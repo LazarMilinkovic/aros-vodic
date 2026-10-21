@@ -324,6 +324,8 @@ ol.recap{max-width:74ch}ol.recap li{margin:6px 0}
 .sort.wide .it{grid-template-columns:1fr}
 .sort.wide .it .bt button{font-size:.76rem;padding:4px 9px}
 
+.resume{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;font:inherit;font-size:.9rem;padding:10px 16px;border-radius:24px;border:1px solid var(--accent);background:var(--accent);color:var(--panel);box-shadow:0 6px 20px rgba(0,0,0,.18);cursor:pointer;max-width:calc(100vw - 32px);transition:opacity .4s ease}
+.resume.hide{opacity:0;pointer-events:none}
 </style>
 </head>
 <body>
@@ -2564,7 +2566,18 @@ const ORDER=["c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","c12","c13
 const FINAL=[["c2",0],["c5",0],["c6",1],["c4",2],["c6",8],["c8",1],["c8",3],["c7",2],["c7",1],["c7",3],["c9",2],["c10",0],["c11",0],["c10",4],["c13",0],["c13",2],["c12",1],["c12",4],["c14",4],["c14",6],["c15",0],["c15",2],["c15",5],["c16",0]].map(([c,i])=>Q[c][i]);
 
 let answers=store.get('aros-ans-v4')||{};
-function save(){store.set('aros-ans-v4',answers);updateProgress();}
+let lastSec=store.get('aros-pos')||null;
+/* cuvanje napretka: localStorage + licni nalog u Claude-u (ako je sajt otvoren kao Claude artifact) */
+let cloud=null,cloudT=0;
+function cloudSave(){if(!cloud)return;clearTimeout(cloudT);cloudT=setTimeout(()=>{cloud.set({answers:JSON.stringify(answers),pos:lastSec||'',at:Date.now()}).catch(()=>{});},800);}
+function save(){store.set('aros-ans-v4',answers);updateProgress();cloudSave();}
+(async()=>{try{if(!(window.claude&&window.claude.use))return;const [db,user]=await Promise.all([claude.use('db'),claude.use('user')]);if(!db||!user)return;const uid=await user.id();if(!uid)return;
+ const ref=db.doc('data/users/'+uid+'/progress');const snap=await ref.get();cloud=ref;
+ if(snap.exists){const d=snap.data()||{};let remote={};try{remote=JSON.parse(d.answers||'{}')}catch(e){}
+  let added=false;for(const k in remote)if(answers[k]===undefined){answers[k]=remote[k];added=true;}
+  if(!lastSec&&d.pos){lastSec=d.pos;showResume();}
+  if(added){store.set('aros-ans-v4',answers);document.querySelectorAll('.quiz').forEach(b=>{b.innerHTML='';const id=b.dataset.ch;renderQuiz(b,id,id==='final'?FINAL:Q[id]);});updateProgress();}}
+ cloudSave();}catch(e){}})();
 
 function renderQuiz(box,id,items){
   if(!items)return;
@@ -3142,6 +3155,15 @@ function score(){sc.innerHTML=done<A.length?`Odgovoreno ${done} od ${A.length}, 
 build();}
 
 
+/* ---- zapamti gde si stao ---- */
+function showResume(){if(!lastSec||location.hash)return;const sec=document.getElementById(lastSec);if(!sec||lastSec==='c1')return;if(document.getElementById('resumeBtn'))return;
+ const lnk=document.querySelector('.toc a[href="#'+lastSec+'"]');const b=document.createElement('button');b.id='resumeBtn';b.type='button';b.className='resume';
+ b.innerHTML='Nastavi gde si stao: <b>'+(lnk?lnk.querySelector('.n').textContent+' '+lnk.lastChild.textContent:lastSec)+'</b>';
+ b.addEventListener('click',()=>{sec.scrollIntoView({behavior:'smooth'});b.remove();});document.body.appendChild(b);setTimeout(()=>b.classList.add('hide'),20000);}
+(function(){const secs=[...document.querySelectorAll('section.ch')];let t=0,first=true;
+ addEventListener('scroll',()=>{clearTimeout(t);t=setTimeout(()=>{const y=innerHeight*0.3;let cur=null;for(const s of secs){if(s.getBoundingClientRect().top<=y)cur=s.id;}
+  if(first&&scrollY<200)return;first=false;if(cur&&cur!==lastSec){lastSec=cur;store.set('aros-pos',cur);cloudSave();const rb=document.getElementById('resumeBtn');if(rb&&scrollY>400)rb.remove();}},500);},{passive:true});
+ showResume();})();
 /* ---- otkrivanje sadržaja pri skrolovanju ---- */
 (function(){const ok=!matchMedia('(prefers-reduced-motion: reduce)').matches&&'IntersectionObserver' in window;if(!ok)return;
  document.documentElement.classList.add('anim');
