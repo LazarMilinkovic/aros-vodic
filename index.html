@@ -353,6 +353,7 @@ button{font:inherit;color:inherit}
 .mainnav a:hover{color:var(--ink);background:var(--panel-2)}
 .mainnav a.on{color:var(--accent);background:var(--accent-soft)}
 .mainnav svg{width:17px;height:17px;flex:none}
+.mainnav .ns{display:none}
 .tools{margin-left:auto;display:flex;gap:6px;align-items:center;flex:none}
 .ibtn{display:inline-flex;align-items:center;gap:8px;height:38px;min-width:38px;justify-content:center;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);cursor:pointer}
 .ibtn:hover{border-color:var(--accent)}
@@ -364,6 +365,11 @@ button{font:inherit;color:inherit}
   .top-in{height:auto;flex-wrap:wrap;padding-block:8px 0;gap:8px}
   .mainnav{order:3;flex-basis:100%;margin:0 -4px;padding-bottom:6px}
   .mainnav a{padding:6px 10px;font-size:.86rem}
+}
+@media (max-width:560px){
+  .mainnav{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin:0;overflow:visible}
+  .mainnav a{flex-direction:column;gap:3px;padding:6px 2px;font-size:.72rem;border-radius:10px}
+  .mainnav .nl{display:none}.mainnav .ns{display:inline}
 }
 .readbar{position:absolute;left:0;bottom:-1px;height:2px;background:var(--accent);width:0;transition:width .15s linear}
 
@@ -614,11 +620,11 @@ details.bq .grade{margin:0 14px 14px}
  <div class="top-in">
   <a class="brand" href="#pocetna"><span class="mk">AR</span><span><b>AROS vodič</b><small>Arhitektura računara i OS</small></span></a>
   <nav class="mainnav" aria-label="Glavna navigacija">
-   <a href="#pocetna" data-nav="pocetna"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Početna</a>
-   <a href="#c1" data-nav="gradivo" id="navLearn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M8 7h7"/></svg>Gradivo</a>
-   <a href="#ispit" data-nav="ispit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>Generator ispita</a>
-   <a href="#pitanja" data-nav="pitanja"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><path d="M12 17.5h.01"/></svg>Banka pitanja</a>
-   <a href="#kartice" data-nav="kartice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="14" height="14" rx="2"/><path d="M7 2h12a2 2 0 0 1 2 2v12"/></svg>Kartice</a>
+   <a href="#pocetna" data-nav="pocetna"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span class="nl">Početna</span><span class="ns">Početna</span></a>
+   <a href="#c1" data-nav="gradivo" id="navLearn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M8 7h7"/></svg><span class="nl">Gradivo</span><span class="ns">Gradivo</span></a>
+   <a href="#ispit" data-nav="ispit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg><span class="nl">Generator ispita</span><span class="ns">Ispit</span></a>
+   <a href="#pitanja" data-nav="pitanja"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><path d="M12 17.5h.01"/></svg><span class="nl">Banka pitanja</span><span class="ns">Pitanja</span></a>
+   <a href="#kartice" data-nav="kartice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="14" height="14" rx="2"/><path d="M7 2h12a2 2 0 0 1 2 2v12"/></svg><span class="nl">Kartice</span><span class="ns">Kartice</span></a>
   </nav>
   <div class="tools">
    <button class="ibtn" id="searchBtn" type="button" aria-label="Pretraži gradivo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="lbl">Pretraga</span><kbd>/</kbd></button>
@@ -5328,7 +5334,7 @@ Prvi proces koji izvrši P(medisk) smanji vrednost na 0 i ulazi u kritičnu sekc
    <div class="eyebrow">Generator ispita</div>
    <h3>Sastavi test</h3>
    <div class="f"><span class="lab2">Gradivo</span><div class="pills" id="exScope">
-     <button type="button" data-v="1" class="on">1. kolokvijum</button><button type="button" data-v="2">2. kolokvijum</button><button type="button" data-v="all">Ceo ispit</button></div>
+     <button type="button" data-v="1">1. kolokvijum</button><button type="button" data-v="2">2. kolokvijum</button><button type="button" data-v="all" class="on">Ceo ispit</button></div>
      <div class="hint" id="exScopeHint"></div></div>
    <div class="f"><span class="lab2">Vrsta pitanja</span><div class="pills" id="exType">
      <button type="button" data-v="open" class="on">Otvorena (kao na ispitu)</button><button type="button" data-v="mc">Test na klik</button><button type="button" data-v="mix">Mešano</button></div></div>
@@ -5727,7 +5733,6 @@ const TERMS=[
 ['cpi',1,'c8','CPI','Prosečan broj ciklusa takta po instrukciji: CPI = Σ (udeo_i × CPI_i). Zavisi od ISA, organizacije i kompajlera, ne od tehnologije.'],
 ['latency',1,'c8','Latentnost i propusnost','Latentnost (vreme odziva) je vreme jednog posla; propusnost (throughput) je broj poslova u jedinici vremena.'],
 ['ilp',1,'c9','ILP, DLP, TLP','Paralelizam na nivou instrukcija (protočna obrada, superskalarnost), podataka (SIMD, vektori, GPU) i niti (više jezgara, Hyper-Threading).'],
-['pipeline',1,'c9','Protočna obrada','Preklapanje faza uzastopnih instrukcija kao na pokretnoj traci. k faza, n instrukcija: k + n − 1 ciklusa umesto k·n.'],
 ['lokalnost',1,'c9','Princip lokalnosti','Programi oko 90% vremena provode u oko 10% koda. Vremenska: ista adresa uskoro opet; prostorna: susedne adrese uskoro.'],
 ['ht',1,'c9','Hyper-Threading','Jedno fizičko jezgro se operativnom sistemu prikazuje kao dva logička i izvršava dve niti, koristeći delove jezgra koji bi inače stajali.'],
 ['bn',1,'c10','BN / PC (brojač naredbi)','Registar koji sadrži <b>adresu sledeće instrukcije</b>. Posle donošenja instrukcije se uvećava (ili ga menja skok).'],
@@ -5764,7 +5769,7 @@ const TERMS=[
 ['psr',1,'c19','PSR i bitovi N, Z, V, C','Registar stanja procesora. N: rezultat negativan; Z: rezultat nula; V: prekoračenje; C: prenos. Uslovni skokovi ih proveravaju.'],
 ['call-ret',1,'c20','CALL i RETURN','CALL čuva povratnu adresu (sadržaj BN) i upisuje adresu potprograma u BN; RETURN vraća sačuvanu adresu u BN. Stek omogućava rekurziju.'],
 ['korutina',1,'c20','Korutina','Modul ravnopravan sa drugim modulima: RESUME predaje kontrolu drugom modulu, koji nastavlja tamo gde je stao (ne od početka, kao potprogram).'],
-['pipeline',1,'c22','Protočna obrada','Izvršavanje instrukcije se deli na faze; dok jedna instrukcija prolazi kroz fazu izvršavanja, sledeća se dekodira, a treća donosi. Povećava propusnost.'],
+['pipeline',1,'c22','Protočna obrada','Izvršavanje instrukcije se deli na faze; dok jedna instrukcija prolazi kroz fazu izvršavanja, sledeća se dekodira, a treća donosi. Povećava propusnost: k faza i n instrukcija traju k + n − 1 ciklusa umesto k·n. Smetnje su hazardi (strukturni, nad podacima, kontrolni).'],
 ['mikroprogram',1,'c23','Mikroprogram','Niz mikroinstrukcija u upravljačkoj memoriji koji izvršava jednu mašinsku instrukciju. Mikroprogramirana jedinica je lakša za izmenu, ožičena je brža.'],
 ['flynn',1,'d1','Flynn-ova klasifikacija','Po broju tokova instrukcija i podataka: SISD (Von Neumann), SIMD (vektorski, GPU), MISD (retko), MIMD (višejezgarni, klasteri).'],
 ['os-def',2,'o1','Operativni sistem','Program koji je interfejs između korisnika i hardvera: olakšava pristup hardveru u višekorisničkom okruženju, povećava efikasnost, obezbeđuje bezbednost i emulira svojstva kojih nema u hardveru.'],
@@ -5834,6 +5839,11 @@ const toastEl=$('toast');let toastT=0;
 function toast(t){toastEl.textContent=t;toastEl.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>toastEl.hidden=true,2600);}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const norm=s=>s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'dj');
+/* stalni (ne nasumični pri svakom otvaranju) raspored opcija, da tačan odgovor ne bude uvek na istom mestu; čuvani odgovori ostaju indeksi iz podataka */
+const optOrder=(key,opts)=>{let h=2166136261;for(const c of key){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}
+  const rnd=()=>{h^=h<<13;h^=h>>>17;h^=h<<5;return (h>>>0)/4294967296;};
+  const last=/^(sve |oba\b|nijedn|ni jedn|ništa|i a i b)/i,idx=opts.map((_,i)=>i),fix=idx.filter(i=>last.test(opts[i])),mv=idx.filter(i=>!last.test(opts[i]));
+  for(let i=mv.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[mv[i],mv[j]]=[mv[j],mv[i]];}return mv.concat(fix);};
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 
 /* ================= tema i slova ================= */
@@ -5861,7 +5871,7 @@ function renderQuiz(box,id,items){
     const p=document.createElement('p');p.textContent=(qi+1)+'. '+q;d.appendChild(p);
     const o=document.createElement('div');o.className='opts';d.appendChild(o);
     const e=document.createElement('div');e.className='expl';e.hidden=true;d.appendChild(e);
-    const btns=opts.map((t,oi)=>{const b=document.createElement('button');b.className='opt';b.type='button';b.textContent=t;b.addEventListener('click',()=>{answers[key]=oi;show();save();score();});o.appendChild(b);return b;});
+    const btns=opts.map((t,oi)=>{const b=document.createElement('button');b.className='opt';b.type='button';b.textContent=t;b.addEventListener('click',()=>{answers[key]=oi;show();save();score();});return b;});optOrder(key,opts).forEach(i=>o.appendChild(btns[i]));
     function show(){const a=answers[key];if(a===undefined){btns.forEach(b=>{b.disabled=false;b.className='opt'});e.hidden=true;return;}
       btns.forEach((b,i)=>{b.disabled=true;b.className='opt'+(i===right?' right':(i===a?' wrong':''));});
       e.hidden=false;e.textContent=(a===right?'Tačno. ':'Netačno. ')+ex;}
@@ -5925,7 +5935,7 @@ function showChapter(id,opts){
   requestAnimationFrame(()=>{const page=$('page');const top=page.getBoundingClientRect().top+scrollY-80;const h=page.offsetHeight;window.scrollTo({top:fr>0.02?top+fr*h:0,behavior:'instant'});});
 }
 $('otp').addEventListener('click',e=>{const a=e.target.closest('a[data-to]');if(!a)return;e.preventDefault();const t=$(a.dataset.to);if(t)t.scrollIntoView({behavior:'smooth',block:'start'});});
-$('chfoot').addEventListener('click',e=>{const a=e.target.closest('a[data-from]');if(a){examFrom=a.dataset.from;}});
+$('chfoot').addEventListener('click',e=>{const a=e.target.closest('a[data-from]');if(a){examFrom=a.dataset.from;examAuto=true;}});
 // praćenje čitanja
 let scrT=0;
 addEventListener('scroll',()=>{
@@ -6000,8 +6010,8 @@ function renderHome(){
 }
 
 /* ================= generator ispita ================= */
-let examFrom=null;
-const EX={scope:'1',type:'open',n:10,pick:'smart',time:0};
+let examFrom=null,examAuto=false;
+const EX={scope:'all',type:'open',n:10,pick:'smart',time:0};
 let exam=store.get('aros-exam-cur')||null;let timerT=0;
 function pillGroup(id,key,cb){const g=$(id);g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));const v=b.dataset.v;EX[key]=key==='n'||key==='time'?+v:v;cb&&cb();});}
 pillGroup('exScope','scope',scopeHint);pillGroup('exType','type',scopeHint);pillGroup('exN','n');pillGroup('exPick','pick');pillGroup('exTime','time');
@@ -6009,8 +6019,7 @@ function mcPool(p){const out=[];for(const id in Q){const pp=id[0]==='o'?2:1;if(p
 function pool(){const parts=EX.scope==='all'?[1,2]:[+EX.scope];let o=[],m=[];parts.forEach(p=>{o=o.concat(BANK.filter(b=>b.p===p&&(!examFrom||b.ch===examFrom)));m=m.concat(mcPool(p).filter(b=>!examFrom||b.ch===examFrom));});
   return {open:o,mc:m};}
 function scopeHint(){const P=pool();const h=$('exScopeHint');
-  const n2=BANK.filter(b=>b.p===2).length;
-  h.innerHTML=(examFrom?`Samo lekcija <b>${esc(CHI[examFrom].n+' '+CHI[examFrom].t)}</b> · <a href="#ispit" id="exClear">sve lekcije</a><br>`:'')+`U izboru: ${P.open.length} otvorenih i ${P.mc.length} pitanja na klik.`+(EX.scope!=='1'&&!n2?' Pitanja iz OS-a stižu sa novim lekcijama.':'');
+  h.innerHTML=(examFrom?`Samo lekcija <b>${esc(CHI[examFrom].n+' '+CHI[examFrom].t)}</b> · <a href="#ispit" id="exClear">sve lekcije</a><br>`:'')+`U izboru: ${P.open.length} otvorenih i ${P.mc.length} pitanja na klik.`;
   const c=$('exClear');if(c)c.addEventListener('click',e=>{e.preventDefault();examFrom=null;scopeHint();});}
 function weight(id){const g=S.grades[id];if(!g)return 3;return g.g===0?3.2:g.g===1?2:0.5;}
 function pickN(arr,n,mode){
@@ -6028,6 +6037,7 @@ function genExam(){
   if(EX.type==='open')qs=byPart(P.open,n);
   else if(EX.type==='mc')qs=byPart(P.mc,n);
   else{const h=Math.ceil(n/2);qs=byPart(P.open,h).concat(byPart(P.mc,n-h,true));}
+  if(!qs.length&&EX.pick==='weak'){EX.pick='smart';$('exPick').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='smart'));genExam();toast('Ovde još nema slabih pitanja, pa je izbor vraćen na „Pametno“.');return;}
   if(!qs.length){toast(EX.pick==='weak'?'Nema slabih pitanja: prvo oceni neka pitanja kao „ne znam“ ili „delimično“.':'Za ovaj izbor još nema pitanja.');return;}
   qs.sort((a,b)=>(CHI[a.ch]?CHI[a.ch].i:99)-(CHI[b.ch]?CHI[b.ch].i:99));
   exam={id:Date.now().toString(36),at:Date.now(),scope:EX.scope,from:examFrom,type:EX.type,time:EX.time,end:EX.time?Date.now()+EX.time*60000*qs.length:0,
@@ -6041,6 +6051,7 @@ function fmtDate(t){const d=new Date(t);return d.toLocaleDateString('sr-Latn-RS'
 function renderExamView(){
   if(examFrom){EX.scope=String(CHI[examFrom]?CHI[examFrom].p:1);$('exScope').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===EX.scope));}
   scopeHint();renderHist();
+  if(examAuto){examAuto=false;genExam();return;}
   if(exam&&!exam.done)renderSheet();else if(exam&&exam.done)renderSheet();else renderEmptySheet();
 }
 function renderEmptySheet(){
@@ -6055,7 +6066,7 @@ function renderSheet(){
   qs.forEach((x,i)=>{const st=e.st[x.id]||{};const c=CHI[x.ch];
     const tags=`<div class="tagrow"><span class="tag p${x.p}">${x.p}. kol.</span>${c?`<span class="tag">${c.m} · ${esc(c.t)}</span>`:''}${x.mc?'<span class="tag">na klik</span>':''}</div>`;
     if(x.mc){const [qq,opts,right,ex]=x.mc;
-      h+=`<div class="eq mc" data-id="${x.id}"><div class="qh"><span class="qn">${i+1}</span><p class="qt">${esc(qq)}</p></div>${tags}<div class="opts">${opts.map((o,oi)=>`<button type="button" class="opt${st.a!==undefined?(oi===right?' right':oi===st.a?' wrong':''):''}" data-o="${oi}"${st.a!==undefined?' disabled':''}>${esc(o)}</button>`).join('')}</div>${st.a!==undefined?`<div class="expl">${st.a===right?'Tačno. ':'Netačno. '}${esc(ex)}${c?` <a href="#${x.ch}">Lekcija →</a>`:''}</div>`:''}</div>`;}
+      h+=`<div class="eq mc" data-id="${x.id}"><div class="qh"><span class="qn">${i+1}</span><p class="qt">${esc(qq)}</p></div>${tags}<div class="opts">${optOrder(x.id,opts).map(oi=>{const o=opts[oi];return `<button type="button" class="opt${st.a!==undefined?(oi===right?' right':oi===st.a?' wrong':''):''}" data-o="${oi}"${st.a!==undefined?' disabled':''}>${esc(o)}</button>`;}).join('')}</div>${st.a!==undefined?`<div class="expl">${st.a===right?'Tačno. ':'Netačno. '}${esc(ex)}${c?` <a href="#${x.ch}">Lekcija →</a>`:''}</div>`:''}</div>`;}
     else{
       h+=`<div class="eq" data-id="${x.id}"><div class="qh"><span class="qn">${i+1}</span><p class="qt">${x.q}</p></div>${tags}
       <textarea placeholder="Napiši odgovor kao na ispitu (opciono). Ostaje sačuvan dok ne napraviš novi ispit." data-t="${x.id}" id="ta-${x.id}">${esc(st.txt||'')}</textarea>
@@ -6123,11 +6134,14 @@ function fcQueue(){const now=Date.now();const ts=TERMS.filter(t=>deck==='all'||S
   const due=ts.filter(t=>{const c=S.cards[t.id];return c&&c.due<=now;}).sort((a,b)=>S.cards[a.id].b-S.cards[b.id].b);
   const fresh=ts.filter(t=>!S.cards[t.id]);
   return {due,fresh,all:ts};}
-function nextCard(){const q=fcQueue();let pick=null;
-  if(q.due.length)pick=q.due[Math.floor(Math.random()*Math.min(3,q.due.length))];
-  else if(q.fresh.length)pick=q.fresh[Math.floor(Math.random()*q.fresh.length)];
-  else if(fcExtra&&q.all.length)pick=q.all[Math.floor(Math.random()*q.all.length)];
-  if(pick&&fcCur&&pick.id===fcCur.id&&q.all.length>1)return nextCard();
+function nextCard(){const q=fcQueue();const prev=fcCur&&fcCur.id;
+  // prethodnu karticu ne daj odmah ponovo, osim ako nema druge
+  const not=a=>{const r=a.filter(t=>t.id!==prev);return r.length?r:a;};
+  const due=not(q.due),fresh=q.fresh.filter(t=>t.id!==prev);let pick=null;
+  if(due.length&&(due[0].id!==prev||!fresh.length))pick=due[Math.floor(Math.random()*Math.min(3,due.length))];
+  else if(fresh.length)pick=fresh[Math.floor(Math.random()*fresh.length)];
+  else if(due.length)pick=due[0];
+  else if(fcExtra&&q.all.length){const a=not(q.all);pick=a[Math.floor(Math.random()*a.length)];}
   fcCur=pick;fcFlip=false;}
 function renderCards(){
   if(!fcCur||(deck!=='all'&&String(fcCur.p)!==deck))nextCard();
@@ -6142,7 +6156,7 @@ function renderCards(){
   const bx=[1,2,3,4,5].map(b=>q.all.filter(t=>(S.cards[t.id]||{}).b===b).length);
   $('fcBoxes').innerHTML=`<div><b>${q.fresh.length}</b><small>nove</small></div>`+bx.map((n,i)=>`<div><b>${n}</b><small>kutija ${i+1}</small></div>`).join('');
 }
-function fcAnswer(k){if(!fcCur)return;const c=S.cards[fcCur.id]||{b:0};const b=k?Math.min(5,(c.b||0)+1):1;S.cards[fcCur.id]={b,due:Date.now()+GAP[b],t:Date.now()};saveAll();nextCard();renderCards();}
+function fcAnswer(k){if(!fcCur)return;const c=S.cards[fcCur.id]||{b:0};const b=k?Math.min(5,Math.max(2,(c.b||0)+1)):1;S.cards[fcCur.id]={b,due:Date.now()+GAP[b],t:Date.now()};saveAll();nextCard();renderCards();}
 function fcToggle(){if(!fcCur)return;fcFlip=!fcFlip;renderCards();}
 on('fcIn','click',e=>{if(e.target.closest('a'))return;fcToggle();});
 $('fcActs').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;const k=b.dataset.k;if(k==='f')fcToggle();else fcAnswer(+k);});

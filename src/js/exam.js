@@ -1,6 +1,6 @@
 /* ================= generator ispita ================= */
-let examFrom=null;
-const EX={scope:'1',type:'open',n:10,pick:'smart',time:0};
+let examFrom=null,examAuto=false;
+const EX={scope:'all',type:'open',n:10,pick:'smart',time:0};
 let exam=store.get('aros-exam-cur')||null;let timerT=0;
 function pillGroup(id,key,cb){const g=$(id);g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));const v=b.dataset.v;EX[key]=key==='n'||key==='time'?+v:v;cb&&cb();});}
 pillGroup('exScope','scope',scopeHint);pillGroup('exType','type',scopeHint);pillGroup('exN','n');pillGroup('exPick','pick');pillGroup('exTime','time');
@@ -8,8 +8,7 @@ function mcPool(p){const out=[];for(const id in Q){const pp=id[0]==='o'?2:1;if(p
 function pool(){const parts=EX.scope==='all'?[1,2]:[+EX.scope];let o=[],m=[];parts.forEach(p=>{o=o.concat(BANK.filter(b=>b.p===p&&(!examFrom||b.ch===examFrom)));m=m.concat(mcPool(p).filter(b=>!examFrom||b.ch===examFrom));});
   return {open:o,mc:m};}
 function scopeHint(){const P=pool();const h=$('exScopeHint');
-  const n2=BANK.filter(b=>b.p===2).length;
-  h.innerHTML=(examFrom?`Samo lekcija <b>${esc(CHI[examFrom].n+' '+CHI[examFrom].t)}</b> · <a href="#ispit" id="exClear">sve lekcije</a><br>`:'')+`U izboru: ${P.open.length} otvorenih i ${P.mc.length} pitanja na klik.`+(EX.scope!=='1'&&!n2?' Pitanja iz OS-a stižu sa novim lekcijama.':'');
+  h.innerHTML=(examFrom?`Samo lekcija <b>${esc(CHI[examFrom].n+' '+CHI[examFrom].t)}</b> · <a href="#ispit" id="exClear">sve lekcije</a><br>`:'')+`U izboru: ${P.open.length} otvorenih i ${P.mc.length} pitanja na klik.`;
   const c=$('exClear');if(c)c.addEventListener('click',e=>{e.preventDefault();examFrom=null;scopeHint();});}
 function weight(id){const g=S.grades[id];if(!g)return 3;return g.g===0?3.2:g.g===1?2:0.5;}
 function pickN(arr,n,mode){
@@ -27,6 +26,7 @@ function genExam(){
   if(EX.type==='open')qs=byPart(P.open,n);
   else if(EX.type==='mc')qs=byPart(P.mc,n);
   else{const h=Math.ceil(n/2);qs=byPart(P.open,h).concat(byPart(P.mc,n-h,true));}
+  if(!qs.length&&EX.pick==='weak'){EX.pick='smart';$('exPick').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==='smart'));genExam();toast('Ovde još nema slabih pitanja, pa je izbor vraćen na „Pametno“.');return;}
   if(!qs.length){toast(EX.pick==='weak'?'Nema slabih pitanja: prvo oceni neka pitanja kao „ne znam“ ili „delimično“.':'Za ovaj izbor još nema pitanja.');return;}
   qs.sort((a,b)=>(CHI[a.ch]?CHI[a.ch].i:99)-(CHI[b.ch]?CHI[b.ch].i:99));
   exam={id:Date.now().toString(36),at:Date.now(),scope:EX.scope,from:examFrom,type:EX.type,time:EX.time,end:EX.time?Date.now()+EX.time*60000*qs.length:0,
@@ -40,6 +40,7 @@ function fmtDate(t){const d=new Date(t);return d.toLocaleDateString('sr-Latn-RS'
 function renderExamView(){
   if(examFrom){EX.scope=String(CHI[examFrom]?CHI[examFrom].p:1);$('exScope').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===EX.scope));}
   scopeHint();renderHist();
+  if(examAuto){examAuto=false;genExam();return;}
   if(exam&&!exam.done)renderSheet();else if(exam&&exam.done)renderSheet();else renderEmptySheet();
 }
 function renderEmptySheet(){
@@ -54,7 +55,7 @@ function renderSheet(){
   qs.forEach((x,i)=>{const st=e.st[x.id]||{};const c=CHI[x.ch];
     const tags=`<div class="tagrow"><span class="tag p${x.p}">${x.p}. kol.</span>${c?`<span class="tag">${c.m} · ${esc(c.t)}</span>`:''}${x.mc?'<span class="tag">na klik</span>':''}</div>`;
     if(x.mc){const [qq,opts,right,ex]=x.mc;
-      h+=`<div class="eq mc" data-id="${x.id}"><div class="qh"><span class="qn">${i+1}</span><p class="qt">${esc(qq)}</p></div>${tags}<div class="opts">${opts.map((o,oi)=>`<button type="button" class="opt${st.a!==undefined?(oi===right?' right':oi===st.a?' wrong':''):''}" data-o="${oi}"${st.a!==undefined?' disabled':''}>${esc(o)}</button>`).join('')}</div>${st.a!==undefined?`<div class="expl">${st.a===right?'Tačno. ':'Netačno. '}${esc(ex)}${c?` <a href="#${x.ch}">Lekcija →</a>`:''}</div>`:''}</div>`;}
+      h+=`<div class="eq mc" data-id="${x.id}"><div class="qh"><span class="qn">${i+1}</span><p class="qt">${esc(qq)}</p></div>${tags}<div class="opts">${optOrder(x.id,opts).map(oi=>{const o=opts[oi];return `<button type="button" class="opt${st.a!==undefined?(oi===right?' right':oi===st.a?' wrong':''):''}" data-o="${oi}"${st.a!==undefined?' disabled':''}>${esc(o)}</button>`;}).join('')}</div>${st.a!==undefined?`<div class="expl">${st.a===right?'Tačno. ':'Netačno. '}${esc(ex)}${c?` <a href="#${x.ch}">Lekcija →</a>`:''}</div>`:''}</div>`;}
     else{
       h+=`<div class="eq" data-id="${x.id}"><div class="qh"><span class="qn">${i+1}</span><p class="qt">${x.q}</p></div>${tags}
       <textarea placeholder="Napiši odgovor kao na ispitu (opciono). Ostaje sačuvan dok ne napraviš novi ispit." data-t="${x.id}" id="ta-${x.id}">${esc(st.txt||'')}</textarea>

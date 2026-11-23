@@ -23,6 +23,11 @@ const toastEl=$('toast');let toastT=0;
 function toast(t){toastEl.textContent=t;toastEl.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>toastEl.hidden=true,2600);}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const norm=s=>s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'dj');
+/* stalni (ne nasumični pri svakom otvaranju) raspored opcija, da tačan odgovor ne bude uvek na istom mestu; čuvani odgovori ostaju indeksi iz podataka */
+const optOrder=(key,opts)=>{let h=2166136261;for(const c of key){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}
+  const rnd=()=>{h^=h<<13;h^=h>>>17;h^=h<<5;return (h>>>0)/4294967296;};
+  const last=/^(sve |oba\b|nijedn|ni jedn|ništa|i a i b)/i,idx=opts.map((_,i)=>i),fix=idx.filter(i=>last.test(opts[i])),mv=idx.filter(i=>!last.test(opts[i]));
+  for(let i=mv.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[mv[i],mv[j]]=[mv[j],mv[i]];}return mv.concat(fix);};
 const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 
 /* ================= tema i slova ================= */
@@ -50,7 +55,7 @@ function renderQuiz(box,id,items){
     const p=document.createElement('p');p.textContent=(qi+1)+'. '+q;d.appendChild(p);
     const o=document.createElement('div');o.className='opts';d.appendChild(o);
     const e=document.createElement('div');e.className='expl';e.hidden=true;d.appendChild(e);
-    const btns=opts.map((t,oi)=>{const b=document.createElement('button');b.className='opt';b.type='button';b.textContent=t;b.addEventListener('click',()=>{answers[key]=oi;show();save();score();});o.appendChild(b);return b;});
+    const btns=opts.map((t,oi)=>{const b=document.createElement('button');b.className='opt';b.type='button';b.textContent=t;b.addEventListener('click',()=>{answers[key]=oi;show();save();score();});return b;});optOrder(key,opts).forEach(i=>o.appendChild(btns[i]));
     function show(){const a=answers[key];if(a===undefined){btns.forEach(b=>{b.disabled=false;b.className='opt'});e.hidden=true;return;}
       btns.forEach((b,i)=>{b.disabled=true;b.className='opt'+(i===right?' right':(i===a?' wrong':''));});
       e.hidden=false;e.textContent=(a===right?'Tačno. ':'Netačno. ')+ex;}
@@ -114,7 +119,7 @@ function showChapter(id,opts){
   requestAnimationFrame(()=>{const page=$('page');const top=page.getBoundingClientRect().top+scrollY-80;const h=page.offsetHeight;window.scrollTo({top:fr>0.02?top+fr*h:0,behavior:'instant'});});
 }
 $('otp').addEventListener('click',e=>{const a=e.target.closest('a[data-to]');if(!a)return;e.preventDefault();const t=$(a.dataset.to);if(t)t.scrollIntoView({behavior:'smooth',block:'start'});});
-$('chfoot').addEventListener('click',e=>{const a=e.target.closest('a[data-from]');if(a){examFrom=a.dataset.from;}});
+$('chfoot').addEventListener('click',e=>{const a=e.target.closest('a[data-from]');if(a){examFrom=a.dataset.from;examAuto=true;}});
 // praćenje čitanja
 let scrT=0;
 addEventListener('scroll',()=>{

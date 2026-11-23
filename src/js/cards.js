@@ -5,11 +5,14 @@ function fcQueue(){const now=Date.now();const ts=TERMS.filter(t=>deck==='all'||S
   const due=ts.filter(t=>{const c=S.cards[t.id];return c&&c.due<=now;}).sort((a,b)=>S.cards[a.id].b-S.cards[b.id].b);
   const fresh=ts.filter(t=>!S.cards[t.id]);
   return {due,fresh,all:ts};}
-function nextCard(){const q=fcQueue();let pick=null;
-  if(q.due.length)pick=q.due[Math.floor(Math.random()*Math.min(3,q.due.length))];
-  else if(q.fresh.length)pick=q.fresh[Math.floor(Math.random()*q.fresh.length)];
-  else if(fcExtra&&q.all.length)pick=q.all[Math.floor(Math.random()*q.all.length)];
-  if(pick&&fcCur&&pick.id===fcCur.id&&q.all.length>1)return nextCard();
+function nextCard(){const q=fcQueue();const prev=fcCur&&fcCur.id;
+  // prethodnu karticu ne daj odmah ponovo, osim ako nema druge
+  const not=a=>{const r=a.filter(t=>t.id!==prev);return r.length?r:a;};
+  const due=not(q.due),fresh=q.fresh.filter(t=>t.id!==prev);let pick=null;
+  if(due.length&&(due[0].id!==prev||!fresh.length))pick=due[Math.floor(Math.random()*Math.min(3,due.length))];
+  else if(fresh.length)pick=fresh[Math.floor(Math.random()*fresh.length)];
+  else if(due.length)pick=due[0];
+  else if(fcExtra&&q.all.length){const a=not(q.all);pick=a[Math.floor(Math.random()*a.length)];}
   fcCur=pick;fcFlip=false;}
 function renderCards(){
   if(!fcCur||(deck!=='all'&&String(fcCur.p)!==deck))nextCard();
@@ -24,7 +27,7 @@ function renderCards(){
   const bx=[1,2,3,4,5].map(b=>q.all.filter(t=>(S.cards[t.id]||{}).b===b).length);
   $('fcBoxes').innerHTML=`<div><b>${q.fresh.length}</b><small>nove</small></div>`+bx.map((n,i)=>`<div><b>${n}</b><small>kutija ${i+1}</small></div>`).join('');
 }
-function fcAnswer(k){if(!fcCur)return;const c=S.cards[fcCur.id]||{b:0};const b=k?Math.min(5,(c.b||0)+1):1;S.cards[fcCur.id]={b,due:Date.now()+GAP[b],t:Date.now()};saveAll();nextCard();renderCards();}
+function fcAnswer(k){if(!fcCur)return;const c=S.cards[fcCur.id]||{b:0};const b=k?Math.min(5,Math.max(2,(c.b||0)+1)):1;S.cards[fcCur.id]={b,due:Date.now()+GAP[b],t:Date.now()};saveAll();nextCard();renderCards();}
 function fcToggle(){if(!fcCur)return;fcFlip=!fcFlip;renderCards();}
 on('fcIn','click',e=>{if(e.target.closest('a'))return;fcToggle();});
 $('fcActs').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;const k=b.dataset.k;if(k==='f')fcToggle();else fcAnswer(+k);});
