@@ -4,21 +4,29 @@ import re, json, html, os, glob
 D = os.path.dirname(os.path.abspath(__file__))
 R = lambda p: open(os.path.join(D, p), encoding='utf-8').read()
 
-ORDER = ['c%d' % i for i in range(1, 18)] + sorted(
-    [os.path.basename(p)[:-5] for p in glob.glob(os.path.join(D, 'chapters', 'o*.html'))],
-    key=lambda s: int(re.sub(r'\D', '', s) or 0))
+# redosled lekcija = redosled u src/js/course.js
+ORDER = re.findall(r"\['([a-z]\d+)'", R('js/course.js'))
 
 def strip(h):
     return re.sub(r'\s+', ' ', html.unescape(re.sub(r'<[^>]+>', ' ', h))).strip()
 
 bank = []
 chapters = []
+# ispitna pitanja iz PDF-ova sa pitanjima: src/questions/*.html, blokovi oznaceni sa <!-- @cid -->
+EXTRA = {}
+for qf in sorted(glob.glob(os.path.join(D, 'questions', '*.html'))):
+    parts = re.split(r'<!--\s*@([a-z]\d+)\s*-->', open(qf, encoding='utf-8').read())
+    for i in range(1, len(parts), 2):
+        EXTRA[parts[i]] = EXTRA.get(parts[i], '') + parts[i + 1]
 for cid in ORDER:
     p = os.path.join(D, 'chapters', cid + '.html')
     if not os.path.exists(p):
         continue
     s = open(p, encoding='utf-8').read()
     part = 2 if cid.startswith('o') else 1
+    if EXTRA.get(cid, '').strip():
+        blk = '<h3 class="exh">Ispitna pitanja iz ove lekcije</h3>\n<p class="exintro">Pitanja iz skripte sa ispitnim pitanjima koja se odnose na ovu lekciju. Pokušaj prvo sam da odgovoriš, pa otvori odgovor. Gde je odgovor u skripti bio netačan ili nepotpun, ovde je ispravljen i to je naznačeno.</p>\n' + EXTRA[cid]
+        s = s.replace('<div class="quiz"', blk + '\n<div class="quiz"', 1)
     # stabilni id-jevi za podnaslove h3
     n = [0]
     def h3(m):

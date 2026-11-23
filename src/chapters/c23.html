@@ -1,0 +1,158 @@
+<section class="ch" id="c23">
+<div class="ch-head"><span class="ch-num">M6</span><span class="ch-src">Modul 6 · deo 2 od 2 · Lecture 6_B – MikroprogramskiNivo.pdf, slajdovi 2–25 i M6_ISA_i_mikroarhitektura.pdf</span></div>
+<h2>Ispod mašinskog jezika: mikroprogram, firmver i mikroarhitektura</h2>
+<p class="lead">Na kraju prvog dela predmeta spuštamo se nivo niže nego ikad. Do sada je mašinska instrukcija bila najmanja stvar koju procesor izvršava. Ali u Modulu 3 smo videli da i jedna instrukcija ima korake: mikrooperacije. Ko odlučuje koje mikrooperacije, kojim redom i u kom taktu? <strong>Upravljačka jedinica.</strong> Ona se može napraviti na dva načina: kao fiksno ožičeno kolo (hardverska kontrola), ili kao mali računar unutar računara koji izvršava svoj program, <strong>mikroprogram</strong>. Ova lekcija objašnjava taj drugi način, šta je firmver, i zatim razliku između ISA i mikroarhitekture, koja zatvara priču o slojevima iz Modula 1.</p>
+
+<h3>Od programa do mikrooperacije (slajdovi 3–4)</h3>
+<figure class="slide"><img src="img/m6b-3.jpg" alt="Dekompozicija izvršavanja programa" loading="lazy"><figcaption><b>Slajd 3 · Dekompozicija izvršavanja programa (Stallings, slika 20.1)</b></figcaption></figure>
+<div class="read"><b>Kako da čitaš ovu sliku.</b> Stablo odozgo nadole. Vrh: <b>Program Execution</b>, izvršavanje celog programa. Ono se sastoji od niza <b>Instruction Cycle</b> (ciklus jedne instrukcije, po jedan za svaku instrukciju). Svaki ciklus ima faze <b>Fetch</b> (donošenje), <b>Indirect</b> (indirektno, donošenje adrese operanda ako je adresiranje indirektno), <b>Execute</b> (izvršavanje) i <b>Interrupt</b> (provera i obrada prekida). Crveni okvir ih ističe. Svaka faza se sastoji od jedne ili više <b>µOP</b>, mikrooperacija.</div>
+<p>Plavi tekst na slici: <b>„Svaka od faza izvršavanja instrukcije sadrži jednu ili više mikrooperacija.“</b> Slajd 4 daje tri definicije koje treba znati napamet:</p>
+<ul>
+<li>„Svaka mašinska instrukcija se može podeliti u nekoliko <b>podinstrukcija ili mikroinstrukcija</b>.“</li>
+<li>„<b>Mikroinstrukcija</b> je skup mikrooperacija koje se izvršavaju u isto vreme.“</li>
+<li>„Skup mikroinstrukcija na osnovu koga je napravljen potpun skup instrukcija se zove <b>mikroprogram ili mikrokod</b>.“</li>
+</ul>
+<div class="simple">Hijerarhija: <b>program</b> → niz <b>mašinskih instrukcija</b> → svaka instrukcija je niz <b>mikroinstrukcija</b> (jedna po taktu) → svaka mikroinstrukcija je skup <b>mikrooperacija</b> koje se dešavaju istovremeno (npr. „MBR ← memorija“ i „PC ← PC + 1“ u istom taktu).</div>
+<details class="stop exq" id="m6-k4"><summary>Objasniti šta je mikroinstrukcija (ili mikrooperacija) i šta je mikroprogramiranje.</summary><div><b>Mikrooperacija</b> je elementarna operacija procesora koja se izvrši u jednom taktu, npr. prenos sadržaja iz jednog registra u drugi (MAR ← PC), čitanje memorije ili povećanje registra. Svaka faza izvršavanja instrukcije (donošenje, indirektna faza, izvršavanje, prekid) sastoji se od jedne ili više mikrooperacija. <b>Mikroinstrukcija</b> je skup mikrooperacija koje se izvršavaju u isto vreme; mašinska instrukcija se deli na nekoliko mikroinstrukcija. <b>Mikroprogramiranje</b> je tehnika implementacije upravljačke jedinice kod koje se upravljačka jedinica pravi kao mašina koja izvršava mikroprogram (računar unutar računara): za svaku mašinsku instrukciju postoji niz mikroinstrukcija u upravljačkoj memoriji, a svaka mikroinstrukcija određuje skup upravljačkih signala koji se aktiviraju.</div></details>
+
+<h3>Dva načina da se napravi upravljačka jedinica (slajdovi 5–6)</h3>
+<figure class="slide"><img src="img/m6b-5.jpg" alt="Mikroprogramiranje i hardverska kontrola" loading="lazy"><figcaption><b>Slajd 5 · Mikroprogramiranje i hardverska kontrola</b></figcaption></figure>
+<div class="tbl"><table>
+<tr><th></th><th>Mikroprogramiranje</th><th>Hardverska kontrola („hardwired control“)</th></tr>
+<tr><td>Kako radi</td><td>upravljačka jedinica čita mikroinstrukcije iz upravljačke memorije (ROM) i šalje signale koje one kažu</td><td>upravljački signali se dobijaju direktno iz logičkih kola (dekoder, brojač taktova, kapije)</td></tr>
+<tr><td>Izmena</td><td><b>lakše se vrši modifikacija</b>: promeni se sadržaj memorije</td><td><b>nije jednostavno za modifikaciju</b>: mora se projektovati novo kolo</td></tr>
+<tr><td>Projektovanje</td><td><b>pojednostavljuje se</b>: piše se program umesto crtanja kola</td><td>složeno, posebno za velike skupove instrukcija</td></tr>
+<tr><td>Brzina</td><td><b>sporije rešenje</b>: svaka mikroinstrukcija se čita iz memorije</td><td><b>brzo rešenje</b></td></tr>
+<tr><td>Tipično za</td><td>CISC (IBM 360, VAX, Intel x86 za složene instrukcije)</td><td>RISC (MIPS, ARM, RISC-V)</td></tr>
+</table></div>
+<p>Slajd 6: <b>„Mikroarhitektura se sastoji od upravljačke jedinice i registara koji su vidljivi programeru, funkcionalne jedinice kao što je ALU i dodatnih registara koji mogu biti potrebni upravljačkoj jedinici.“</b> i <b>„Mikroprogramiranje je tehnika koja se koristi za implementaciju upravljačke jedinice. Osnovna ideja je da se upravljačka jedinica implementira kao mašina za izvršavanje mikroprograma (računar unutar računara).“</b></p>
+<div class="bridge">Ovo je ista dilema koju smo u Modulu 3 videli kod CISC i RISC („mikroprogram ili hardver“, slajdovi 25–26). Sada razumemo zašto: složene CISC instrukcije imaju mnogo koraka, pa ih je lakše opisati mikroprogramom; jednostavne RISC instrukcije imaju malo koraka i mogu se direktno ožičiti.</div>
+
+<h3>Firmver: most između hardvera i softvera (slajdovi 7–9)</h3>
+<p><b>„Mikroprogram se često zove i firmver („firmware“), jer povezuje hardver i softver, odnosno smanjuje razliku između hardvera i softvera.“</b> Ime dolazi od engleskog <i>firm</i> (čvrst): nešto između <i>hard</i> (tvrd, hardver) i <i>soft</i> (mek, softver). Mikroprogram je program (softver), ali je upisan u memoriju unutar procesora i korisnik ga ne menja, pa se ponaša kao deo hardvera.</p>
+<p>„Da bi se izvršila neka mikroinstrukcija upravljačka jedinica mora da pošalje skup upravljačkih signala odgovarajućim hardverskim komponentama, odnosno <b>svakoj mikroinstrukciji se pridružuje skup aktivnih upravljačkih signala</b>.“</p>
+<p><b>Programiranje firmvera</b> (slajd 8): „Za programiranje firmvera koristi se <b>mikro-asembler</b> koji nije vidljiv krajnjem korisniku sistema.“ i „Mikroprogram napisan u mikro-asembler jeziku mora da bude preveden na mašinski jezik pre nego što se upiše u <b>upravljačku memoriju</b>, isto kao i što program napisan u asembleru mora da bude preveden na mašinski jezik pre nego što se upiše u glavnu memoriju.“</p>
+<p><b>Promena firmvera</b> (slajd 9): „Bilo koja promena u skupu instrukcija na konvencionalnom mašinskom nivou prouzrokuje promenu i u firmveru.“ (nova instrukcija traži novi mikroprogram) i „Promena softvera na aplikativnom nivou (na nivou korisnika) ne utiče na firmver.“ (instaliranje programa ne menja procesor).</p>
+<div class="ex">Danas reč „firmver“ ima šire značenje: program upisan u neki uređaj (BIOS/UEFI matične ploče, firmver rutera, telefona, SSD diska). Ali i dalje postoji i u užem smislu: Intel i AMD izdaju <b>ažuriranja mikrokoda</b> (microcode updates) koja operativni sistem učita u procesor pri pokretanju. Tako su 2018. delimično ublaženi sigurnosni propusti Spectre i Meltdown bez menjanja čipa.</div>
+<details class="stop exq" id="m6-k5"><summary>Objasniti šta je firmver („firmware“) i koja je njegova osnovna namena.</summary><div>Firmver je naziv za mikroprogram (mikrokod), skup mikroinstrukcija upisan u upravljačku memoriju procesora, na osnovu kog upravljačka jedinica izvršava mašinske instrukcije. Zove se firmver jer <b>povezuje hardver i softver</b>, odnosno smanjuje razliku između njih: po prirodi je program, a ponaša se kao deo hardvera i nije vidljiv krajnjem korisniku. Osnovna namena mu je da <b>implementira skup instrukcija konvencionalnog mašinskog nivoa</b>: za svaku mašinsku instrukciju određuje niz upravljačkih signala. Piše se u mikro-asembleru i prevodi pre upisa u upravljačku memoriju. Promena skupa instrukcija zahteva promenu firmvera, a promena aplikativnog softvera ne utiče na njega.</div></details>
+
+<h3>Ciklus instrukcije na mikroprogramskom nivou (slajdovi 10–11)</h3>
+<figure class="slide"><img src="img/m6b-10.jpg" alt="Ciklus uzimanja i izvršavanja instrukcija na mikroprogramskom nivou" loading="lazy"><figcaption><b>Slajd 10 · Ciklus uzimanja i izvršavanja instrukcija na mikroprogramskom nivou</b></figcaption></figure>
+<p>Najjednostavniji oblik: <b>Početak</b> → <b>Uzimanje sledeće instrukcije</b> (ciklus uzimanja) → <b>Izvršavanje instrukcije</b> (ciklus izvršavanja) → nazad na uzimanje, dok se ne dođe do <b>Kraj</b>-a. Mikroprogram je zapravo petlja koja stalno ponavlja ova dva dela.</p>
+<figure class="slide"><img src="img/m6b-11.jpg" alt="Ciklus uzimanja i izvršavanja instrukcija sa proverom i obradom prekida" loading="lazy"><figcaption><b>Slajd 11 · Ciklus uzimanja i izvršavanja instrukcija sa proverom i obradom prekida</b></figcaption></figure>
+<p>Pravi procesor posle svake instrukcije proverava da li je stigao <b>prekid</b>. Dodat je treći deo, <b>ciklus prekida</b>: posle izvršavanja ide se na „Provera i obrada prekida“ (crveno uokvireno). Ako ima prekida, sačuva se stanje i skoči na rutinu za obradu; ako nema, ide se na uzimanje sledeće instrukcije. Postoji i grana <b>„Onemogućeni prekidi“</b>: ako su prekidi zabranjeni (bit dozvole prekida u PSW je 0), posle izvršavanja se ide direktno na uzimanje, bez provere.</p>
+<details class="stop exq" id="m6-k6"><summary>a) Prikazati blok šemu ciklusa uzimanja i izvršavanja instrukcija. b) Prikazati je sa prekidima.</summary><div>a) Početak → [Uzimanje sledeće instrukcije] (ciklus uzimanja) → [Izvršavanje instrukcije] (ciklus izvršavanja) → nazad na uzimanje; kada nema više instrukcija (HALT) → Kraj. b) Isto, ali posle [Izvršavanje instrukcije] dolazi odluka: ako su prekidi omogućeni → [Provera i obrada prekida] (ciklus prekida), pa nazad na uzimanje; ako su prekidi onemogućeni → direktno nazad na uzimanje. Ciklus prekida: ako postoji zahtev za prekid, sadržaj BN (i stanje procesora) se sačuva, u BN se upiše adresa rutine za obradu prekida, i sledeća uzeta instrukcija je prva instrukcija te rutine.</div></details>
+
+<h3>Upravljački signali u akciji (slajdovi 12–15)</h3>
+<figure class="slide"><img src="img/m6b-12.jpg" alt="Ilustracija funkcionisanja upravljačke jedinice" loading="lazy"><figcaption><b>Slajd 12 · Ilustracija funkcionisanja upravljačke jedinice (Stallings, slika 20.5: Data Paths and Control Signals)</b></figcaption></figure>
+<div class="read"><b>Kako da čitaš ovu sliku.</b> Pravougaonici su registri: <b>MBR</b> (gore levo, prihvatni registar memorije), <b>MAR</b> (dole levo, adresni registar memorije), <b>PC</b> (brojač naredbi), <b>IR</b> (registar naredbi), <b>AC</b> (akumulator), <b>ALU</b> i <b>Control unit</b> (upravljačka jedinica, dole, sa ulazima Clock i Flags). Linije su putevi podataka, a na svakoj je mali kružić sa oznakom <b>C0 … C13</b>: to je „ventil“, <b>upravljački signal</b>. Kad upravljačka jedinica aktivira, npr., C2, otvara se put PC → MAR i adresa iz PC prelazi u MAR. Linije bez ventila su stalno otvorene.</div>
+<p>Upravljačka jedinica ništa ne računa sama. Njen jedini posao je da u svakom taktu odluči <b>koje ventile da otvori</b>. Tabela sa slajda 13 kaže tačno koje:</p>
+<figure class="slide"><img src="img/m6b-13.jpg" alt="Mikroinstrukcije i upravljački signali" loading="lazy"><figcaption><b>Slajd 13 · Mikroinstrukcije i upravljački signali (Stallings, tabela 20.1)</b></figcaption></figure>
+<div class="tbl"><table>
+<tr><th>Faza</th><th>Takt</th><th>Mikrooperacije</th><th>Aktivni signali</th></tr>
+<tr><td rowspan="3"><b>Fetch</b> (donošenje)</td><td>t1</td><td>MAR ← (PC)</td><td>C2</td></tr>
+<tr><td>t2</td><td>MBR ← Memory; &nbsp;PC ← (PC) + 1</td><td>C5, CR</td></tr>
+<tr><td>t3</td><td>IR ← (MBR)</td><td>C4</td></tr>
+<tr><td rowspan="3"><b>Indirect</b></td><td>t1</td><td>MAR ← (IR(Address))</td><td>C8</td></tr>
+<tr><td>t2</td><td>MBR ← Memory</td><td>C5, CR</td></tr>
+<tr><td>t3</td><td>IR(Address) ← (MBR(Address))</td><td>C4</td></tr>
+<tr><td rowspan="3"><b>Interrupt</b> (prekid)</td><td>t1</td><td>MBR ← (PC)</td><td>C1</td></tr>
+<tr><td>t2</td><td>MAR ← Save-address; &nbsp;PC ← Routine-address</td><td></td></tr>
+<tr><td>t3</td><td>Memory ← (MBR)</td><td>C12, CW</td></tr>
+</table></div>
+<p>C<sub>R</sub> = signal čitanja (Read) na sistemsku magistralu, C<sub>W</sub> = signal pisanja (Write). Crveno uokvirena faza <b>Fetch</b> je ista ona koju smo u Modulu 3 pisali kao ARM ← BN; PRM ← M[ARM], BN ← BN + 1; RN ← PRM. Sada vidimo i signale: svaki red tabele je <b>jedna mikroinstrukcija</b>, a sve mikrooperacije u istom redu (npr. „MBR ← Memory“ i „PC ← PC + 1“ u t2) se dešavaju istovremeno. <b>Indirektna faza</b> donosi adresu operanda kod indirektnog adresiranja i upisuje je u adresni deo IR. <b>Faza prekida</b> čuva PC u memoriju na adresu za čuvanje (Save-address) i upisuje u PC adresu rutine za obradu prekida (Routine-address).</p>
+<figure class="slide"><img src="img/m6b-14.jpg" alt="CPU i interna magistrala" loading="lazy"><figcaption><b>Slajd 14 · CPU sa internom magistralom (Stallings, slika 20.6)</b></figcaption></figure>
+<p>U pravom procesoru registri nisu povezani svaki sa svakim, nego preko jedne <b>interne magistrale procesora</b> (vertikalna linija „Internal CPU bus“). Na nju su vezani Control unit, IR, PC, MAR (koji izlazi na adresne linije), MBR (na linije podataka), AC, i ALU sa pomoćnim registrima <b>Y</b> (drži jedan operand na ulazu ALU, jer magistrala može da prenese samo jedan podatak po taktu) i <b>Z</b> (privremeno drži rezultat ALU). Zato sabiranje traje više taktova: prvo operand u Y, zatim drugi operand na magistralu i rezultat u Z, pa iz Z u AC.</p>
+<figure class="slide"><img src="img/m6b-15.jpg" alt="Upravljačka jedinica i dekoder" loading="lazy"><figcaption><b>Slajd 15 · Upravljačka jedinica sa dekodiranim ulazima (Stallings, slika 20.10)</b></figcaption></figure>
+<p>Ovo je unutrašnjost <b>hardverske</b> upravljačke jedinice. Iz <b>Instruction register</b> operacioni kod ide u <b>Decoder</b>, koji aktivira tačno jedan izlaz I<sub>0</sub>, I<sub>1</sub>, … I<sub>k</sub> (po jedan za svaku instrukciju). <b>Timing generator</b> (generator taktova), vođen signalom <b>Clock</b>, daje vremenske signale T<sub>1</sub>, T<sub>2</sub>, … T<sub>n</sub> (koji je takt unutar instrukcije). <b>Control Unit</b> kombinuje I (koja instrukcija), T (koji takt) i <b>Flags</b> (zastavice) i daje upravljačke signale C<sub>0</sub> … C<sub>m</sub>. Na primer: „C2 = T1“ (u prvom taktu svake instrukcije PC ide u MAR).</p>
+
+<h3>Zašto se mikroprogramiranje koristilo (slajdovi 16–17)</h3>
+<figure class="slide"><img src="img/m6b-16.jpg" alt="Prednosti mikroprogramiranja 1" loading="lazy"><figcaption><b>Slajd 16 · Advantages of microprogramming – 1</b></figcaption></figure>
+<ol>
+<li><b>Poboljšanje performansi</b> (u ono vreme: brz mikroprogram u ROM-u umesto spore glavne memorije).</li>
+<li><b>Ostvarivanje kompatibilnosti serije računara</b>, npr. u prethodnim generacijama: Intel 286, 386, Pentium, IBM Systems 309x, Motorola serija 68000. Različiti modeli iste serije imaju različit hardver, ali svaki ima mikroprogram koji izvršava <em>isti</em> skup instrukcija, pa programi rade na svima.</li>
+<li><b>Mikroprogramiranje je oblik emulacije.</b> „Emulator je skup mikroprograma koji interpretiraju zadati skup instrukcija ili jezik L1. Računar C1 emulira računar C2 ako može da interpretira mašinski jezik L2.“ (Engleski: emulator je program koji omogućava da na svom računaru pokreneš softver sa potpuno drugog uređaja.)</li>
+</ol>
+<figure class="slide"><img src="img/m6b-17.jpg" alt="Prednosti mikroprogramiranja 2" loading="lazy"><figcaption><b>Slajd 17 · Advantages of microprogramming – 2</b></figcaption></figure>
+<ol start="4">
+<li><b>Podrška softveru</b>: lakše programiranje proširenjem skupa instrukcija (nova složena instrukcija = novi mikroprogram, bez novog hardvera).</li>
+<li><b>Podrška uređajima specijalne namene</b>: za komunikaciju, akviziciju podataka, kontrolere uređaja.</li>
+<li><b>Mikrodijagnostika</b>: software diagnostics, hardware diagnostics, microdiagnostics. Mikroprogram može da testira hardver iznutra.</li>
+</ol>
+<details class="stop exq" id="m6-k7"><summary>Zašto se mikroprogramiranje intenzivno koristilo na mnogim prvim procesorima?</summary><div>Zato što pojednostavljuje projektovanje upravljačke jedinice (piše se program umesto projektovanja složenog kola) i lako se menja i ispravlja (menja se sadržaj upravljačke memorije). Omogućilo je <b>kompatibilnost serije računara</b>: različiti modeli sa različitim hardverom izvršavaju isti skup instrukcija (IBM System/360 i 309x, Intel 286/386/Pentium, Motorola 68000), kao i <b>emulaciju</b> drugih računara. Olakšavalo je proširenje skupa instrukcija složenim instrukcijama (CISC), podršku specijalnim uređajima i mikrodijagnostiku. Kad je memorija bila spora i skupa, složene mikroprogramirane instrukcije su smanjivale veličinu programa i broj pristupa memoriji. Mana je što je sporije od hardverske kontrole, pa RISC procesori koriste hardversku kontrolu.</div></details>
+
+<h3>Blok šema Intelovog 8086 (slajdovi 18–19)</h3>
+<figure class="slide"><img src="img/m6b-19.jpg" alt="Blok šema Intelovog 8086 procesora" loading="lazy"><figcaption><b>Slajd 19 · Blok šema Intelovog 8086 procesora</b></figcaption></figure>
+<p>Ovo je crtež na srpskom koji treba umeti nacrtati na ispitu. Gore levo je <b>Upravljačka jedinica</b> (crveno uokvirena) sa ulazima <b>Takt</b> i <b>Prekid</b> i izlazom na <b>Upravljačku magistralu</b>. Ispod nje su <b>Flegovi</b>, registar <b>R</b> (registar instrukcija) i <b>ALU</b>. U sredini su <b>Registri za podatke</b> AX (AH, AL), BX (BH, BL), CX (CH, CL), DX (DH, DL) i <b>Indeksni registri</b> SI, DI, BP, SP. Desno je <b>BN</b> i <b>Jedinica za interfejs magistrale</b> (BIU), sa izlazima na <b>Adresnu magistralu</b> i <b>Magistralu podataka</b>, i <b>Segmentni registri</b> CS, DS, SS, ES. Strelice označavaju tokove <b>Instrukcije</b> (iz BIU ka R i upravljačkoj jedinici) i <b>Podaci</b> (između registara, ALU i BIU). Dole levo je napajanje +5V.</p>
+<details class="stop exq" id="m6-k8"><summary>Prikazati detaljnu blok šemu Intel-ovog 8086 procesora sa prikazom registara, upravljačke jedinice, ALU i magistrala.</summary><div>Delovi koje šema mora da ima: <b>upravljačka jedinica</b> (ulazi: takt, prekid; izlaz: upravljačka magistrala), <b>registar flegova</b>, <b>registar instrukcija</b>, <b>ALU</b>; <b>registri za podatke</b> AX (AH/AL), BX (BH/BL), CX (CH/CL), DX (DH/DL); <b>indeksni i pokazivački registri</b> SI, DI, BP, SP; <b>BN (IP)</b>; <b>jedinica za interfejs magistrale</b> (BIU) sa <b>segmentnim registrima</b> CS, DS, SS, ES, sabiračem za fizičku adresu i redom instrukcija; spoljne <b>adresna magistrala</b> (20 bita), <b>magistrala podataka</b> (16 bita) i <b>upravljačka magistrala</b>. Instrukcije idu iz BIU u registar instrukcija i upravljačku jedinicu, a podaci između registara, ALU i BIU (vidi slajd 19 i slajd 4 iz Modula 5).</div></details>
+
+<h3>Primer: mali mikroprogram (slajdovi 20–24)</h3>
+<p>Profesor na kraju daje primer jednog izmišljenog računara i komad njegovog mikroprograma. Ovo nije zadatak za računanje, nego ilustracija kako mikroprogram „izgleda“.</p>
+<p><b>Registri</b> (slajdovi 20–21): REGISTAR 0: <b>ACC</b> (akumulator); REGISTAR 1: <b>PC</b> (brojač naredbi); REGISTAR 2: <b>IR</b> (registar naredbi); REGISTAR 3: <b>TMP</b> (za privremena izračunavanja, npr. dekodiranje); REGISTAR 4: <b>AMASK</b> (maska za uklanjanje 3 bita najveće težine i dobijanje 13 bita adrese); REGISTAR 5: konstanta <b>1</b>. Pored njih: <b>MAR</b> (13 bita), <b>MBR</b>, <b>MIR</b> (registar naredbi <em>za mikroprogram</em>) i <b>MPC</b> (brojač naredbi <em>za mikroprogram</em>). MIR i MPC su „BN i RN mikro-računara unutar računara“.</p>
+<p><b>Format instrukcije</b> (slajd 22): 16 bita, od čega <b>3 bita najveće težine su operacioni kod</b>, a <b>13 bita adresa</b> (zato je MAR 13-bitni i zato postoji AMASK). <b>Skup instrukcija</b> (slajd 23):</p>
+<div class="tbl"><table>
+<tr><th>Instrukcija</th><th>Op. kod</th><th>Opis</th></tr>
+<tr><td>ADD</td><td>000</td><td>ACC := ACC + (A)</td></tr>
+<tr><td>SUB</td><td>001</td><td>ACC := ACC − (A)</td></tr>
+<tr><td>LOAD</td><td>010</td><td>ACC := (A)</td></tr>
+<tr><td>STORE</td><td>011</td><td>(A) := ACC</td></tr>
+<tr><td>JUMP</td><td>100</td><td>PC := A</td></tr>
+<tr><td>JZER</td><td>101</td><td>If ACC == 0 JUMP A</td></tr>
+</table></div>
+<figure class="slide"><img src="img/m6b-24.jpg" alt="Primer fragmenta mikroprograma" loading="lazy"><figcaption><b>Slajd 24 · Primer fragmenta mikroprograma</b></figcaption></figure>
+<pre>0: MAR := PC; READ;                     // čitanje (13 bita najmanje težine)
+1: READ;                                // podaci su u MBR
+2: PC := PC + 1;
+3: IR := MBR; if N then goto 25         // provera 0-tog bita u op. kodu
+4: TMP := lshift(IR + IR); if N then goto 16   // provera 1-og bita u op. kodu
+5: TMP := TMP; if N then goto 10;       // provera sledećeg bita u op. kodu</pre>
+<p>Redovi 0–3 su <b>faza donošenja</b>: adresa iz PC ide u MAR, čita se memorija (dva takta, jer je memorija spora), PC se povećava, instrukcija ide u IR. Od reda 3 počinje <b>dekodiranje bit po bit</b>: N je zastavica „negativno“, a ona je 1 kad je najviši bit rezultata 1. Kad se IR prepiše, N pokazuje prvi bit op. koda; ako je 1, instrukcija je JUMP ili JZER (100, 101) i skače se na mikroinstrukciju 25. <code>IR + IR</code> je pomeranje ulevo za 1, pa N sada pokazuje drugi bit; <code>lshift</code> pomera još jednom za treći bit. Tako mikroprogram sa tri provere razlikuje svih šest instrukcija i skače na odgovarajući deo za izvršavanje. Ovo je baš ta „mašina unutar mašine“: mikroprogram ima svoje instrukcije, svoje skokove i svoj brojač (MPC).</p>
+
+<h3>ISA i mikroarhitektura (M6_ISA_i_mikroarhitektura.pdf)</h3>
+<figure class="slide"><img src="img/m6c-2.jpg" alt="Slojevi u arhitekturi računara" loading="lazy"><figcaption><b>ISA i mikroarhitektura, slajd 2 · Slojevi u arhitekturi računara</b></figcaption></figure>
+<p>Levo je stub slojeva odozgo nadole: Data, Problem, Algorithm, Program/Language, Runtime System (VM, OS, MM), <b>ISA (Architecture)</b>, <b>Microarchitecture</b> (uokvireno), Logic, Devices, Electrons. To su devet nivoa iz Modula 1. Definicije:</p>
+<ul>
+<li><b>ISA</b> (Instruction Set Architecture, arhitektura skupa instrukcija) <b>definiše skup instrukcija koje procesor može da izvrši. ISA uključuje operacije, tipove podataka, registre i načine adresiranja.</b></li>
+<li><b>Mikroarhitektura</b> je <b>sloj između arhitekture skupa instrukcija (ISA) i fizičkog hardvera</b>.</li>
+<li>Namena sloja mikroarhitekture je <b>implementacija funkcionalnosti ISA sloja na efikasan način</b>.</li>
+</ul>
+<figure class="slide"><img src="img/m6c-3.jpg" alt="Klasifikacija mikrooperacija" loading="lazy"><figcaption><b>ISA i mikroarhitektura, slajd 3 · Klasifikacija mikrooperacija</b></figcaption></figure>
+<p>Mikrooperacije se grupišu u <b>četiri kategorije</b>:</p>
+<ol>
+<li><b>Mikrooperacije za prenos podataka između registara</b>: prenose podatke iz jednog registra u drugi (MAR ← PC).</li>
+<li><b>Aritmetičke mikrooperacije</b>: sabiranje, oduzimanje, povećanje i smanjenje vrednosti podataka u registrima.</li>
+<li><b>Logičke mikrooperacije</b>: binarne operacije AND, OR, XOR nad podacima. Primer: XOR registara R1 = 1100 i R2 = 1010 daje 0110.</li>
+<li><b>Mikrooperacije pomeranja</b>: pomeranje podataka u registrima na nivou bita.</li>
+</ol>
+<p>Sledeći slajdovi pokazuju da broj ciklusa po instrukciji (CPI iz Modula 2) zavisi od <b>tipa instrukcije i mikroarhitekture</b>:</p>
+<div class="tbl"><table>
+<tr><th>Tip instrukcije</th><th>Intel i7 (x86)</th><th>ARM Cortex</th><th>Tesla Dojo (superračunar)</th></tr>
+<tr><td>Aritmetičke (ADD, SUB)</td><td>1 ciklus</td><td>1 ciklus</td><td>1 ciklus</td></tr>
+<tr><td>Pristup memoriji</td><td>MOV: 3–5</td><td>LDR/STR: 1–2 (pogodak u kešu)</td><td>LOAD/STORE: 1–3</td></tr>
+<tr><td>Grananje</td><td>JMP, CALL: 1 (može zastoj)</td><td>B: 1 (može zastoj)</td><td>B: 1 (može zastoj)</td></tr>
+<tr><td>Množenje</td><td>MUL, IMUL: 3–6</td><td>MUL: 1–2</td><td>MATMUL: 1–2 po elementu</td></tr>
+<tr><td>Deljenje</td><td>DIV: 20+</td><td>UDIV, SDIV: 10+</td><td>–</td></tr>
+<tr><td>Pokretni zarez</td><td>ADDSS, MULSS: 3–5</td><td>VADD, VMUL: 2–4</td><td>FADD, FMUL: 1</td></tr>
+<tr><td>Operacije neuronskih mreža</td><td>–</td><td>–</td><td>CONV, RELU: 1 po operaciji</td></tr>
+</table></div>
+<p>„May stall“ kod grananja je kontrolni hazard iz prethodne lekcije. Dojo je specijalizovan za AI: ima posebne instrukcije za matrice i neuronske mreže.</p>
+<figure class="slide"><img src="img/m6c-7.jpg" alt="Tabela poređenja" loading="lazy"><figcaption><b>ISA i mikroarhitektura, slajd 7 · Tabela poređenja</b></figcaption></figure>
+<p>Tabela poređenja tri čipa: <b>Intel Core i9-13900K</b> (ISA x86-64; 24 jezgra: 8 Performance i 16 Efficiency; 32 niti; 3,0 GHz osnovni, do 5,8 GHz boost; proces Intel 7 (10 nm); igre i računarstvo visokih performansi), <b>ARM Cortex-X4</b> (ARMv9; broj jezgara i niti zavisi od implementacije; 3 ili 5 nm; mobilni, ugrađeni sistemi, AI) i <b>Dojo D1</b> (sopstvena RISC arhitektura; projektovan za AI; 7 ili 5 nm; treniranje i izvršavanje AI modela).</p>
+<figure class="slide"><img src="img/m6c-8.jpg" alt="Razlike između ISA sloja i sloja mikroarhitekture" loading="lazy"><figcaption><b>ISA i mikroarhitektura, slajd 8 · Razlike između ISA sloja i sloja mikroarhitekture</b></figcaption></figure>
+<div class="tbl"><table>
+<tr><th>Osobina</th><th>ISA</th><th>Mikroarhitektura</th></tr>
+<tr><td><b>Definicija</b></td><td>apstraktni model koji definiše skup instrukcija koje CPU može da izvrši</td><td>konkretna implementacija ISA u hardveru</td></tr>
+<tr><td><b>Fokus</b></td><td>definiše <b>kako softver komunicira sa hardverom</b></td><td>opisuje <b>kako CPU izvršava instrukcije na nivou hardvera</b></td></tr>
+<tr><td><b>Komponente</b></td><td>instrukcije, tipovi podataka, načini adresiranja, registri</td><td>ALU, upravljačke jedinice, protočne obrade (pipelines), keševi, magistrale</td></tr>
+<tr><td>Nivo apstrakcije</td><td>viši, za programere i kompajlere</td><td>niži, za projektante hardvera</td></tr>
+<tr><td><b>Primeri</b></td><td>x86, ARM, MIPS, RISC-V</td><td>Intel Core, AMD Ryzen, ARM Cortex</td></tr>
+<tr><td>Svrha</td><td>pruža programski interfejs i definiše ponašanje</td><td>ostvaruje optimizacije performansi i upravljanje resursima</td></tr>
+<tr><td>Performanse</td><td>utiče posredno, kroz efikasnost instrukcija</td><td>utiče direktno, kroz pipelining i keš</td></tr>
+<tr><td>Kompatibilnost</td><td>održava kompatibilnost softvera između različitih implementacija</td><td>razlikuje se od implementacije do implementacije</td></tr>
+</table></div>
+<div class="ex">Najbolji primer: <b>Intel Core i9</b> i <b>AMD Ryzen 9</b> imaju <b>istu ISA</b> (x86-64), pa isti Windows i isti programi rade na oba. Ali imaju potpuno <b>različite mikroarhitekture</b> (Raptor Lake i Zen 4): različit broj faza pipeline-a, različite keševe, različit broj ALU. Obrnuto, Apple M3 i Qualcomm Snapdragon imaju istu ISA (ARM), a različite mikroarhitekture.</div>
+<details class="stop exq" id="m6-k9"><summary>Da li se dati skup instrukcija na konvencionalnom mašinskom nivou može implementirati pomoću različitih mikroarhitektura? Obrazložiti.</summary><div><b>Može.</b> Skup instrukcija (ISA) samo definiše <em>šta</em> svaka instrukcija radi (operacije, tipove podataka, registre, načine adresiranja), a ne <em>kako</em> se to izvršava u hardveru. Mikroarhitektura je konkretna implementacija ISA: ona određuje broj i vrstu funkcionalnih jedinica, protočnu obradu, keševe, magistrale i način realizacije upravljačke jedinice (mikroprogram ili hardverska kontrola). Zato ista ISA može imati mnogo implementacija različite brzine i cene: npr. x86-64 implementiraju Intel Core i AMD Ryzen, a ARM implementiraju ARM Cortex, Apple M-serija i drugi. Na tome počiva kompatibilnost serije računara: isti program radi na svim modelima koji implementiraju istu ISA.</div></details>
+<details class="stop exq" id="m6-k10"><summary>Definisati ISA i mikroarhitekturu. Šta je fokus, šta su komponente i primeri svakog sloja?</summary><div><b>ISA</b> (Instruction Set Architecture) je apstraktni model koji definiše skup instrukcija koje procesor može da izvrši, uključujući operacije, tipove podataka, registre i načine adresiranja. <b>Fokus:</b> kako softver komunicira sa hardverom. <b>Komponente:</b> instrukcije, tipovi podataka, načini adresiranja, registri. <b>Primeri:</b> x86 (IA-32, x86-64), ARM, MIPS, RISC-V, SPARC, PowerPC. <b>Mikroarhitektura</b> je sloj između ISA i fizičkog hardvera, konkretna implementacija ISA u hardveru, čija je namena da funkcionalnost ISA ostvari na efikasan način. <b>Fokus:</b> kako CPU izvršava instrukcije na nivou hardvera. <b>Komponente:</b> ALU, upravljačke jedinice, protočne obrade, keševi, magistrale. <b>Primeri:</b> Intel Core (npr. Raptor Lake), AMD Ryzen (Zen), ARM Cortex (A78, X4).</div></details>
+<div class="bridge">Ovim se zatvara prvi deo predmeta: od programa u višem jeziku, preko asemblera i mašinskih instrukcija, do mikroprograma i upravljačkih signala na žicama. Drugi deo predmeta se penje nagore, do sloja koji se zove <b>Runtime System (VM, OS, MM)</b>: operativnog sistema koji upravlja procesorom, memorijom i uređajima za sve programe zajedno.</div>
+<p class="src">Dodatni izvori: W. Stallings, <i>Organizacija i arhitektura računara</i>, pogl. 20 (Control Unit Operation) i 21 (Microprogrammed Control); A. Tanenbaum, <i>Structured Computer Organization</i>, pogl. 4 (The Microarchitecture Level, primer Mic-1).</p>
+<div class="quiz" data-ch="c23"></div></section>

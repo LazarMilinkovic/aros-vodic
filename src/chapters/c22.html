@@ -1,0 +1,142 @@
+<section class="ch" id="c22">
+<div class="ch-head"><span class="ch-num">M6</span><span class="ch-src">Modul 6 · deo 1 od 2 · Lecture 6_A – TipoviInstrukcija.pdf, slajdovi 2–19</span></div>
+<h2>Sve vrste instrukcija: prenos, pomeranje, rotacija, maske i protočna obrada</h2>
+<p class="lead">U Modulu 5 smo videli kako instrukcije menjaju tok programa. Sada pravimo kompletan pregled: koje sve vrste instrukcija postoje na konvencionalnom mašinskom nivou. Ima ih tri grupe. Najviše prostora dobijaju operacije nad bitovima (pomeranje, rotacija, izvlačenje i ubacivanje bitova pomoću maske), jer se na ispitu pitaju sa primerima. Na kraju se pitamo kako procesor izvršava instrukcije brže: odgovor je protočna obrada (pipelining) i više funkcionalnih jedinica.</p>
+
+<h3>Tri grupe instrukcija (slajdovi 2–5)</h3>
+<figure class="slide"><img src="img/m6a-3.jpg" alt="Prva grupa, instrukcije nad podacima" loading="lazy"><figcaption><b>Slajd 3 · Tipovi instrukcija na konvencionalnom mašinskom nivou: prva grupa</b></figcaption></figure>
+<div class="tbl"><table>
+<tr><th>Grupa</th><th>Šta obuhvata</th><th>Primeri</th></tr>
+<tr><td><b>1. Instrukcije (operacije) nad podacima</b> (slajd 3)</td><td>• instrukcije za prenos podataka<br>• unarne operacije<br>• binarne operacije</td><td>MOV, PUSH, POP; NOT, NEG, INC, SHL, ROL; ADD, SUB, AND, OR, XOR, CMP</td></tr>
+<tr><td><b>2. Upravljanje redosledom izvršavanja instrukcija programa</b> (slajd 4)</td><td>• poređenje i uslovni skokovi<br>• upravljanje iterativnom programskom strukturom<br>• poziv potprograma<br>• aktiviranje korutina</td><td>CMP + BEQ/JE, JMP, LOOP, CALL, RETURN, RESUME</td></tr>
+<tr><td><b>3. Razmena podataka sa ulazno/izlaznim uređajima</b> (slajd 5)</td><td>• ulazno/izlazne instrukcije</td><td>IN, OUT (Intel), ili pristup preko memorijskih adresa</td></tr>
+</table></div>
+<figure class="slide"><img src="img/m6a-5.jpg" alt="Treća grupa, razmena podataka sa ulazno izlaznim uređajima" loading="lazy"><figcaption><b>Slajd 5 · Treća grupa: razmena podataka sa U/I uređajima</b></figcaption></figure>
+<p>Slajd 5 ima važnu napomenu: <b>„Kod većine računara na konvencionalnom mašinskom nivou ne postoje eksplicitne ulazno/izlazne instrukcije, već se realizuju kao gotovi asemblerski moduli, koji se pozivaju odgovarajućom naredbom.“</b> Na primer, u programu za zbir iz Modula 5 nismo sami ispisivali rezultat, nego bismo pozvali operativni sistem (<code>int $0x80</code>), koji ima gotove rutine (drajvere) za uređaje. Mnogi procesori (ARM, RISC-V) uopšte nemaju IN/OUT, nego registre uređaja vide kao obične adrese u memoriji (<i>memory-mapped I/O</i>), pa za U/I koriste običan LOAD/STORE.</p>
+<details class="stop exq" id="m6-k1"><summary>Navesti tipove (grupe) instrukcija na konvencionalnom mašinskom nivou.</summary><div><b>1. Instrukcije nad podacima:</b> instrukcije za prenos podataka (MOV), unarne operacije (jedan operand: pomeranje, rotacija, negacija, inkrement) i binarne operacije (dva operanda: aritmetičke ADD, SUB, MUL, DIV; logičke AND, OR, XOR; izvlačenje i ubacivanje bitova). <b>2. Upravljanje redosledom izvršavanja instrukcija:</b> poređenje i uslovni skokovi, upravljanje iterativnom strukturom, poziv potprograma (CALL/RETURN), aktiviranje korutina (RESUME). <b>3. Razmena podataka sa U/I uređajima:</b> ulazno/izlazne instrukcije; kod većine računara ne postoje eksplicitno, nego se realizuju kao gotovi asemblerski moduli (rutine OS-a) koji se pozivaju odgovarajućom naredbom.</div></details>
+
+<h3>1.1 Instrukcije za prenos podataka (slajdovi 6–7)</h3>
+<p>Slajd 6: instrukcija za prenos premešta podatak <b>iz jedne memorijske lokacije ili registra u drugu memorijsku lokaciju ili registar</b>. Ona mora da sadrži: <b>operacioni kod, adresu izvora, adresu odredišta i dužinu podatka</b> koji se prenosi. Dužina je često deo samog operacionog koda: npr. <b>MOV</b> prenosi 2 bajta, a <b>MOVB</b> 1 bajt (kod PDP-11 i sličnih mašina; kod x86 AT&amp;T sufiksi b, w, l).</p>
+<figure class="slide"><img src="img/m6a-7.jpg" alt="Primeri instrukcija za prenos podataka" loading="lazy"><figcaption><b>Slajd 7 · 1.1 Primeri instrukcija za prenos podataka</b></figcaption></figure>
+<div class="read"><b>Kako da čitaš ovu sliku.</b> Instrukcija <code>movl</code> (zaokružena) se grana po <b>izvoru</b> (Source: Imm, Reg, Mem), pa po <b>odredištu</b> (Destination: Reg, Mem). Za svaku kombinaciju je dat primer u AT&amp;T asembleru i desno ista stvar u C-u (C Analog). <code>(%eax)</code> znači „memorija na adresi iz EAX“, što je u C-u <code>*p</code>.</div>
+<div class="tbl"><table>
+<tr><th>Izvor → odredište</th><th>Asembler</th><th>C</th></tr>
+<tr><td>Imm → Reg</td><td><code>movl $0x4, %eax</code></td><td><code>temp = 0x4;</code></td></tr>
+<tr><td>Imm → Mem</td><td><code>movl $-147, (%eax)</code></td><td><code>*p = -147;</code></td></tr>
+<tr><td>Reg → Reg</td><td><code>movl %eax, %edx</code></td><td><code>temp2 = temp1;</code></td></tr>
+<tr><td>Reg → Mem</td><td><code>movl %eax, (%edx)</code></td><td><code>*p = temp;</code></td></tr>
+<tr><td>Mem → Reg</td><td><code>movl (%eax), %edx</code></td><td><code>temp = *p;</code></td></tr>
+</table></div>
+<p>Nema kombinacije <b>Mem → Mem</b>. Napomena na dnu slajda: <b>„Prenos podataka iz jedne memorijske lokacije u neku drugu memorijsku lokaciju ne može se uraditi pomoću jedne instrukcije.“</b> Razlog je u formatu: instrukcija bi morala da ima dve pune memorijske adrese i dva pristupa memoriji, pa bi bila duga i spora. Kopiranje ide u dva koraka, preko registra.</p>
+
+<h3>1.2 Unarne operacije: pomeranje bitova (slajdovi 8–11)</h3>
+<p><b>Unarne operacije se izvršavaju nad jednim operandom i daju jedan rezultat</b> (slajd 8). Najvažnije među njima su <b>operacije pomeranja i rotacije bitova</b>. Kod <b>pomeranja</b> (ulevo ili udesno) <b>krajnji bitovi se gube</b>, a upražnjena mesta se popunjavaju nulama.</p>
+<figure class="slide"><img src="img/m6a-9.jpg" alt="Pomeranje bitova, primer" loading="lazy"><figcaption><b>Slajd 9 · Pomeranje bitova: primer</b></figcaption></figure>
+<pre>Originalna 16-bitna reč:      0000 0000 0111 0011
+
+Pomeranje ULEVO za 2 bita:    0000 0001 1100 1100
+                              ↑ izbačena su dva bita sleva (00), dve nule dopisane zdesna
+
+Pomeranje UDESNO za 2 bita:   0000 0000 0001 1100
+                              dve nule dopisane sleva, izbačena dva bita zdesna (11)</pre>
+<p>Na slajdu su izbačeni bitovi istaknuti posebno, a strelica „Upražnjena mesta se popunjavaju nulama“ pokazuje nove nule.</p>
+<figure class="slide"><img src="img/m6a-10.jpg" alt="Pomeranje bitova, pozitivni celi brojevi" loading="lazy"><figcaption><b>Slajd 10 · Pomeranje bitova: pozitivni celi brojevi</b></figcaption></figure>
+<p>Pomeranje ima aritmetičko značenje. <code>0000 0000 0000 0100</code> = 4. Pomeranje ulevo za 2 daje <code>…0001 0000</code> = <b>16</b>, a udesno za 2 daje <code>…0000 0001</code> = <b>1</b>.</p>
+<div class="formula">pomeranje ulevo za k bita = množenje sa 2<sup>k</sup> &nbsp;&nbsp;|&nbsp;&nbsp; pomeranje udesno za k bita = celobrojno deljenje sa 2<sup>k</sup></div>
+<p>Zato kompajleri <code>x * 8</code> često prevode u <code>x &lt;&lt; 3</code>: pomeranje traje jedan takt, a množenje nekoliko.</p>
+<figure class="slide"><img src="img/m6a-11.jpg" alt="Pomeranje bitova, negativni brojevi" loading="lazy"><figcaption><b>Slajd 11 · Pomeranje bitova: negativni brojevi</b></figcaption></figure>
+<p>Kod negativnih brojeva (u drugom komplementu) najviši bit je <b>bit znaka</b> (1 = negativan). Broj <code>1000 0011 1100 0010</code> je negativan. Pomeranje udesno za 1 bit može da se uradi na dva načina:</p>
+<ul>
+<li><b>bez očuvanja znaka</b> (logičko pomeranje, SHR): sleva ulazi 0 → <code>0100 0001 1110 0001</code>. Broj je postao pozitivan, što je pogrešno ako smo hteli da delimo sa 2.</li>
+<li><b>sa očuvanjem znaka</b> (aritmetičko pomeranje, SAR): sleva se kopira bit znaka → <code>1100 0001 1110 0001</code>. Broj ostaje negativan, i to je tačno polovina originala.</li>
+</ul>
+<div class="simple"><b>Logičko pomeranje</b> tretira reč kao niz bitova i uvek ubacuje nule. <b>Aritmetičko pomeranje udesno</b> tretira reč kao broj sa znakom i čuva znak, pa i za negativne brojeve znači deljenje sa 2. Kod Intela: SHL/SHR (logička), SAL/SAR (aritmetička).</div>
+
+<h3>Rotacija bitova (slajdovi 12–14)</h3>
+<p>Kod <b>rotacije</b> se bitovi ne gube: bit koji „ispadne“ na jednom kraju vraća se na drugi kraj, kao na traci koja se vrti u krug.</p>
+<figure class="slide"><img src="img/m6a-12.jpg" alt="Rotacija bitova, primer" loading="lazy"><figcaption><b>Slajd 12 · Rotacija bitova: primer</b></figcaption></figure>
+<pre>Originalna 16-bitna reč:     1100 0000 0000 0011
+Rotacija ulevo za 2 bita:    0000 0000 0000 1111   (11 sa leve strane otišlo na desni kraj)
+Rotacija udesno za 2 bita:   1111 0000 0000 0000   (11 sa desne strane otišlo na levi kraj)</pre>
+<p>Kod rotacije postoji i varijanta <b>sa bitom prenosa C</b> (carry), koji se ponaša kao dodatni, 17. bit registra.</p>
+<figure class="slide"><img src="img/m6a-13.jpg" alt="Rotacija ulevo bez i sa carry bitom" loading="lazy"><figcaption><b>Slajd 13 · Rotacija ulevo bez i sa carry bitom</b></figcaption></figure>
+<ul>
+<li><b>(a) Rotate left without carry</b> (<code>RotateL #2, R0</code>): registar R0 se rotira sam u sebi, a bit koji izlazi sleva se <em>kopira</em> i u C. Pre: C = 0, R0 = <code>01110…011</code>. Posle rotacije za 2: R0 = <code>110…01101</code> (prva dva bita 01 su sad na kraju), C = 1 (poslednji izbačeni bit).</li>
+<li><b>(b) Rotate left with carry</b> (<code>RotateLC #2, R0</code>): C je deo kruga. Bit koji izlazi iz R0 ide u C, a stari C ulazi u R0 sa desne strane. Pre: C = 0, R0 = <code>01110…011</code>. Posle: R0 = <code>110…01100</code>, C = 1. Razlika je u poslednjim bitovima: u R0 su ušli stari C (0) i prvi izbačeni bit (0).</li>
+</ul>
+<figure class="slide"><img src="img/m6a-14.jpg" alt="Rotacija udesno bez i sa carry bitom" loading="lazy"><figcaption><b>Slajd 14 · Rotacija udesno bez i sa carry bitom</b></figcaption></figure>
+<p>Isto, samo nadesno: <b>(c) RotateR #2, R0</b> daje R0 = <code>1101110…0</code> i C = 1; <b>(d) RotateRC #2, R0</b> daje R0 = <code>1001110…0</code> i C = 1, jer je u najviši bit ušao stari C (0).</p>
+<div class="ex">Čemu služi rotacija kroz C? Za pomeranje brojeva dužih od registra. Ako je 64-bitni broj u dva 32-bitna registra, pomeriš gornji deo ulevo (izbačeni bit ide u C), pa donji deo rotiraš kroz C. Tako bit „prelazi“ iz jednog registra u drugi. Rotacija se koristi i u kriptografiji i za proveru pojedinačnih bitova.</div>
+<details class="stop"><summary>Koja je razlika između pomeranja i rotacije bitova?</summary><div>Kod <b>pomeranja</b> krajnji bitovi koji izađu iz registra se gube (poslednji može ostati u C), a upražnjena mesta se popunjavaju nulama (ili bitom znaka kod aritmetičkog pomeranja udesno). Kod <b>rotacije</b> se bitovi ne gube: bit koji izađe na jednom kraju ulazi na drugi kraj. Rotacija može biti bez carry bita (C samo dobija kopiju izbačenog bita) ili sa carry bitom (C je deo kruga, kao dodatni bit registra).</div></details>
+
+<h3>1.3 Binarne operacije: maske, izvlačenje i ubacivanje bitova (slajdovi 15–17)</h3>
+<p><b>Binarne operacije se izvršavaju nad dva operanda i daju jedan rezultat</b> (slajd 15). To su <b>aritmetičke operacije</b> (sabiranje, oduzimanje, množenje, deljenje), <b>logičke operacije</b> I (AND), ILI (OR), EKSKLUZIVNO ILI (XOR), i dve primene logičkih operacija: <b>izvlačenje bitova</b> i <b>ubacivanje bitova</b>.</p>
+<div class="tbl"><table>
+<tr><th>Operacija</th><th>Pravilo po bitu</th><th>Upotreba sa maskom</th></tr>
+<tr><td>AND</td><td>1 samo ako su oba 1</td><td>bit maske 0 → <b>briše</b> bit (postavlja na 0); 1 → <b>zadržava</b></td></tr>
+<tr><td>OR</td><td>1 ako je bar jedan 1</td><td>bit maske 1 → <b>postavlja</b> bit na 1; 0 → zadržava</td></tr>
+<tr><td>XOR</td><td>1 ako su različiti</td><td>bit maske 1 → <b>invertuje</b> bit; 0 → zadržava. Npr. 1100 XOR 1010 = 0110</td></tr>
+</table></div>
+<p><b>Maska</b> je reč koju sami sastavimo tako da njeni bitovi kažu koje bitove originala zadržavamo, a koje menjamo.</p>
+<figure class="slide"><img src="img/m6a-16.jpg" alt="Primer izvlačenja bitova" loading="lazy"><figcaption><b>Slajd 16 · Primer izvlačenja bitova</b></figcaption></figure>
+<p><b>Izvlačenje bitova</b>: hoćemo samo drugi bajt sleva iz reči A (bitove 23–16).</p>
+<pre>A                     1100 0011  1010 1010  0011 1100  0110 0110
+B (maska)             0000 0000  1111 1111  0000 0000  0000 0000
+A AND B               0000 0000  1010 1010  0000 0000  0000 0000
+(A AND B) pomereno
+udesno za 16 bita     0000 0000  0000 0000  0000 0000  1010 1010</pre>
+<p>Maska ima jedinice tačno na mestima bitova koje želimo. AND briše sve ostalo. Zatim pomeranje udesno za 16 dovodi izvučeni bajt na najniže mesto, pa ga možemo koristiti kao običan broj (1010 1010 = AAh = 170).</p>
+<figure class="slide"><img src="img/m6a-17.jpg" alt="Primer ubacivanja bitova" loading="lazy"><figcaption><b>Slajd 17 · Primer ubacivanja bitova</b></figcaption></figure>
+<p><b>Ubacivanje bitova</b>: hoćemo da u reč A, na mesto drugog bajta zdesna (bitovi 15–8), upišemo novi sadržaj 1110 0111, a da ostalo ostane isto.</p>
+<pre>A                     1100 0011  1010 1010  0011 1100  0110 0110
+B (maska)             1111 1111  1111 1111  0000 0000  1111 1111
+A AND B               1100 0011  1010 1010  0000 0000  0110 0110   ← „rupa“ od nula
+C                     0000 0000  0000 0000  1110 0111  0000 0000   ← novi bitovi na pravom mestu
+(A AND B) OR C        1100 0011  1010 1010  1110 0111  0110 0110</pre>
+<p>Dva koraka: prvo <b>AND sa maskom koja ima nule na mestu ubacivanja</b> (napravi se „rupa“ od nula), zatim <b>OR sa C</b>, koji ima nove bitove na tom mestu i nule svuda drugde (popuni se rupa). Ostali bitovi A ostaju netaknuti.</p>
+<details class="stop exq" id="m6-k2"><summary>Objasniti izvlačenje i ubacivanje bitova na primeru.</summary><div><b>Izvlačenje:</b> reč A se AND-uje sa maskom koja ima jedinice samo na pozicijama bitova koje izvlačimo (npr. 0000 0000 1111 1111 0000 0000 0000 0000); svi ostali bitovi postaju 0. Rezultat se zatim pomeri udesno (ovde za 16 bita) da bi izvučeni bitovi došli na najniže pozicije. <b>Ubacivanje:</b> reč A se AND-uje sa maskom koja ima nule na pozicijama gde ubacujemo, a jedinice svuda drugde (npr. 1111 1111 1111 1111 0000 0000 1111 1111), čime se te pozicije obrišu; zatim se rezultat OR-uje sa rečju C koja sadrži nove bitove na tim pozicijama i nule drugde. Rezultat: (A AND B) OR C.</div></details>
+
+<h3>Kako procesor izvršava instrukcije brže: protočna obrada (slajd 18)</h3>
+<figure class="slide"><img src="img/m6a-18.jpg" alt="Pipelining" loading="lazy"><figcaption><b>Slajd 18 · Pipelining</b></figcaption></figure>
+<p>Definicija sa slajda: <b>„Pipelining je tehnika izvršavanja instrukcija koja omogućava preklapanje više faza instrukcija (preuzimanje, dekodiranje, izvršavanje, pristup memoriji, povratno pisanje) u izvršavanju.“</b> i <b>„Pipelining povećava propusnost instrukcija i poboljšava performanse smanjenjem vremena praznog hoda za svaku funkcionalnu jedinicu.“</b></p>
+<p>Pet faza iz definicije su klasičan RISC pipeline:</p>
+<ol>
+<li><b>IF</b> (Instruction Fetch, preuzimanje): donesi instrukciju sa adrese iz BN.</li>
+<li><b>ID</b> (Instruction Decode, dekodiranje): odredi šta instrukcija radi, pročitaj registre.</li>
+<li><b>EX</b> (Execute, izvršavanje): ALU izračuna rezultat ili adresu.</li>
+<li><b>MEM</b> (Memory access, pristup memoriji): LOAD čita, STORE piše.</li>
+<li><b>WB</b> (Write Back, povratno pisanje): rezultat se upiše u registar.</li>
+</ol>
+<div class="tbl"><table>
+<tr><th>Takt →</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th></tr>
+<tr><td>Instrukcija 1</td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td><td></td></tr>
+<tr><td>Instrukcija 2</td><td></td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td><td></td></tr>
+<tr><td>Instrukcija 3</td><td></td><td></td><td>IF</td><td>ID</td><td>EX</td><td>MEM</td><td>WB</td></tr>
+</table></div>
+<p>Bez protočne obrade, svaka instrukcija bi trajala 5 taktova, pa bi 3 instrukcije trajale 15 taktova. Sa njom, 3 instrukcije završe za 7 taktova, a kad se „cev“ napuni, <b>svakog takta se završi po jedna instrukcija</b>. Pojedinačna instrukcija nije brža (i dalje traje 5 taktova), ali je <b>propusnost</b> (broj završenih instrukcija u sekundi) do 5 puta veća. U idealnom slučaju CPI teži 1.</p>
+<div class="ex">Kao perionica veša: pranje, sušenje, peglanje, slaganje. Ne čekaš da se prva korpa i opegla i složi pre nego što staviš drugu u mašinu. Dok se prva suši, druga se pere. Svaka mašina (funkcionalna jedinica) stalno radi, nema „praznog hoda“.</div>
+<h4>Šta kvari protočnu obradu: hazardi</h4>
+<p>Idealni tok se prekida kad sledeća instrukcija ne može da uđe u sledeću fazu. Takve situacije se zovu <b>hazardi (opasnosti)</b> i ima ih tri vrste:</p>
+<div class="tbl"><table>
+<tr><th>Hazard</th><th>Uzrok</th><th>Primer</th><th>Rešenje</th></tr>
+<tr><td><b>Strukturni</b></td><td>dve instrukcije u istom taktu traže isti hardverski resurs</td><td>IF jedne i MEM druge instrukcije istovremeno traže jednu memoriju</td><td>udvostručiti resurs (posebni keševi za instrukcije i podatke, Harvard), ili sačekati</td></tr>
+<tr><td><b>Podataka</b> (data)</td><td>instrukcija treba rezultat prethodne koji još nije upisan</td><td><code>ADD R1,R2,R3</code> pa odmah <code>SUB R4,R1,R5</code>: SUB čita R1 pre nego što ga je ADD upisao (WB)</td><td>prosleđivanje (forwarding/bypassing) rezultata direktno iz ALU, ubacivanje „mehurića“ (stall), preraspoređivanje instrukcija</td></tr>
+<tr><td><b>Kontrolni</b> (upravljački)</td><td>skokovi i grananja: ne zna se koja je sledeća instrukcija dok se uslov ne izračuna</td><td>BEQ: dok se ne izvrši, već su donete instrukcije koje možda ne treba izvršiti</td><td>predviđanje grananja (branch prediction), odloženi skok, spekulativno izvršavanje, predikacija</td></tr>
+</table></div>
+<details class="stop exq" id="m6-k3"><summary>Šta je protočna obrada (pipelining) i koje vrste hazarda postoje?</summary><div>Protočna obrada je tehnika izvršavanja instrukcija kod koje se faze različitih instrukcija preklapaju: dok se jedna instrukcija izvršava, sledeća se dekodira, a naredna preuzima (faze: preuzimanje, dekodiranje, izvršavanje, pristup memoriji, povratno pisanje). Povećava propusnost i smanjuje prazan hod funkcionalnih jedinica; idealno se u svakom taktu završi jedna instrukcija. Hazardi su situacije koje prekidaju protok: <b>strukturni</b> (dve instrukcije traže isti resurs), <b>podataka</b> (instrukcija koristi rezultat prethodne koji još nije spreman) i <b>kontrolni/upravljački</b> (kod skokova se ne zna unapred koja je sledeća instrukcija). Rešavaju se dupliranjem resursa, prosleđivanjem rezultata, čekanjem (stall) i predviđanjem grananja.</div></details>
+
+<h3>Funkcionalne jedinice i superskalarni procesori (slajd 19)</h3>
+<figure class="slide"><img src="img/m6a-19.jpg" alt="Funkcionalne jedinice u izvršavanju instrukcija" loading="lazy"><figcaption><b>Slajd 19 · Funkcionalne jedinice u izvršavanju instrukcija</b></figcaption></figure>
+<p>Faza „izvršavanje“ u modernom procesoru ne radi jedna ALU, nego više specijalizovanih jedinica:</p>
+<ul>
+<li><b>ALU</b> (aritmetičko-logička jedinica): celobrojno sabiranje, oduzimanje, logičke operacije, pomeranja;</li>
+<li><b>AGU</b> (address generation unit): računa adrese operanada (baza + indeks × skala + pomeraj), da ALU ne bi trošila vreme na to;</li>
+<li><b>FPU</b> (jedinica za rad sa pokretnim zarezom): realni brojevi (float, double);</li>
+<li><b>SIMD/Vector jedinice</b>: jedna instrukcija nad više podataka odjednom (SSE, AVX kod Intela, NEON kod ARM-a), za grafiku, zvuk, AI;</li>
+<li><b>jedinice za grananja</b> (branch units): izvršavaju i predviđaju skokove;</li>
+<li><b>Load/Store jedinice</b>: čitanje i pisanje memorije.</li>
+</ul>
+<p>„Svaka od njih može biti višestruka u superskalarnim procesorima.“ <b>Superskalarni procesor može da dohvati, dekodira i izvrši više od jedne instrukcije istovremeno</b> (više protočnih obrada koje rade paralelno). Ako procesor ima 4 ALU, može u jednom taktu da izvrši 4 nezavisna sabiranja, pa CPI pada <em>ispod</em> 1. Ovo je paralelizam na nivou instrukcija (ILP) iz Modula 2.</p>
+<div class="bridge">Sve ovo su načini na koje <em>mikroarhitektura</em> izvršava instrukcije koje definiše <em>ISA</em>. Isti skup instrukcija (npr. x86) može da se izvrši na procesoru bez pipelininga ili na superskalarnom procesoru sa 20 faza. Sledeća lekcija se bavi upravo tom razlikom i time kako upravljačka jedinica „zna“ koje signale da pošalje: mikroprogramom.</div>
+<p class="src">Dodatni izvori: W. Stallings, <i>Organizacija i arhitektura računara</i>, pogl. 12 (Instruction Sets: Operations) i 14 (Processor Structure, Pipelining, Hazards); Hennessy &amp; Patterson, <i>Computer Organization and Design</i>, pogl. 4.5–4.8.</p>
+<div class="quiz" data-ch="c22"></div></section>

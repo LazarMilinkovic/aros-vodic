@@ -255,3 +255,15 @@ ol.recap{max-width:74ch}ol.recap li{margin:6px 0}
 /* --- v5 M4 --- */
 .sort.wide .it{grid-template-columns:1fr}
 .sort.wide .it .bt button{font-size:.76rem;padding:4px 9px}
+details.stop.exq{border-left-color:var(--signal);background:color-mix(in srgb,var(--signal) 6%,var(--panel))}
+details.stop.exq summary::before{content:"Ispitno pitanje";color:var(--signal)}
+details.stop.exq summary::after{content:"Odgovori u sebi ili na papiru, pa otvori"}
+details.stop .fix{display:block;margin-top:8px;padding:6px 10px;border-radius:8px;background:color-mix(in srgb,var(--signal) 10%,transparent);font-size:.88rem}
+details.stop .fix::before{content:"Ispravka skripte: ";font-weight:600;color:var(--signal)}
+h3.exh{margin-top:2.4em;padding-top:1em;border-top:2px solid var(--line)}
+p.exintro{color:var(--muted);font-size:.92rem}
+.ch h4{font:600 1.02rem var(--f-display);margin:1.4em 0 .4em}
+figure.diag{max-width:74ch;margin:18px 0;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink)}
+figure.diag svg{display:block;width:100%;height:auto;max-height:300px}
+figure.diag figcaption{margin-top:8px;font-size:.86rem;color:var(--muted)}
+.tree pre{max-width:74ch;overflow-x:auto}

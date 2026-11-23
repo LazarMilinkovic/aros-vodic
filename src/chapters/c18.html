@@ -1,0 +1,120 @@
+<section class="ch" id="c18">
+<div class="ch-head"><span class="ch-num">M5</span><span class="ch-src">Modul 5 · deo 1 od 4 · ProgramExecutionManagement.pdf, slajdovi 3–10 i ProgramiranjeUAsembleru.pdf, slajdovi 3–8</span></div>
+<h2>Od programa u C-u do bitova u procesoru: Intel 8086 iznutra</h2>
+<p class="lead">Do sada smo procesor gledali kroz naš mali „školski“ računar sa BN, RN i akumulatorom. Modul 5 nas vodi u pravi procesor: Intel 8086, pretka svih današnjih x86 procesora u laptopovima i desktop računarima. Pitanje koje ćemo pratiti kroz ceo modul glasi: <em>kako procesor zna koju instrukciju sledeću da izvrši</em>, i šta se dešava kad program skoči, ponavlja petlju ili pozove funkciju. Da bismo to razumeli, prvo moramo da znamo šta je u procesoru: koji registri postoje, kako izgledaju podaci u memoriji i kako procesor od dva broja napravi adresu.</p>
+<p>Kroz modul pratimo jedan mali C program koji na kraju predavanja profesor prevodi u asembler:</p>
+<pre>int a, b;
+a = 3;
+b = 6;
+b += a;      /* b postaje 9 */</pre>
+<p>Ova tri reda izgledaju trivijalno, ali da bi se izvršila, mora da ih neko prevede, učita u memoriju, a procesor mora da zna gde je sledeća instrukcija i gde su <code>a</code> i <code>b</code>. Krenimo redom.</p>
+
+<h3>Put programa: od višeg jezika do mikroprocesora (slajd 3)</h3>
+<figure class="slide"><img src="img/m5a-3.jpg" alt="Transformacija programa" loading="lazy"><figcaption><b>Slajd 3 · Transformacija programa</b></figcaption></figure>
+<div class="read"><b>Kako da čitaš ovu sliku.</b> Čita se odozgo nadole, kao niz prevođenja. Plavi pravougaonici su <em>oblici</em> u kojima program postoji, a uske trake između njih su <em>alati</em> koji ga prevode u sledeći oblik. Kutija sa strane (desno dole) kaže ključnu stvar: samo poslednji oblik razume procesor.</div>
+<ol>
+<li><strong>High Level Languages</strong> (viši programski jezici: C, C++, Java, BASIC). Ovde je naš <code>b += a;</code>. Isti kod može da se prevede za bilo koji procesor, jer ne zavisi od hardvera.</li>
+<li><strong>Compilers/Interpreters</strong>: kompajler prevodi ceo program unapred, interpreter prevodi i izvršava naredbu po naredbu dok program radi.</li>
+<li><strong>Assembly Languages</strong> (asemblerski jezik). Natpis kaže <em>„This varies per processor“</em>: svaki procesor ima svoj asembler, jer asembler je samo čitljiv zapis njegovih instrukcija. Naše <code>b += a</code> postaje <code>addl %eax, %ebx</code>.</li>
+<li><strong>Assemblers</strong>: asembler (program) prevodi simboličke naredbe u brojeve, jednu po jednu (odnos 1:1). U Modulu 3 smo videli da to radi u dva prolaza.</li>
+<li><strong>Machine Languages / Op Codes</strong>: mašinski jezik, nizovi bitova (operacioni kodovi i adrese). Opet <em>„This varies per processor“</em>.</li>
+<li><strong>Executed by the Microprocessor</strong>: tek ovaj oblik procesor izvršava. Kutija desno: <em>„Only this is understood by Microprocessor“</em>.</li>
+</ol>
+<div class="simple">Viši jezik je za ljude, mašinski jezik je za procesor, a asembler je most između njih: i dalje ga čitaju ljudi, ali svaka njegova naredba odgovara tačno jednoj mašinskoj instrukciji. Zato se kaže da je odnos višeg jezika i mašinskog <strong>1 : n</strong> (jedna naredba C-a postaje više instrukcija), a asemblera i mašinskog <strong>1 : 1</strong>.</div>
+<div class="bridge">Ovo je ista slika kao „devet nivoa“ iz Modula 1: viši jezik je nivo 5, asembler nivo 4, konvencionalni mašinski nivo (ISA) nivo 3, a ispod njega je mikroarhitektura, o kojoj pričamo u Modulu 6.</div>
+
+<h3>Šta je unutar 8086: dve jedinice koje rade istovremeno (slajd 4)</h3>
+<p>Intel 8086 je izašao 1978. godine. Bio je 16-bitni procesor: registri su mu bili 16-bitni, magistrala podataka 16 bita, a adresna magistrala 20 bita, što znači da je mogao da adresira 2<sup>20</sup> = 1 MB memorije. Svi današnji Intel i AMD procesori i dalje umeju da izvršavaju njegove instrukcije (to je <em>kompatibilnost unazad</em>), pa je on idealan za učenje.</p>
+<figure class="slide"><img src="img/m5a-4.jpg" alt="Arhitektura 8086 procesora" loading="lazy"><figcaption><b>Slajd 4 · Arhitektura 8086 procesora</b></figcaption></figure>
+<div class="read"><b>Kako da čitaš ovu sliku.</b> Procesor je podeljen isprekidanom linijom na dva dela. <strong>Gornji deo je BIU</strong> (Bus Interface Unit, jedinica za vezu sa magistralom): u njemu su segmentni registri (CS, DS, SS, ES), pokazivač instrukcija IP, sabirač (Σ) koji pravi fizičku adresu i red instrukcija (Instruction Stream Byte Queue, 6 bajtova). Ona jedina razgovara sa memorijom preko „Memory Interface“ gore levo. <strong>Donji deo je EU</strong> (Execution Unit, izvršna jedinica): opšti registri (AH/AL, BH/BL, CH/CL, DH/DL, SP, BP, SI, DI), ALU (Arithmetic Logic Unit) sa operandima, registar zastavica (Flags) i upravljačka jedinica (Control System).</div>
+<p>Zašto podela na dva dela? Zbog <strong>preklapanja</strong>. Dok EU izvršava trenutnu instrukciju, BIU unapred donosi sledeće bajtove programa iz memorije i stavlja ih u red od 6 bajtova. Kad EU završi, sledeća instrukcija je već tu i ne mora da se čeka memorija. To je prvi, najjednostavniji oblik <strong>protočne obrade (pipelining)</strong>, o kojoj ćemo više u Modulu 6: donošenje (fetch) i izvršavanje (execute) rade istovremeno, svako na svojoj instrukciji.</p>
+<div class="ex">Kao u restoranu: konobar (BIU) donosi sledeće jelo iz kuhinje dok ti (EU) jedeš trenutno. Ne moraš da čekaš praznog tanjira da bi neko otišao po sledeće.</div>
+<div class="warn">Red od 6 bajtova ima problem: ako program <em>skoči</em> (GOTO, petlja, poziv funkcije), bajtovi koje je BIU već doneo više ne važe, jer program ne ide na sledeću adresu. Red se tada prazni i puni ispočetka. Ovo je ista „kontrolna opasnost“ (control hazard) koju ćemo sresti kod pipelininga.</div>
+
+<h3>Registri 8086 i čemu služi svaki (slajd 5 i Asembler, slajd 4)</h3>
+<p>Registar je mala, vrlo brza memorija unutar procesora. 8086 ima 14 registara od po 16 bita, i svaki ima svoju „specijalnost“, iako se opšti registri mogu koristiti i za druge stvari.</p>
+<figure class="slide"><img src="img/m5a-5.jpg" alt="8086 procesor, tipovi registara" loading="lazy"><figcaption><b>Slajd 5 · 8086 procesor: tipovi registara</b></figcaption></figure>
+<p>Slajd deli registre u četiri grupe (crveno uokvirene):</p>
+<div class="tbl"><table>
+<tr><th>Grupa</th><th>Registri</th><th>Čemu služe</th></tr>
+<tr><td><b>General Purpose</b> (opšte namene)</td><td>AX (AH, AL), BX (BH, BL), CX (CH, CL), DX (DH, DL)</td><td><b>AX</b> akumulator, za sve aritmetičke i logičke operacije; <b>BX</b> bazni registar, pokazivač na podatke u segmentu DS; <b>CX</b> brojač, za petlje i ponavljanja; <b>DX</b> registar podataka, koristi se kod množenja, deljenja i za U/I adrese</td></tr>
+<tr><td><b>Index</b> (indeksni)</td><td>SI (Source Index), DI (Destination Index)</td><td>Pokazivači za rad sa nizovima i stringovima: SI pokazuje na izvor, DI na odredište</td></tr>
+<tr><td><b>Pointer</b> (pokazivači)</td><td>BP (Base Pointer), SP (Stack Pointer)</td><td>BP pokazuje na podatke unutar steka (parametri funkcije), SP pokazuje na vrh steka</td></tr>
+<tr><td><b>Flag</b> (zastavice)</td><td>Flag Register</td><td>Pokazuje stanje (uslove) posle poslednje operacije i menja način izvršavanja instrukcija</td></tr>
+</table></div>
+<p>Pored ovih, postoje <strong>segmentni registri</strong> CS, DS, SS, ES (o njima malo niže) i <strong>IP</strong> (Instruction Pointer). IP je ono što smo u Modulu 3 zvali <strong>BN, brojač naredbi</strong>: drži adresu sledeće instrukcije. Kod Intela se zove IP (16 bita), kasnije EIP (32 bita) i RIP (64 bita).</p>
+<figure class="slide"><img src="img/m5b-4.jpg" alt="Specijalne funkcije registara procesora Intel 8086" loading="lazy"><figcaption><b>Asembler, slajd 4 · Specijalne funkcije registara procesora Intel 8086</b></figcaption></figure>
+<p>Tabela iz drugog predavanja to kaže još preciznije, registar po registar. Primetiti nekoliko detalja koji se pitaju: <b>AX</b> je 16-bitni akumulator, a <b>AL</b> 8-bitni akumulator (donja polovina AX); <b>CX</b> se koristi kao brojač u instrukcijama za pomeranje i rotaciju (SHIFT, ROTATE) i u petljama (LOOP); <b>DX</b> drži podatke za množenje i deljenje; <b>SP</b> drži pomeraj (offset) vrha steka; <b>BP</b> je bazna adresa za pristup podacima u segmentu steka; <b>SI</b> i <b>DI</b> su indeksi izvornog i odredišnog operanda kod instrukcija za stringove.</p>
+<div class="simple">Zašto AX ima delove AH i AL? Jer je 8086 nastao od 8-bitnog 8080. Da bi stari 8-bitni programi mogli lako da se prebace, svaki 16-bitni registar opšte namene može da se koristi i kao dva 8-bitna: <b>H</b> = high (gornjih 8 bitova), <b>L</b> = low (donjih 8 bitova). Ako je AX = 1234h, onda je AH = 12h, a AL = 34h.</div>
+
+<h3>Od 16 do 32 i 64 bita: registri 80386 i x86-64 (Asembler, slajdovi 5–7 i slajd 8)</h3>
+<p>Intel je kasnije proširio registre, ali tako da stari nazivi i dalje rade. Ovo je suština kompatibilnosti unazad.</p>
+<figure class="slide"><img src="img/m5b-5.jpg" alt="Osnovni registri procesora Intel 80386" loading="lazy"><figcaption><b>Asembler, slajd 5 · Osnovni registri procesora Intel 80386</b></figcaption></figure>
+<p>Kod 80386 (1985, prvi 32-bitni Intel) registri su dobili slovo <b>E</b> (Extended, prošireni): EAX, EBX, ECX, EDX, ESI, EDI, EBP, ESP, i EIP umesto IP. Na slici gore su „Registri opšte namene“ sa podelom bitova 31–16, 15–8, 7–0; dole levo su „Segmentni registri“ (CS, SS, DS, ES, FS, GS, dodata su dva nova), a dole desno „Status registri“ (EFLAGS sa pojedinačnim zastavicama i EIP).</p>
+<figure class="slide"><img src="img/m5b-6.jpg" alt="X86 registri" loading="lazy"><figcaption><b>Asembler, slajd 6 · x86 registri</b></figcaption></figure>
+<figure class="slide"><img src="img/m5b-7.jpg" alt="Numeracija bita u registrima opšte namene" loading="lazy"><figcaption><b>Asembler, slajd 7 · Numeracija bita u registrima opšte namene</b></figcaption></figure>
+<div class="read"><b>Kako da čitaš ove dve slike.</b> Svaki red je jedan registar. Ceo red (32 bita, bitovi 31 do 0) je <b>EAX</b>. Desna polovina reda (bitovi 15 do 0) je <b>AX</b>. AX je još podeljen na <b>AH</b> (bitovi 15–8) i <b>AL</b> (bitovi 7–0). Isto važi za EBX/BX/BH/BL, ECX, EDX. Registri ESI, EDI, EBP i ESP imaju samo 16-bitni deo (SI, DI, BP, SP), bez 8-bitnih polovina. Na slajdu 6 su <b>ESP</b> označen kao „stack pointer“ i <b>EBP</b> kao „base pointer“.</div>
+<div class="ex"><b>Tipično ispitno pitanje.</b> EAX = 12345678h. Koliko je AX, AH i AL?<br>Svaka heksadecimalna cifra je 4 bita, pa dve cifre čine jedan bajt. Bajtovi EAX, od najvišeg ka najnižem: 12 | 34 | 56 | 78. AX je donjih 16 bitova: <b>AX = 5678h</b>. AH je gornji bajt AX: <b>AH = 56h</b>. AL je donji bajt: <b>AL = 78h</b>. Gornjih 16 bitova (1234h) nemaju svoje ime i ne mogu se direktno adresirati.</div>
+<figure class="slide"><img src="img/m5a-8.jpg" alt="Registri opšte namene koji se mogu adresirati" loading="lazy"><figcaption><b>Slajd 8 · Registri opšte namene koji se mogu adresirati (x86-64)</b></figcaption></figure>
+<p>Slajd 8 je iz Intelovog priručnika za 64-bitni režim. Tabela ima dve kolone: šta je dostupno <b>bez REX prefiksa</b> i šta <b>sa REX prefiksom</b>. REX je dodatni bajt koji se stavi ispred instrukcije i kaže „ova instrukcija radi sa 64 bita“ ili „koristi nove registre“. Tekst ispod tabele (plavo) kaže:</p>
+<ul>
+<li>REX prefiksi se koriste da se dobiju 64-bitne veličine operanada ili da se pristupi registrima R8–R15.</li>
+<li>R8D–R15D / R8–R15 su osam <b>novih</b> registara opšte namene (64-bitni režim ih ima ukupno 16).</li>
+<li>Svim ovim registrima može se pristupiti na nivou bajta, reči (word, 16 bita), dvostruke reči (dword, 32 bita) i četvorostruke reči (qword, 64 bita).</li>
+</ul>
+<p>Tako u 64-bitnom svetu postoji niz <b>RAX ⊃ EAX ⊃ AX ⊃ AL</b>: isti fizički registar, četiri imena za četiri širine.</p>
+<p>Da li je Pentium 4 32-bitni ili 64-bitni procesor, česta je zamka na ispitu; odgovor je u dopuni <a href="#k1-32">D.2</a>.</p>
+
+<h3>Kako podaci izgledaju u memoriji (slajdovi 6–7)</h3>
+<figure class="slide"><img src="img/m5a-6.jpg" alt="Osnovni tipovi podataka" loading="lazy"><figcaption><b>Slajd 6 · Osnovni tipovi podataka</b></figcaption></figure>
+<p>Slajd 6 ređa tipove podataka po veličini, svaki kao traku bitova sa označenim granicama i adresom početka (N):</p>
+<ul>
+<li><b>Byte</b> (bajt): 8 bitova, bitovi 7–0, zauzima jednu adresu N.</li>
+<li><b>Word</b> (reč): 16 bitova, sastoji se od „Low Byte“ (bitovi 7–0, na adresi N) i „High Byte“ (bitovi 15–8, na adresi N+1).</li>
+<li><b>Doubleword</b> (dvostruka reč): 32 bita, Low Word na N i High Word na N+2.</li>
+<li><b>Quadword</b>: 64 bita, Low Doubleword na N i High Doubleword na N+4.</li>
+<li><b>Double Quadword</b>: 128 bita, Low Quadword na N i High Quadword na N+8.</li>
+</ul>
+<p>Uoči pravilo: <strong>niži deo je uvek na nižoj adresi</strong>. To je <em>little endian</em> raspored koji smo upoznali u Modulu 4.</p>
+<figure class="slide"><img src="img/m5a-7.jpg" alt="Osnovni tipovi podataka u memoriji" loading="lazy"><figcaption><b>Slajd 7 · Osnovni tipovi podataka u memoriji</b></figcaption></figure>
+<div class="read"><b>Kako da čitaš ovu sliku.</b> Srednja kolona je memorija, bajt po bajt, adrese rastu odozdo nagore (0H do FH). Strelice levo i desno pokazuju koje bajtove obuhvata neki podatak. Da bi pročitao vrednost, kreneš od <em>najviše</em> adrese podatka ka najnižoj, jer je najviši bajt na najvišoj adresi.</div>
+<ul>
+<li><b>Word at Address 1H</b> = bajtovi na 2H (CB) i 1H (31) → <b>CB31H</b>.</li>
+<li><b>Word at Address 2H</b> = bajtovi na 3H (74) i 2H (CB) → <b>74CBH</b>. Primeti: reč na 1H i reč na 2H se <em>preklapaju</em>, dele bajt CB. Memorija ne zna gde jedan podatak počinje; to zna samo program.</li>
+<li><b>Word at Address 6H</b> = 7H (23) i 6H (0B) → <b>230BH</b>.</li>
+<li><b>Byte at Address 9H</b> = <b>1FH</b>.</li>
+<li><b>Word at Address BH</b> = CH (FE) i BH (06) → <b>FE06H</b>.</li>
+<li><b>Doubleword at Address AH</b> = DH, CH, BH, AH → 7A FE 06 36 → <b>7AFE0636H</b>.</li>
+<li><b>Quadword at Address 6H</b> = od DH do 6H → <b>7AFE06361FA4230BH</b>.</li>
+<li><b>Double quadword at Address 0H</b> = svih 16 bajtova, od FH do 0H.</li>
+</ul>
+<div class="simple">Adresa podatka je uvek adresa njegovog <b>najnižeg</b> bajta. Reč na adresi 6 zauzima adrese 6 i 7, dvostruka reč na adresi A zauzima A, B, C i D.</div>
+
+<h3>Tri modela memorije (slajd 9 i Asembler, slajd 8)</h3>
+<p>Sad dolazimo do pitanja: kako 8086 sa 16-bitnim registrima adresira 1 MB, kad 16 bitova daje samo 2<sup>16</sup> = 64 KB? I kako se ta ideja razvijala kasnije? Intel opisuje tri modela upravljanja memorijom.</p>
+<figure class="slide"><img src="img/m5a-9.jpg" alt="3 modela za upravljanje memorijom" loading="lazy"><figcaption><b>Slajd 9 · Tri modela za upravljanje memorijom</b></figcaption></figure>
+<ol>
+<li><strong>Flat Model (ravni model).</strong> Memorija je jedan neprekidan niz bajtova, „Linear Address Space“. Program daje <em>linearnu adresu</em> (Linear Address) i ona direktno pokazuje na bajt. Ovo koriste svi današnji 32- i 64-bitni operativni sistemi: Windows, Linux, macOS.</li>
+<li><strong>Segmented Model (segmentni model).</strong> Memorija je podeljena na <em>segmente</em> (delove). Program daje <em>logičku adresu</em> koja ima dva dela: <b>Segment Selector</b> (koji segment) i <b>Offset</b> (efektivna adresa, pomeraj unutar segmenta). Procesor ih prevodi u linearnu adresu.</li>
+<li><strong>Real-Address Mode Model (model realnog adresiranja).</strong> Ovo je način rada samog 8086. Linearni adresni prostor je podeljen na segmente <b>jednake veličine</b> (64 KB), a adresa se dobija od segmenta i offseta jednostavnim računom (vidi sledeći slajd).</li>
+</ol>
+<p>Napomena na dnu slajda: <em>linearni adresni prostor može dodatno da se „stranici“ (paging) i u ravnom i u segmentnom modelu</em>. Straničenje je tema operativnih sistema (2. deo predmeta).</p>
+<figure class="slide"><img src="img/m5b-8.jpg" alt="Korišćenje segmentnih registara u modelu memorije sa segmentnom organizacijom" loading="lazy"><figcaption><b>Asembler, slajd 8 · Segmentni registri u segmentnom modelu memorije</b></figcaption></figure>
+<p>Ova slika pokazuje kako šest segmentnih registara (CS, DS, SS, ES, FS, GS) pokazuju na različite segmente u linearnom adresnom prostoru: <b>Code Segment</b> (kod programa, CS), <b>Stack Segment</b> (stek, SS) i četiri <b>Data Segment</b>-a (podaci, DS, ES, FS, GS). Desno piše: „All segments are mapped to the same linear-address space“, svi segmenti su delovi istog linearnog prostora. Program tako u svakom trenutku vidi do šest segmenata.</p>
+<div class="simple"><b>CS</b> = gde je kod. <b>DS</b> = gde su podaci. <b>SS</b> = gde je stek. <b>ES, FS, GS</b> = dodatni segmenti podataka. Instrukcija se uvek čita sa adrese CS:IP, a vrh steka je uvek na SS:SP.</div>
+
+<h3>Računanje fizičke adrese kod 8086 (slajd 10)</h3>
+<figure class="slide"><img src="img/m5a-10.jpg" alt="8086 procesor, primer adresiranja memorije" loading="lazy"><figcaption><b>Slajd 10 · 8086 procesor: primer adresiranja memorije</b></figcaption></figure>
+<p>Na slici je fizička memorija od 1 MB (plavi pravougaonik, adrese od 00000 Hex do FFFFF Hex). Levo dole je zadato <b>CS = 1234H</b> i <b>IP = 5678H</b>. Pravilo 8086 je:</p>
+<div class="formula">Fizička adresa = Segment × 16 + Offset &nbsp;=&nbsp; (Segment pomeren ulevo za 4 bita) + Offset</div>
+<p>Množenje sa 16 u heksadecimalnom sistemu je samo dopisivanje jedne nule na kraj. Zato:</p>
+<pre>  CS:       1234   →  12340   (početak segmenta koda)
++ IP:        5678
+  ─────────────────
+  Fizička:  179B8 H</pre>
+<p>Desno na slici: <b>Start of Code Segment 12340 H</b> (početak segmenta), <b>179B8 Hex = Physical Memory Location</b> (adresa instrukcije koja se sledeća izvršava), i <b>End of Code Segment 2233F H</b>. Kraj je 12340 + FFFF = 2233F, jer segment ima najviše 64 KB (offset je 16-bitni, od 0000 do FFFF). Leva strelica „64 KB“ pokazuje tu veličinu.</p>
+<div class="ex">Proveri sam: DS = 2000H, offset = 0150H. Fizička adresa = 20000 + 0150 = <b>20150H</b>. A sa DS = 1FFFH i offset 0160H? 1FFF0 + 0160 = <b>20150H</b>, ista! Kod 8086 ista fizička adresa može da se dobije iz različitih parova segment:offset, jer se segmenti preklapaju na svakih 16 bajtova.</div>
+<details class="stop"><summary>Zašto je 8086 mogao da adresira 1 MB iako su mu registri 16-bitni?</summary><div>Jer fizičku adresu ne pravi iz jednog registra, nego iz dva: 16-bitnog segmenta pomerenog za 4 bita ulevo i 16-bitnog offseta. Zbir daje 20-bitnu adresu, a 2<sup>20</sup> = 1 MB. Sabirač za to se nalazi u BIU (Σ na slajdu 4).</div></details>
+<div class="bridge">Sada znamo šta je u procesoru i kako on stiže do bajta u memoriji. U sledećem delu pratimo samo jedan registar, <b>IP (BN)</b>, i gledamo kako se on menja: kad program ide redom, kad skoči i kad se grana po uslovu.</div>
+<p class="src">Dodatni izvori: Intel 64 and IA-32 Architectures Software Developer's Manual, Vol. 1, pogl. 3–4 (Basic Execution Environment, Data Types); D. Simić, P. Bataveljić, <i>Organizacija računara i operativni sistemi</i>, FON 2011.</p>
+<div class="quiz" data-ch="c18"></div></section>

@@ -1,0 +1,119 @@
+<section class="ch" id="d1">
+<div class="ch-head"><span class="ch-num">D</span><span class="ch-src">Dopuna 1 · teme iz ispitnih pitanja kojih nema na slajdovima · izvori: Simić i Bataveljić (FON), Stallings pogl. 17, Tanenbaum pogl. 8</span></div>
+<h2>Kad jedan procesor nije dovoljan: Flynn-ova klasifikacija i paralelni računari</h2>
+<p class="lead">U Modulu 2 smo videli Amdalov zakon i više jezgara, a u Modulu 1 Von Neumann-ovu mašinu: jedan procesor, jedan tok instrukcija, jedan tok podataka. Ispitna pitanja traže i ono što je između: kako se uopšte dele računari prema tome koliko instrukcija i podataka obrađuju istovremeno, kako izgledaju paralelni računari i šta se dešava kad više procesora istovremeno pristupi istoj memorijskoj lokaciji. Ove teme profesor objašnjava na tabli i u knjizi, pa ih ovde pričamo kao jedno zaokruženo predavanje.</p>
+
+<h3>Dve reke: tok instrukcija i tok podataka</h3>
+<p>Michael Flynn je 1966. predložio jednostavnu ideju. Svaki računar gleda dva „toka“:</p>
+<ul>
+<li><b>tok instrukcija</b> (instruction stream): niz instrukcija koje upravljačka jedinica donosi i izvršava;</li>
+<li><b>tok podataka</b> (data stream): niz podataka nad kojima te instrukcije rade.</li>
+</ul>
+<p>Svaki tok može biti <b>jedan (Single)</b> ili <b>više (Multiple)</b>. Dve mogućnosti za instrukcije puta dve za podatke daju četiri klase. To je <b>Flynn-ova klasifikacija</b>:</p>
+<div class="tbl"><table>
+<tr><th></th><th>jedan tok podataka (SD)</th><th>više tokova podataka (MD)</th></tr>
+<tr><th>jedan tok instrukcija (SI)</th><td><b>SISD</b><br>klasičan Von Neumann-ov računar sa jednim procesorom</td><td><b>SIMD</b><br>vektorski i matrični procesori, GPU, SSE/AVX instrukcije</td></tr>
+<tr><th>više tokova instrukcija (MI)</th><td><b>MISD</b><br>retko, praktično teorijska klasa (protočni nizovi, sistemi otporni na greške)</td><td><b>MIMD</b><br>višeprocesorski i višejezgarni računari, klasteri</td></tr>
+</table></div>
+
+<h3>SISD: jedan procesor, jedan podatak</h3>
+<p><b>SISD</b> (Single Instruction, Single Data): jedna upravljačka jedinica šalje jedan tok instrukcija jednoj procesnoj jedinici (ALU), koja radi nad jednim tokom podataka iz memorije. To je naš „školski“ računar iz Modula 3 i Von Neumann-ova mašina. I protočna obrada (pipelining) se smatra SISD, jer je i dalje jedan tok instrukcija, samo su faze preklopljene.</p>
+<figure class="diag"><svg viewBox="0 0 520 110" role="img" aria-label="SISD blok šema"><g font-family="Inter,sans-serif" font-size="13" fill="none" stroke="currentColor" stroke-width="1.5">
+<rect x="10" y="35" width="110" height="40" rx="6"/><rect x="200" y="35" width="110" height="40" rx="6"/><rect x="390" y="35" width="120" height="40" rx="6"/>
+<path d="M120 55h78M310 55h78" marker-end="url(#a1)"/><path d="M450 35v-20h-390v20" stroke-dasharray="4 3"/></g>
+<g font-family="Inter,sans-serif" font-size="13" fill="currentColor" text-anchor="middle"><text x="65" y="60">Upravljačka j. (CU)</text><text x="255" y="60">Procesna j. (PU)</text><text x="450" y="60">Memorija (MM)</text><text x="159" y="48" font-size="11">IS</text><text x="349" y="48" font-size="11">DS</text><text x="255" y="12" font-size="11">IS (instrukcije iz memorije)</text></g>
+<defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs></svg><figcaption>SISD: CU šalje tok instrukcija (IS) jednoj procesnoj jedinici, koja razmenjuje tok podataka (DS) sa memorijom.</figcaption></figure>
+
+<h3>SIMD: jedna naredba za mnogo podataka</h3>
+<p><b>SIMD</b> (Single Instruction, Multiple Data): jedna upravljačka jedinica šalje <em>istu</em> instrukciju mnogim procesnim jedinicama odjednom, a svaka radi nad svojim podatkom (svojim delom memorije). Kad CU kaže „saberi“, sve PU sabiraju istovremeno, svaka svoj par brojeva.</p>
+<figure class="diag"><svg viewBox="0 0 520 200" role="img" aria-label="SIMD blok šema"><g font-family="Inter,sans-serif" font-size="13" fill="none" stroke="currentColor" stroke-width="1.5">
+<rect x="10" y="80" width="100" height="40" rx="6"/>
+<rect x="200" y="15" width="100" height="36" rx="6"/><rect x="200" y="82" width="100" height="36" rx="6"/><rect x="200" y="149" width="100" height="36" rx="6"/>
+<rect x="390" y="15" width="120" height="36" rx="6"/><rect x="390" y="82" width="120" height="36" rx="6"/><rect x="390" y="149" width="120" height="36" rx="6"/>
+<path d="M110 100h40M150 33v134M150 33h48M150 100h48M150 167h48M300 33h88M300 100h88M300 167h88" marker-end="url(#a2)"/></g>
+<g font-family="Inter,sans-serif" font-size="13" fill="currentColor" text-anchor="middle"><text x="60" y="105">CU</text><text x="250" y="38">PU 1</text><text x="250" y="105">PU 2</text><text x="250" y="172">PU n</text><text x="450" y="38">LM 1</text><text x="450" y="105">LM 2</text><text x="450" y="172">LM n</text><text x="130" y="92" font-size="11">IS</text><text x="344" y="26" font-size="11">DS 1</text><text x="344" y="93" font-size="11">DS 2</text><text x="344" y="160" font-size="11">DS n</text></g>
+<defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs></svg><figcaption>SIMD: jedan tok instrukcija (IS) ide svim procesnim jedinicama; svaka ima svoj tok podataka iz svoje lokalne memorije (LM).</figcaption></figure>
+<p>Primeri: vektorski superračunari (Cray-1), matrični procesori (ILLIAC IV, Connection Machine), danas <b>grafičke kartice (GPU)</b> i <b>SIMD instrukcije</b> u svakom procesoru (Intel MMX, SSE, AVX; ARM NEON), koje smo pomenuli kao „SIMD/Vector jedinice“ u Modulu 6. Kod IA-64 su to instrukcije PADD i PSUB (paralelno sabiranje i oduzimanje). Idealno za obradu slike, zvuka, matrica i neuronskih mreža, gde se ista operacija radi nad hiljadama podataka.</p>
+
+<h3>MISD: više instrukcija nad istim podatkom</h3>
+<p><b>MISD</b> (Multiple Instruction, Single Data): više upravljačkih jedinica, svaka sa svojim tokom instrukcija, šalje instrukcije svojoj procesnoj jedinici, a <em>sve</em> rade nad <em>istim</em> tokom podataka. Podatak prolazi kroz niz procesnih jedinica i svaka mu radi nešto drugo.</p>
+<figure class="diag"><svg viewBox="0 0 520 210" role="img" aria-label="MISD blok šema"><g font-family="Inter,sans-serif" font-size="13" fill="none" stroke="currentColor" stroke-width="1.5">
+<rect x="10" y="15" width="90" height="36" rx="6"/><rect x="10" y="85" width="90" height="36" rx="6"/><rect x="10" y="155" width="90" height="36" rx="6"/>
+<rect x="190" y="15" width="90" height="36" rx="6"/><rect x="190" y="85" width="90" height="36" rx="6"/><rect x="190" y="155" width="90" height="36" rx="6"/>
+<rect x="400" y="70" width="110" height="66" rx="6"/>
+<path d="M100 33h88M100 103h88M100 173h88" marker-end="url(#a3)"/><path d="M235 51v32M235 121v32" marker-end="url(#a3)"/><path d="M400 90h-40v-75h-125M280 173h80v-60h38" stroke-dasharray="0"/></g>
+<g font-family="Inter,sans-serif" font-size="13" fill="currentColor" text-anchor="middle"><text x="55" y="38">CU 1</text><text x="55" y="108">CU 2</text><text x="55" y="178">CU n</text><text x="235" y="38">PU 1</text><text x="235" y="108">PU 2</text><text x="235" y="178">PU n</text><text x="455" y="100">Memorija</text><text x="455" y="118" font-size="11">(podaci)</text><text x="144" y="26" font-size="11">IS 1</text><text x="144" y="96" font-size="11">IS 2</text><text x="144" y="166" font-size="11">IS n</text><text x="252" y="72" font-size="11">DS</text><text x="252" y="142" font-size="11">DS</text><text x="330" y="10" font-size="11">jedan tok podataka</text></g>
+<defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs></svg><figcaption>MISD: svaka procesna jedinica ima svoju upravljačku jedinicu i svoj tok instrukcija, a jedan tok podataka prolazi redom kroz PU 1, PU 2, … PU n.</figcaption></figure>
+<p>Ova klasa praktično nema komercijalnih računara. Najčešće se kao primeri navode: <b>sistolni nizovi</b> (systolic arrays, podatak „pulsira“ kroz niz procesora), <b>protočni procesori</b> po nekim autorima, i sistemi <b>otporni na greške</b> (npr. upravljački računari u avionima i Space Shuttle-u), gde više procesora sa različitim programima obrađuje isti podatak, pa se rezultati porede.</p>
+
+<h3>MIMD: više nezavisnih procesora</h3>
+<p><b>MIMD</b> (Multiple Instruction, Multiple Data): više procesora, svaki sa svojom upravljačkom jedinicom, izvršava <em>svoj</em> program nad <em>svojim</em> podacima. Ovo je najopštija i danas najvažnija klasa: svaki višejezgarni laptop, telefon i server je MIMD.</p>
+<figure class="diag"><svg viewBox="0 0 520 200" role="img" aria-label="MIMD blok šema"><g font-family="Inter,sans-serif" font-size="13" fill="none" stroke="currentColor" stroke-width="1.5">
+<rect x="10" y="15" width="80" height="36" rx="6"/><rect x="10" y="82" width="80" height="36" rx="6"/><rect x="10" y="149" width="80" height="36" rx="6"/>
+<rect x="170" y="15" width="80" height="36" rx="6"/><rect x="170" y="82" width="80" height="36" rx="6"/><rect x="170" y="149" width="80" height="36" rx="6"/>
+<rect x="340" y="15" width="170" height="170" rx="8"/>
+<path d="M90 33h78M90 100h78M90 167h78M250 33h88M250 100h88M250 167h88" marker-end="url(#a4)"/></g>
+<g font-family="Inter,sans-serif" font-size="13" fill="currentColor" text-anchor="middle"><text x="50" y="38">CU 1</text><text x="50" y="105">CU 2</text><text x="50" y="172">CU n</text><text x="210" y="38">PU 1</text><text x="210" y="105">PU 2</text><text x="210" y="172">PU n</text><text x="425" y="95">Deljena memorija</text><text x="425" y="113" font-size="11">ili mreža za povezivanje</text><text x="129" y="26" font-size="11">IS 1</text><text x="129" y="93" font-size="11">IS 2</text><text x="129" y="160" font-size="11">IS n</text><text x="294" y="26" font-size="11">DS 1</text><text x="294" y="93" font-size="11">DS 2</text><text x="294" y="160" font-size="11">DS n</text></g>
+<defs><marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs></svg><figcaption>MIMD: n potpunih procesora (CU + PU), svaki sa svojim tokom instrukcija i podataka; povezani su preko deljene memorije ili mreže.</figcaption></figure>
+
+<h3>Klasifikacija struktura paralelnih procesora</h3>
+<p>Ispitno pitanje traži i grafički prikaz cele klasifikacije (Stallings, slika 17.1). Ona je stablo:</p>
+<div class="tree"><pre>Arhitekture procesora
+├── SISD ─────────── jednoprocesorski (uniprocesor)
+├── SIMD ─────────── vektorski procesor
+│                    matrični procesor (array processor)
+├── MISD
+└── MIMD
+     ├── deljena memorija (čvrsto spregnuti, tightly coupled)
+     │     ├── SMP  (simetrični multiprocesori)
+     │     └── NUMA (neuniformni pristup memoriji)
+     └── distribuirana memorija (labavo spregnuti, loosely coupled)
+           └── klasteri (cluster), multiračunari</pre></div>
+<ul>
+<li><b>Čvrsto spregnuti (deljena memorija)</b>: svi procesori vide jednu zajedničku memoriju i komuniciraju preko nje. <b>SMP</b> (Symmetric Multiprocessor): svi procesori su ravnopravni, vezani na zajedničku magistralu, pa im pristup bilo kojoj lokaciji traje isto (UMA, uniform memory access). <b>NUMA</b>: svaki procesor ima „svoju“ blisku memoriju, ali može da pristupi i tuđoj, samo sporije.</li>
+<li><b>Labavo spregnuti (distribuirana memorija)</b>: svaki računar ima svoju privatnu memoriju, a komuniciraju slanjem poruka preko mreže. Primer: klasteri u data centrima i superračunari.</li>
+</ul>
+
+<h3>Višeprocesorski sistem sa deljenom memorijom</h3>
+<figure class="diag"><svg viewBox="0 0 520 190" role="img" aria-label="Višeprocesorski sistem sa deljenom memorijom"><g font-family="Inter,sans-serif" font-size="13" fill="none" stroke="currentColor" stroke-width="1.5">
+<rect x="20" y="10" width="100" height="34" rx="6"/><rect x="150" y="10" width="100" height="34" rx="6"/><rect x="380" y="10" width="110" height="34" rx="6"/>
+<rect x="20" y="58" width="100" height="28" rx="6"/><rect x="150" y="58" width="100" height="28" rx="6"/><rect x="380" y="58" width="110" height="28" rx="6"/>
+<path d="M70 44v14M200 44v14M435 44v14M70 86v24M200 86v24M435 86v24M10 110h500M120 110v24M400 110v24"/>
+<rect x="60" y="134" width="140" height="40" rx="6"/><rect x="330" y="134" width="140" height="40" rx="6"/></g>
+<g font-family="Inter,sans-serif" font-size="13" fill="currentColor" text-anchor="middle"><text x="70" y="32">Procesor 1</text><text x="200" y="32">Procesor 2</text><text x="315" y="32">…</text><text x="435" y="32">Procesor n</text><text x="70" y="77" font-size="11">keš</text><text x="200" y="77" font-size="11">keš</text><text x="435" y="77" font-size="11">keš</text><text x="260" y="104" font-size="11">zajednička magistrala (ili mreža za povezivanje)</text><text x="130" y="159">Deljena (globalna) memorija</text><text x="400" y="159">U/I</text></g></svg><figcaption>Višeprocesorski sistem sa deljenom memorijom: svaki procesor ima svoj keš, a svi preko zajedničke magistrale pristupaju jednoj globalnoj memoriji i U/I uređajima.</figcaption></figure>
+<p>Prednost: programiranje je jednostavno, jer svi procesori vide iste promenljive. Mana: magistrala postaje usko grlo kad procesora ima mnogo, a pošto svaki procesor ima svoj keš, mora se paziti da kopije istog podatka u različitim keševima budu iste (<b>koherencija keša</b>). U Modulu 2 smo videli „Kako više procesora deli memoriju“ (slajd 32): to je upravo ovaj model.</p>
+
+<h3>Kad dva procesora žele istu lokaciju: EREW, CREW, CRCW</h3>
+<p>Kod sistema sa deljenom memorijom može se desiti da više procesora <b>konkurentno</b> (istovremeno) pristupa istoj memorijskoj lokaciji. Za rešavanje mogućih kolizija koriste se tri modela (dolaze iz teorijskog modela PRAM, Parallel Random Access Machine):</p>
+<div class="tbl"><table>
+<tr><th>Model</th><th>Čitanje</th><th>Pisanje</th><th>Šta ako dođe do konflikta</th></tr>
+<tr><td><b>EREW</b> – Exclusive Read, Exclusive Write</td><td>ekskluzivno: samo jedan procesor u datom trenutku</td><td>ekskluzivno</td><td>ne dozvoljava konflikt ni za čitanje ni za pisanje. Ako do njega ipak dođe, stanje programa je <b>nedefinisano</b>.</td></tr>
+<tr><td><b>CREW</b> – Concurrent Read, Exclusive Write</td><td>konkurentno: više procesora istovremeno čita istu lokaciju</td><td>ekskluzivno</td><td>čitanje je dozvoljeno svima; ako dođe do konkurentnog <b>pisanja</b>, stanje je nedefinisano.</td></tr>
+<tr><td><b>CRCW</b> – Concurrent Read, Concurrent Write</td><td>konkurentno</td><td>konkurentno</td><td>dozvoljen je istovremeni upis; mora se <b>definisati koji procesor upisuje</b>: npr. svi moraju upisati istu vrednost (common), pobeđuje procesor sa najmanjim brojem (priority), ili proizvoljan (arbitrary).</td></tr>
+</table></div>
+<div class="ex">Dva bankomata istovremeno čitaju stanje računa (100 €) i oba isplate 80 €. Ako oba upišu „20 €“, banka je izgubila 80 €. EREW bi zabranio da oba istovremeno pristupe tom računu; CRCW bi morao da propiše šta se dešava kad oba upisuju. Ovaj problem je jezgro teme <b>sinhronizacije procesa</b> u drugom delu predmeta (kritična sekcija, semafori).</div>
+
+<h3>Mane Flynn-ove klasifikacije</h3>
+<p>Flynn-ova podela je jednostavna i zato je svi koriste, ali ima ozbiljne nedostatke:</p>
+<ul>
+<li><b>Ograničeno poređenje</b>: u istu klasu upadaju vrlo različiti računari (i dvojezgarni laptop i superračunar sa milion procesora su MIMD), pa klasa malo govori o stvarnom sistemu.</li>
+<li><b>Ne razmatra međusobne veze komponenti</b> sistema: kako su procesori povezani (magistrala, mreža, topologija).</li>
+<li><b>Ne razmatra memoriju</b> (deljena ili distribuirana) ni <b>U/I uređaje</b>.</li>
+<li>Klasa <b>MISD je praktično prazna</b>, a neke tehnike (protočna obrada, superskalarnost, višenitnost) se ne uklapaju jasno ni u jednu klasu.</li>
+</ul>
+<p>Zato se koriste dopunske podele, kao stablo iznad (deljena ili distribuirana memorija, SMP, NUMA, klasteri).</p>
+
+<h3>Kako se meri brzina: MIPS i MFLOPS</h3>
+<p>Za paralelne i naučne računare koristi se jedinica <b>FLOPS</b> (FLoating-point Operations Per Second), broj operacija u pokretnom zarezu (sa realnim brojevima) izvršenih u jednoj sekundi:</p>
+<div class="tbl"><table>
+<tr><th>Jedinica</th><th>Značenje</th></tr>
+<tr><td><b>MFLOPS</b></td><td>milion (10<sup>6</sup>) operacija u pokretnom zarezu u sekundi</td></tr>
+<tr><td><b>GFLOPS</b></td><td>milijarda (10<sup>9</sup>) operacija u sekundi</td></tr>
+<tr><td><b>TFLOPS</b></td><td>bilion (10<sup>12</sup>) operacija u sekundi</td></tr>
+<tr><td>PFLOPS, EFLOPS</td><td>10<sup>15</sup> i 10<sup>18</sup>; najjači superračunari danas su u eksa-klasi (EFLOPS)</td></tr>
+</table></div>
+<div class="formula">MFLOPS = broj operacija u pokretnom zarezu u programu / (vreme izvršavanja × 10<sup>6</sup>)</div>
+<p>Slično, <b>MIPS</b> (Million Instructions Per Second) meri milione instrukcija u sekundi. Obe mere imaju manu koju smo videli u Modulu 2: ne govore koliko je posla urađeno jednom instrukcijom, pa se računari sa različitim skupovima instrukcija ne mogu pošteno porediti. Najpouzdanija mera ostaje <b>vreme izvršavanja</b> stvarnog programa.</p>
+<div class="bridge">Paralelizam iz Modula 2 (više jezgara, Amdalov zakon, Hyper-Threading) sada ima i imena: višejezgarni procesor je MIMD sa deljenom memorijom (SMP), SSE/AVX jedinice u svakom jezgru su SIMD, a jedno jezgro bez njih je SISD.</div>
+<p class="src">Izvori: M. J. Flynn, „Very High-Speed Computing Systems“, Proc. IEEE, 1966; W. Stallings, <i>Organizacija i arhitektura računara</i>, pogl. 17 (Parallel Processing); A. Tanenbaum, <i>Structured Computer Organization</i>, pogl. 8; D. Simić, P. Bataveljić, <i>Organizacija računara i operativni sistemi</i>, FON 2011.</p>
+<div class="quiz" data-ch="d1"></div></section>
