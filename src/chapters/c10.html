@@ -1,0 +1,115 @@
+<section class="ch" id="c10">
+<div class="ch-head"><span class="ch-num">M3</span><span class="ch-src">Modul 3 · deo 1 od 4 · IzvrsavanjeInstrukcija_M3_01.pdf, slajdovi 2–11</span></div>
+<h2>Procesor iznutra: registri, instrukcije i prvi program</h2>
+<p class="lead">U Modulu 1 smo procesor gledali izdaleka: upravljačka jedinica, ALU, registri, magistrala. U Modulu 2 smo merili koliko je brz. Sada ulazimo unutra i odgovaramo na pitanje koje je od početka u pozadini celog predmeta: <strong>kako procesor zapravo izvršava program</strong>, instrukciju po instrukciju, registar po registar.</p>
+<p>Kroz ceo Modul 3 pratimo jedan isti, najmanji mogući program: naredbu <code>A = B + C;</code>, to jest „saberi dva broja i sačuvaj zbir“. To je ono isto sabiranje ocena iz Modula 1, samo svedeno na jedan korak. Videćemo kako ta naredba izgleda kao mašinski kod, kako je procesor izvršava kroz faze, kako je asembler prevodi i kako bi izgledala na različitim vrstama procesora.</p>
+<figure class="slide"><img src="img/m3a-2.jpg" alt="Sadržaj predavanja Izvršavanje instrukcija" loading="lazy"><figcaption><b>M3_01, slajd 2 · Sadržaj</b></figcaption></figure>
+<p>Slajd 2 je mapa ovog predavanja, i strelice na njemu su upravo redosled naše priče: <strong>registri unutar procesora</strong> → <strong>tipovi instrukcija po broju adresa</strong> → <strong>izvršavanje instrukcija na primeru programa za sabiranje</strong> → <strong>modeli izvršavanja sa 3, 8 i 9 faza</strong> → <strong>primer skupa instrukcija</strong> → <strong>primer izvršavanja programa</strong> → <strong>asembler</strong> → <strong>asembler sa 2 prolaza</strong> → <strong>skrivena (keš) memorija</strong>. Posle toga drugo predavanje Modula 3 (M3_02) gleda skup instrukcija „odozgo“: koje vrste procesora postoje i po čemu se razlikuju (CISC i RISC).</p>
+
+<h3>Šta procesor radi sa svakom instrukcijom (slajd 3)</h3>
+<p>Za svaku instrukciju procesor obavlja do pet poslova, i sve što ćemo raditi u ovom modulu su detalji ovih pet koraka:</p>
+<ol>
+<li><strong>Donošenje instrukcije iz memorije</strong> (fetch). Program je u RAM-u (Von Neumann, Modul 1), pa instrukcija mora prvo da se prenese u procesor.</li>
+<li><strong>Dekodiranje (analiza) instrukcije</strong>. Upravljačka jedinica „pročita“ operacioni kod i shvati šta treba da se uradi.</li>
+<li><strong>Donošenje podataka iz memorije</strong>, ako instrukcija radi sa podatkom koji je u memoriji.</li>
+<li><strong>Izvršavanje instrukcije</strong>, to jest obrada podataka: ALU uradi operaciju.</li>
+<li><strong>Upisivanje rezultata</strong> u registar ili u memoriju.</li>
+</ol>
+<p>Da bi sve to mogao, procesoru trebaju mala mesta za pamćenje unutar samog čipa: gde je sledeća instrukcija, koja instrukcija se upravo izvršava, koji podatak je stigao iz memorije. To su <strong>registri</strong>.</p>
+
+<h3>Registri i njihove uloge (slajdovi 4–5)</h3>
+<p>Registar je mala memorijska ćelija <strong>unutar procesora</strong>, širine jedne reči (npr. 32 ili 64 bita). Registri su najbrža memorija u računaru, vrh hijerarhije memorije iz Modula 1. Slajdovi 4 i 5 ih dele u dve grupe:</p>
+<div class="two">
+<div><h5>Registri vidljivi korisniku</h5>Dostupni programeru u asembleru ili mašinskom jeziku; programer (ili kompajler) ih koristi da bi što ređe išao u sporu memoriju. To su: <ul><li>registri opšte namene,</li><li>registri podataka,</li><li>registri adresa,</li><li>registri za uslovne kodove (zastavice).</li></ul></div>
+<div><h5>Upravljački i statusni registri</h5>Koristi ih upravljačka jedinica za upravljanje radom procesora, i operativni sistem za upravljanje izvršavanjem programa. Programer ih obično ne menja direktno. To su: <ul><li>PC, IR, MAR, MBR, PSW.</li></ul></div>
+</div>
+<p>Setićeš se iz Modula 1 (slajd 36): <em>skup registara</em> je jedna od šest stvari koje čine arhitekturu procesora. Ovo je razlog: registre iz leve kolone programer mora da poznaje da bi napisao program.</p>
+<p>Udžbenik i slajdovi koriste srpske nazive, a drugi materijali (i Modul 4) engleske. Evo obe verzije na jednom mestu, uz analogiju koja pomaže da ih zapamtiš:</p>
+<div class="tbl"><table>
+<tr><th>Srpski naziv</th><th>Engleski</th><th>Šta čuva</th><th>Analogija</th></tr>
+<tr><td><strong>BN</strong>, brojač naredbi (programski brojač)</td><td>PC, Program Counter</td><td>Adresu <strong>sledeće</strong> instrukcije koju treba izvršiti</td><td>Obeleživač u knjizi: gde nastavljaš da čitaš</td></tr>
+<tr><td><strong>RN</strong>, registar naredbi</td><td>IR, Instruction Register</td><td>Instrukciju koja se <strong>trenutno</strong> izvršava</td><td>Rečenica koju upravo čitaš</td></tr>
+<tr><td><strong>ARM</strong>, adresni registar memorije</td><td>MAR, Memory Address Register</td><td>Adresu kojoj se pristupa u memoriji; odatle adresa ide na adresnu magistralu</td><td>Broj police koji si dao magacioneru</td></tr>
+<tr><td><strong>PRM</strong>, prihvatni registar memorije</td><td>MBR, Memory Buffer Register (MDR)</td><td>Podatak koji je upravo pročitan iz memorije ili koji treba upisati</td><td>Pult na koji magacioner spusti robu</td></tr>
+<tr><td><strong>PSW</strong>, statusni registar</td><td>Program Status Word</td><td>Zastavice: Z (rezultat nula), N (negativan), C (prenos), V (prekoračenje), dozvola prekida, režim rada (korisnički/privilegovani)</td><td>Kontrolne lampice na instrument tabli</td></tr>
+<tr><td><strong>AK</strong>, akumulator</td><td>AC, Accumulator</td><td>Jedan operand, a posle operacije i rezultat</td><td>Ekran kalkulatora</td></tr>
+</table></div>
+<div class="warn">Najčešća greška: BN (PC) <em>ne</em> sadrži trenutnu instrukciju, nego <strong>adresu sledeće</strong>. Trenutna instrukcija je u RN (IR). ARM (MAR) sadrži <strong>adresu</strong>, PRM (MBR) sadrži <strong>podatak</strong>.<br>Pazi i na imena: <strong>ARM</strong> ovde znači „adresni registar memorije“ i nema veze sa firmom ARM i njenim procesorima (deo 4 ovog modula). Isto tako, instrukcija <code>MAR reg</code> iz skupa sa slajda 19 nije registar MAR.</div>
+<figure class="slide"><img src="img/m3a-6.jpg" alt="Primeri organizacije registara MC68000, 8086, 80386" loading="lazy"><figcaption><b>Slajd 6 · Primeri organizacije registara</b></figcaption></figure>
+<p>Slajd 6 pokazuje kako to izgleda na tri stvarna procesora. <strong>(a) Motorola MC68000</strong> ima 8 registara podataka (D0–D7) i 8 adresnih registara (A0–A7, gde je A7 pokazivač steka), plus Program Counter i Status Register: podaci i adrese su strogo odvojeni. <strong>(b) Intel 8086</strong> (16-bitni) ima opšte registre AX (Accumulator), BX (Base), CX (Count), DX (Data); pokazivače i indekse SP (Stack Pointer), BP (Base Pointer), SI (Source Index), DI (Destination Index); segmentne registre CS (Code), DS (Data), SS (Stack), ES (Extra); i statusne: Instr Ptr (to je PC) i Flags (to je PSW). <strong>(c) 80386 – Pentium II</strong> (32-bitni) ima iste registre proširene na 32 bita, pa EAX sadrži AX, ESP sadrži SP i tako dalje. Poruka slajda: različite arhitekture različito organizuju registre, ali svaka ima brojač naredbi, statusni registar i registre za podatke i adrese. Intelove registre detaljno radimo u Modulu 4.</p>
+<details class="stop"><summary>Procesor upravo izvršava instrukciju sa adrese 5. Šta je u BN, a šta u RN?</summary><div>U <strong>RN</strong> je sama instrukcija sa adrese 5. U <strong>BN</strong> je već <strong>6</strong>, adresa sledeće instrukcije, jer se BN povećava odmah posle donošenja (videćeš to u mikrokoracima, slajd 13).</div></details>
+
+<h3>Najjednostavniji računar: akumulatorska mašina (slajd 7)</h3>
+<p>Da bi se princip video bez suvišnih detalja, udžbenik koristi zamišljen, vrlo jednostavan računar. Sa njim ćemo raditi većinu ovog modula, pa ga dobro upoznaj:</p>
+<ul>
+<li>Memorija ima <strong>16 lokacija</strong> (adrese 0–15), svaka od <strong>8 bita</strong>.</li>
+<li>Instrukcija ima 8 bita: <strong>4 bita operacioni kod (opkod)</strong> + <strong>4 bita adresa</strong>. Četiri bita za adresu daju 2⁴ = 16 adresa, upravo koliko ima memorija. Četiri bita za opkod daju do 16 različitih instrukcija.</li>
+<li>Procesor ima BN, RN, A/L jedinicu i <strong>akumulator</strong>.</li>
+</ul>
+<figure class="slide"><img src="img/m3a-7.jpg" alt="Memorija, procesor, instrukcije" loading="lazy"><figcaption><b>Slajd 7 · Memorija, procesor, instrukcije</b></figcaption></figure>
+<p>Tabela na slajdu je ceo <strong>skup instrukcija</strong> ove mašine. Svaka instrukcija ima četiri imena: opis (šta radi, zapisano formulom), brojnu oznaku, binarni opkod i simbolički opkod (reč koju pišemo u asembleru):</p>
+<div class="tbl"><table>
+<tr><th>Opis instrukcije</th><th class="num">Brojna oznaka</th><th class="num">Binarni opkod</th><th>Simbolički opkod</th><th>Šta radi, rečima</th></tr>
+<tr><td>AK ← 0</td><td class="num">0</td><td class="num">0000</td><td>CLR</td><td>Obriši akumulator</td></tr>
+<tr><td>AK ← S(M)</td><td class="num">1</td><td class="num">0001</td><td>LOAD</td><td>Napuni akumulator sadržajem lokacije M</td></tr>
+<tr><td>M ← S(AK)</td><td class="num">2</td><td class="num">0010</td><td>STORE</td><td>Upiši akumulator u lokaciju M</td></tr>
+<tr><td>AK ← S(AK) + S(M)</td><td class="num">3</td><td class="num">0011</td><td>ADD</td><td>Dodaj sadržaj M na akumulator</td></tr>
+<tr><td>AK ← S(AK) − S(M)</td><td class="num">4</td><td class="num">0100</td><td>SUB</td><td>Oduzmi</td></tr>
+<tr><td>AK ← S(AK) × S(M)</td><td class="num">5</td><td class="num">0101</td><td>MUL</td><td>Pomnoži</td></tr>
+<tr><td>AK ← S(AK) / S(M)</td><td class="num">6</td><td class="num">0110</td><td>DIV</td><td>Podeli</td></tr>
+<tr><td>Prekid rada</td><td class="num">7</td><td class="num">0111</td><td>HALT</td><td>Zaustavi program</td></tr>
+</table></div>
+<p>Notacija koju moraš da čitaš tečno: <strong>S(M)</strong> znači „sadržaj lokacije M“, a strelica ← znači „upiši u“. Dakle <code>AK ← S(AK) + S(M)</code> čitaj: „u akumulator upiši zbir sadržaja akumulatora i sadržaja lokacije M“.</p>
+<p>Tekst sa slajda postavlja tri pravila koja važe za svaki računar: da bi izvršio obradu, računar mora da izvrši <strong>niz pojedinačnih instrukcija</strong>; skup instrukcija koje čine celinu zove se <strong>program</strong>; procesor može da izvrši samo instrukciju koja se nalazi <strong>u memoriji</strong>, nad podacima koji su takođe u memoriji ili u registrima.</p>
+
+<h3>Naš program: saberi dva broja (slajd 8)</h3>
+<p>Zadatak sa slajda 8: saberi broj sa adrese 8 i broj sa adrese 9, a rezultat upiši na adresu 10. U višem jeziku to je baš naša naredba <code>A = B + C;</code> (B je na adresi 8, C na 9, A na 10). Neka je B = 20 i C = 60:</p>
+<pre>Binarno      Simbolički   Značenje              Posle izvršenja
+0001 1000    LOAD 8       AK ← S(8)             AK = 20
+0011 1001    ADD 9        AK ← S(AK) + S(9)     AK = 20 + 60 = 80
+0010 1010    STORE 10     10 ← S(AK)            M[10] = 80
+0111 0000    HALT         prekini sa radom</pre>
+<p>Pročitaj prvu instrukciju bit po bit: <code>0001</code> je opkod za LOAD, a <code>1000</code> je adresa 8. Procesor ne vidi reči LOAD ili ADD, vidi samo ovih osam bita, a <strong>dekoder operacionog koda</strong> u upravljačkoj jedinici iz prva četiri bita zaključi koja je instrukcija. Probaj sam:</p>
+<div class="lab"><div class="lab-title">Laboratorija: dekoder instrukcija</div>
+<p style="margin:0 0 6px;font-size:.92rem">Upiši 8 bita (npr. <code>00111001</code>). Prva 4 bita su opkod, druga 4 adresa. Ovo radi dekoder operacionog koda.</p>
+<div class="row"><label for="decIn">Instrukcija:</label><input type="text" id="decIn" value="00111001" size="10" maxlength="8"></div>
+<div class="bits" id="decBits"></div>
+<div class="simlog" id="decOut"></div></div>
+<p>Ove instrukcije se zovu <strong>jednoadresne</strong> jer navode samo jednu adresu: drugi operand je uvek u akumulatoru. Zato slajd 8 naglašava: računar koji koristi jednoadresne instrukcije <strong>mora</strong> da ima akumulator, čija je funkcija da u izvršenju jedne instrukcije čuva jedan operand, a zatim i rezultat.</p>
+<figure class="slide"><img src="img/m3a-8.jpg" alt="Primer programa sa akumulatorom i put instrukcije kroz procesor" loading="lazy"><figcaption><b>Slajd 8 · Primer programa sa akumulatorom</b></figcaption></figure>
+<p>Desno na slajdu 8 je mala skica koja već najavljuje sledeći deo: put kojim instrukcija stiže do izvršenja u stvarnom procesoru. Iz <strong>RAM-a</strong> ide u <strong>L2 keš</strong>, pa u <strong>L1 keš za instrukcije</strong>, odatle je uzima <strong>jedinica za donošenje</strong> (Fetch Unit), predaje <strong>jedinici za dekodiranje</strong> (Decode Unit), pa <strong>izvršnoj jedinici</strong> (Execution Unit), a podaci se čitaju i upisuju preko <strong>L1 keša za podatke</strong>. Prepoznaješ podeljen L1 keš, modifikovanu Harvard arhitekturu iz Modula 1: instrukcije i podaci imaju odvojene keševe.</p>
+<details class="stop"><summary>Kako bi izgledala binarna instrukcija „oduzmi sadržaj lokacije 12 od akumulatora“?</summary><div>SUB ima opkod <code>0100</code>, a 12 binarno je <code>1100</code>. Instrukcija je <code>0100 1100</code>. Proveri u dekoderu iznad.</div></details>
+
+<div class="bridge">Program od četiri instrukcije je ručno napisan. U praksi niko ne piše tako, nego piše <code>A = B + C;</code> u višem jeziku. Kako izgleda instrukcija kad je posmatramo kao strukturu, i da li uvek mora da ima tačno jednu adresu?</div>
+
+<h3>Od višeg jezika do instrukcije (slajdovi 9–10)</h3>
+<p>Slajd 9 podseća da se programi pišu u višim jezicima. Pokazuje <code>A = B + C;</code> i deo Java koda (otvaranje mrežne veze sa <code>Socket</code>, učitavanje ključeva sa <code>KeyStore</code>), i kaže: <strong>program se mora prevesti u binarni oblik</strong>. Jedna linija Jave postaje desetine ili stotine mašinskih instrukcija, a naša naredba <code>A = B + C</code> postaje četiri (LOAD, ADD, STORE, HALT). To je prevođenje „1 : n“ sa nivoa programskog jezika na nivo ISA, koje smo videli na stubu nivoa transformacije u Modulu 1.</p>
+<p>Slajd 10 daje <strong>strukturu instrukcije</strong>. Svaka instrukcija <strong>mora</strong> da ima <strong>operacioni deo (opkod)</strong>, koji kaže <em>šta</em> treba uraditi, i <strong>može</strong> da ima jedan ili više <strong>adresnih delova</strong>, koji kažu <em>sa čim</em> to treba uraditi. U našem simboličkom kodu <code>LOAD B / ADD C / STORE A / HALT</code>: LOAD, ADD, STORE i HALT su opkodi, a B, C i A adresni delovi; HALT nema adresni deo jer mu ne treba podatak.</p>
+
+<h3>Koliko adresa ima instrukcija (slajd 11)</h3>
+<p>Za binarnu operaciju kao što je sabiranje potrebne su, u principu, tri adrese: <strong>A1</strong> (adresa prvog operanda), <strong>A2</strong> (adresa drugog operanda) i <strong>A3</strong> (adresa rezultata). Instrukcija može sve tri da navede eksplicitno, ili neke od njih da „podrazumeva“. Prema tome koliko ih navodi, instrukcije su troadresne, dvoadresne, jednoadresne ili nulaadresne. Evo naše naredbe A = B + C na sva četiri načina:</p>
+<div class="tbl"><table>
+<tr><th>Tip</th><th>Oblik</th><th>A = B + C</th><th>Broj instrukcija</th><th>Napomena</th></tr>
+<tr><td><strong>Troadresne</strong></td><td>OP A3, A1, A2</td><td><code>ADD A, B, C</code></td><td class="num">1</td><td>Najmanje instrukcija, ali je svaka dugačka (tri adrese)</td></tr>
+<tr><td><strong>Dvoadresne</strong></td><td>OP A1, A2 (rezultat u A1)</td><td><code>MOV A, B</code><br><code>ADD A, C</code></td><td class="num">2</td><td>Jedan operand se „pregazi“ rezultatom, pa ga prvo kopiramo. Tipično za x86</td></tr>
+<tr><td><strong>Jednoadresne</strong></td><td>OP A (drugi operand i rezultat su u AK)</td><td><code>LOAD B</code><br><code>ADD C</code><br><code>STORE A</code></td><td class="num">3</td><td>Mora postojati <strong>akumulator</strong>. To je naša mašina</td></tr>
+<tr><td><strong>Nulaadresne</strong></td><td>OP (operandi na vrhu steka)</td><td><code>PUSH B</code><br><code>PUSH C</code><br><code>ADD</code><br><code>POP A</code></td><td class="num">4</td><td><strong>Stek</strong> mašina; ADD skine dva broja sa vrha, sabere i stavi rezultat na vrh</td></tr>
+</table></div>
+<div class="simple">Što manje adresa u instrukciji, to je instrukcija <strong>kraća</strong> (manje bita), ali je potrebno <strong>više instrukcija</strong> za isti posao. To je osnovni kompromis u projektovanju formata instrukcija, i vratićemo mu se kod CISC i RISC procesora.</div>
+<p>Nulaadresne instrukcije koriste <strong>stek</strong> (stack): deo memorije koji radi po principu <strong>LIFO</strong> (Last In, First Out), poslednje stavljeno prvo se skida, kao gomila tanjira. Postoje samo dve operacije: <code>PUSH</code> (stavi na vrh) i <code>POP</code> (skini sa vrha). Gde je vrh, pamti registar <strong>SP</strong> (Stack Pointer, pokazivač steka), onaj A7 kod Motorole i SP kod Intela sa slajda 6. Stek se osim za nulaadresne instrukcije koristi za pozive potprograma (čuvanje adrese povratka) i za prekide (čuvanje PC i PSW, Modul 4).</p>
+<div class="ex">Izračunaj ručno nulaadresni program za A = (B + C) × D, sa B=2, C=3, D=4. PUSH B → stek [2]. PUSH C → [2, 3]. ADD → [5]. PUSH D → [5, 4]. MUL → [20]. POP A → A = 20, stek prazan. Ovako radi i Java virtuelna mašina (JVM).</div>
+<p>Najbolje se razlika vidi kad pustiš sva četiri programa da se izvršavaju i pratiš gde je međurezultat:</p>
+<div class="lab" id="fmtLab"><div class="lab-title">Laboratorija: A = B + C na četiri načina</div>
+<div class="row"><select id="fmtSel" aria-label="Format instrukcija">
+<option value="3">Troadresne instrukcije</option>
+<option value="2">Dvoadresne instrukcije</option>
+<option value="1">Jednoadresne (akumulator)</option>
+<option value="0" selected>Nulaadresne (stek)</option>
+</select>
+<button class="btn" id="fmtNext" type="button">Sledeća instrukcija</button><button class="btn ghost" id="fmtReset" type="button">Ispočetka</button></div>
+<div class="two"><div><h5>Program</h5><div class="mem" id="fmtProg"></div></div><div><h5>Stanje</h5><div id="fmtState"></div></div></div>
+<div class="simlog" id="fmtLog"></div></div>
+<details class="stop"><summary>Zašto troadresna instrukcija ADD A, B, C na našoj mašini sa 16 lokacija ne bi stala u 8 bita?</summary><div>Tri adrese po 4 bita su 12 bita, plus 4 bita opkoda: ukupno <strong>16 bita</strong>. Zato naša mašina, sa instrukcijama od 8 bita, može da ima samo jednu adresu (4 + 4) i mora da koristi akumulator.</div></details>
+<div class="bridge">Sada imamo program u memoriji: četiri jednoadresne instrukcije i tri podatka. Šta se tačno dešava u procesoru, registar po registar, dok ih izvršava? To je srce Modula 3, slajdovi 12–42.</div>
+<div class="quiz" data-ch="c10"></div>
+</section>

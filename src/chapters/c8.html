@@ -1,0 +1,147 @@
+<section class="ch" id="c8">
+<div class="ch-head"><span class="ch-num">M2</span><span class="ch-src">Modul 2 · deo 2 od 3 · slajdovi 24–31, 39 i 46–50</span></div>
+<h2>Šta tačno merimo: CPU vreme, CPI i radni takt</h2>
+<p>Kad kažemo da je jedan računar „brži“ od drugog, moramo tačno da kažemo šta merimo. Broj GHz, broj jezgara, količina keša, sve to samo <em>utiče</em> na brzinu. Najpoštenija mera brzine procesora je jednostavna: <strong>koliko sekundi treba da se izvrši dati program</strong>. To vreme se zove <strong>CPU vreme</strong> (CPU execution time), i profesor ga na slajdu 24 naziva kvantitativnim parametrom, jer je to broj koji se može izmeriti i izračunati.</p>
+
+<h3>Formula za CPU vreme (slajd 24)</h3>
+<p>Ideja slajda 24 je da vreme izvršavanja razložimo na tri pitanja, koja se mogu posebno meriti i posebno popravljati:</p>
+<ol>
+<li>Koliko <strong>instrukcija</strong> program izvrši?</li>
+<li>Koliko <strong>ciklusa takta</strong> u proseku traje jedna instrukcija?</li>
+<li>Koliko <strong>sekundi</strong> traje jedan ciklus?</li>
+</ol>
+<p>Pomnožimo odgovore i jedinice se „skrate“ kao razlomci:</p>
+<div class="formula">CPU vreme = sekundi/program = (instrukcija/program) × (ciklusa/instrukciji) × (sekundi/ciklusu)</div>
+<div class="formula">CPU vreme = IC × CPI × T&nbsp;&nbsp;=&nbsp;&nbsp;IC × CPI / f</div>
+<ul>
+<li><strong>IC</strong> (Instruction Count), broj instrukcija: koliko instrukcija program <em>izvrši</em>. Ne koliko ih piše u kodu, nego koliko se stvarno izvrši: instrukcija u petlji koja se ponovi 1000 puta broji se 1000 puta.</li>
+<li><strong>CPI</strong> (Cycles Per Instruction): koliko ciklusa takta u proseku traje jedna instrukcija.</li>
+<li><strong>T</strong>: trajanje jednog ciklusa takta, ili umesto njega <strong>f</strong>, frekvencija takta (T = 1/f).</li>
+</ul>
+<div class="warn">Slovo f ovde znači <strong>frekvenciju</strong>, a u Amdalovom zakonu iz dela 1 znači <strong>paralelni deo programa</strong>. Isto slovo, potpuno različito značenje. U zadatku uvek proveri o čemu je reč.</div>
+<p>Da bismo formulu stvarno razumeli, prođimo kroz njena tri dela. Počinjemo od poslednjeg, takta, jer od njega sve počinje.</p>
+
+<h3>Radni takt: srce koje kuca (slajdovi 28–30)</h3>
+<p>Unutar procesora sve se dešava u ritmu jednog signala, <strong>radnog takta</strong> (clock). To je pravougaoni signal koji stalno ide 0 → 1 → 0 → 1, milijardama puta u sekundi. Jedan pun prolaz, od jedne uzlazne ivice do sledeće, zove se <strong>jedan ciklus</strong> (one cycle). Slajd 28 kaže šta takt radi:</p>
+<ul>
+<li><strong>sinhroniše sve operacije</strong> procesora i magistrala: svi delovi „pomeraju se“ na istu ivicu takta, kao veslači na komandu;</li>
+<li><strong>mašinski takt meri vreme jedne operacije</strong>: najjednostavnija operacija traje jedan ciklus, složenije više;</li>
+<li><strong>koristi se za aktiviranje događaja</strong>: na primer, na uzlaznu ivicu se nova vrednost upisuje u registar.</li>
+</ul>
+<figure class="ill"><div class="sx">
+<svg class="rsvg" viewBox="0 0 560 132" role="img" aria-label="Signal radnog takta">
+ <path class="s-aline" d="M20 90 H60 V30 H110 V90 H160 V30 H210 V90 H260 V30 H310 V90 H360 V30 H410 V90 H460 V30 H510 V90 H540"/>
+ <text class="s-tm" x="8" y="34">1</text><text class="s-tm" x="8" y="94">0</text>
+ <line class="s-line" x1="60" y1="122" x2="160" y2="122"/><path class="s-line" d="M66 117 L60 122 L66 127 M154 117 L160 122 L154 127"/>
+ <text class="s-t" x="110" y="112" text-anchor="middle" style="font-size:12px">jedan ciklus = T</text>
+ <text class="s-tm" x="330" y="18">f = broj ciklusa u sekundi (Hz)</text>
+</svg></div>
+<figcaption>Dopunska ilustracija: signal takta. Period T je trajanje jednog ciklusa, frekvencija f = 1/T.</figcaption>
+</figure>
+<p><strong>Frekvencija</strong> f je broj ciklusa u sekundi i meri se u hercima (Hz). Slajd 29 daje tablicu jedinica, a slajd 30 kaže kako se iz frekvencije dobija <strong>vreme jednog ciklusa</strong>:</p>
+<div class="formula">frekvencija f = broj ciklusa / sekundi&nbsp;&nbsp;&nbsp;&nbsp;vreme ciklusa T = 1 / f</div>
+<div class="tbl"><table>
+<tr><th>Frekvencija</th><th class="num">Ciklusa u sekundi</th><th class="num">Vreme jednog ciklusa</th></tr>
+<tr><td>1 Hz</td><td class="num">1</td><td class="num">1 s</td></tr>
+<tr><td>1 kHz</td><td class="num">10³</td><td class="num">1 ms (10⁻³ s)</td></tr>
+<tr><td>1 MHz</td><td class="num">10⁶</td><td class="num">1 µs (10⁻⁶ s)</td></tr>
+<tr><td>1 GHz</td><td class="num">10⁹</td><td class="num">1 ns (10⁻⁹ s)</td></tr>
+<tr><td>1 THz</td><td class="num">10¹²</td><td class="num">1 ps (10⁻¹² s)</td></tr>
+</table></div>
+<p>Primer sa slajda 30: 1 GHz = 1 000 000 000 ciklusa u sekundi, pa je T = 1/10⁹ s = 10⁻⁹ s = <strong>1 ns</strong>. Za 4 GHz: T = 1/(4·10⁹) s = 0,25 ns. Da bi osetio koliko je to kratko: za vreme jednog ciklusa na 4 GHz svetlost pređe samo 7,5 cm.</p>
+<details class="stop"><summary>Procesor radi na 2 GHz. Koliko traje jedan ciklus?</summary><div>T = 1/f = 1/(2·10⁹) s = 0,5·10⁻⁹ s = <strong>0,5 ns</strong>.</div></details>
+
+<h3>CPI: koliko ciklusa traje jedna instrukcija (slajd 26)</h3>
+<p>Različite instrukcije traju različito. Sabiranje dva registra može da traje 1 ciklus, a čitanje podatka iz memorije 2 ili više, jer mora da se čeka memorija. Zato CPI programa nije jedan broj iz kataloga, nego <strong>ponderisani prosek</strong> (prosek u kome se češće instrukcije više računaju):</p>
+<div class="formula">CPI = Σ (CPIᵢ × Iᵢ) / IC&nbsp;&nbsp;=&nbsp;&nbsp;Σ (CPIᵢ × udeoᵢ)</div>
+<p>gde je Iᵢ broj instrukcija klase i (npr. svih load instrukcija), a udeoᵢ = Iᵢ / IC procenat te klase u programu.</p>
+<figure class="slide"><img src="img/m2-26.jpg" alt="CPI broj ciklusa po instrukciji primer" loading="lazy"><figcaption><b>Slajd 26 · CPI (broj ciklusa po instrukciji)</b></figcaption></figure>
+<p>Primer sa slajda 26 deli instrukcije u četiri klase. Svaki red tabele množimo, pa saberemo:</p>
+<div class="tbl"><table>
+<tr><th>Klasa instrukcija</th><th class="num">Udeo</th><th class="num">CPIᵢ</th><th class="num">Doprinos = udeo × CPIᵢ</th></tr>
+<tr><td>ALU operacije (računanje)</td><td class="num">43%</td><td class="num">1</td><td class="num">0,43</td></tr>
+<tr><td>Load (čitanje iz memorije)</td><td class="num">21%</td><td class="num">2</td><td class="num">0,42</td></tr>
+<tr><td>Store (upis u memoriju)</td><td class="num">12%</td><td class="num">2</td><td class="num">0,24</td></tr>
+<tr><td>Branch (skokovi)</td><td class="num">24%</td><td class="num">2</td><td class="num">0,48</td></tr>
+<tr><th>Ukupno</th><th class="num">100%</th><th></th><th class="num">CPI = 1,57</th></tr>
+</table></div>
+<p>Tumačenje: ovaj procesor za ovaj program u proseku troši 1,57 ciklusa po instrukciji. Ako je takt 2 GHz, on izvršava 2·10⁹ / 1,57 ≈ 1,27 milijardi instrukcija u sekundi.</p>
+<p>Sad možemo da odgovorimo zašto naš album traje 100 sekundi. Recimo da laptop ima takt 2 GHz, a mešavina instrukcija aplikacije je baš ona sa slajda 26 (CPI = 1,57). Iz formule, IC = vreme × f / CPI = 100 × 2·10⁹ / 1,57 ≈ <strong>127 milijardi instrukcija</strong>. Toliko sitnih koraka treba da se obradi 1000 fotografija.</p>
+<details class="stop"><summary>Pola instrukcija programa ima CPI 1, a pola CPI 3. Koliki je prosečan CPI?</summary><div>0,5 · 1 + 0,5 · 3 = <strong>2</strong>.</div></details>
+
+<h3>Ko utiče na koji deo formule (slajd 25)</h3>
+<figure class="slide"><img src="img/m2-25.jpg" alt="Faktori koji utiču na procesorsko vreme" loading="lazy"><figcaption><b>Slajd 25 · Faktori koji utiču na procesorsko vreme (CPU time)</b></figcaption></figure>
+<p>Slajd 25 je jedan od najkorisnijih u modulu, jer kaže <strong>ko može da popravi koji činilac</strong>. Ispod formule je tabela u kojoj X znači „utiče“. Čitaj je red po red i poveži sa onim što znaš iz Modula 1:</p>
+<div class="tbl"><table>
+<tr><th>Šta utiče</th><th>IC</th><th>CPI</th><th>T (takt)</th><th>Zašto</th></tr>
+<tr><td>Program (algoritam)</td><td>✓</td><td></td><td></td><td>Bolji algoritam izvrši manje instrukcija.</td></tr>
+<tr><td>Kompajler</td><td>✓</td><td>✓</td><td></td><td>Bira koliko i <em>koje</em> instrukcije će koristiti, pa menja i prosečan CPI.</td></tr>
+<tr><td>ISA</td><td>✓</td><td>✓</td><td></td><td>Složenije instrukcije (CISC): manje njih, ali duže traju. RISC obrnuto.</td></tr>
+<tr><td>Organizacija</td><td></td><td>✓</td><td>✓</td><td>Protočna obrada i keš smanjuju CPI; organizacija određuje i koliko kratak takt sme da bude.</td></tr>
+<tr><td>Tehnologija</td><td></td><td></td><td>✓</td><td>Brži tranzistori daju brži takt (Mur i Denard).</td></tr>
+</table></div>
+<p>Ovde se zatvara pitanje iz dela 1: <strong>CISC ili RISC, koji je brži?</strong> CISC smanjuje IC, ali povećava CPI; RISC povećava IC, ali smanjuje CPI i dozvoljava brži takt. Pobeđuje onaj kome je <em>proizvod</em> IC × CPI × T manji, i to se ne može reći bez merenja.</p>
+<div class="warn">Zamka: veći takt (GHz) ne znači automatski brži procesor. Procesor A na 4 GHz sa CPI = 2 je sporiji od procesora B na 3 GHz sa CPI = 1, jer A izvršava 2 milijarde, a B 3 milijarde instrukcija u sekundi.</div>
+
+<h3>Kako se poredi „brže“ (slajd 27)</h3>
+<figure class="slide"><img src="img/m2-27.jpg" alt="Performanse i poređenje računara A i B" loading="lazy"><figcaption><b>Slajd 27 · Performanse i poređenje različitih računara A i B</b></figcaption></figure>
+<p>Kad imamo vremena, treba nam precizan jezik za poređenje. <strong>Performansa je obrnuto srazmerna vremenu</strong>: performansa = 1 / vreme izvršavanja. Kraće vreme, veća performansa. Zato se na slajdu 27 u razlomku uvek gore piše vreme <em>sporijeg</em> (B), a dole vreme <em>bržeg</em> (A):</p>
+<div class="formula">„A je n puta brži od B“ ⇔ vreme_B / vreme_A = n</div>
+<div class="formula">„A je n% brži od B“ ⇔ vreme_B / vreme_A = 1 + n/100</div>
+<div class="formula">„A je n redova veličine brži od B“ ⇔ vreme_B / vreme_A = 10ⁿ</div>
+<p>Na našem albumu: na jednom jezgru 100 s, na pet jezgara 60 s. 100/60 = 1,67, pa je verzija sa pet jezgara <strong>1,67 puta brža</strong>, odnosno <strong>67% brža</strong>. Ako bi neki superračunar to uradio za 0,1 s, odnos bi bio 100/0,1 = 1000 = 10³, dakle <strong>3 reda veličine</strong> brže.</p>
+<details class="stop"><summary>Program traje 12 s na računaru B i 8 s na računaru A. Koliko je A brži?</summary><div>12/8 = 1,5. A je <strong>1,5 puta</strong> brži, odnosno <strong>50% brži</strong>. Pazi: nije „33% brži“; 33% je koliko je B sporiji računato u odnosu na B (4/12).</div></details>
+
+<h3>Ceo račun na jednom primeru (slajd 31)</h3>
+<p>Slajd 31 spaja takt, CPI i broj instrukcija u jedan zadatak. Pazi kako se CPI dobija iz <strong>faza izvršavanja instrukcije</strong>: svaka instrukcija prolazi kroz uzimanje instrukcije, uzimanje operanada, izvršavanje i upis rezultata (te faze detaljno radimo u Modulu 3).</p>
+<div class="task"><b>Zadatak sa slajda 31</b>Radni takt procesora je 1 THz. Prosečan broj ciklusa: uzimanje instrukcije 2, uzimanje operanada 2, izvršavanje 4, analiza i upisivanje 0. Koliko ciklusa treba za program od 2000 instrukcija, i u kojim jedinicama se meri vreme njegovog izvršavanja?
+<ol>
+<li>Jedna instrukcija: 2 + 2 + 4 + 0 = <strong>8 ciklusa</strong>. To je CPI.</li>
+<li>Ceo program: 8 × 2000 = <strong>16 000 ciklusa</strong>.</li>
+<li>T = 1/10¹² s = 1 ps. Vreme = 16 000 × 10⁻¹² s = 16 × 10⁻⁹ s = <strong>16 ns</strong>.</li>
+</ol>
+Odgovor na pitanje o jedinicama: u nanosekundama.</div>
+<p>Laboratorija ispod je podešena baš na ovaj zadatak. Promeni brojeve i prati korake:</p>
+<div class="lab" id="cpuLab">
+<div class="lab-title">Laboratorija: izračunaj CPU vreme</div>
+<div class="row">
+ <label for="icIn">Broj instrukcija (IC) <input type="text" id="icIn" value="2000" size="10"></label>
+ <label for="cpiIn">CPI <input type="text" id="cpiIn" value="8" size="5"></label>
+ <label for="fIn">Takt <input type="text" id="fIn" value="1" size="5"></label>
+ <select id="fUnit" aria-label="Jedinica takta"><option value="1e3">kHz</option><option value="1e6">MHz</option><option value="1e9">GHz</option><option value="1e12" selected>THz</option></select>
+</div>
+<div class="row"><span>CPU vreme =</span><span class="big" id="cpuOut">16 ns</span></div>
+<div class="simlog" id="cpuSteps"></div>
+</div>
+<div class="task"><b>Dodatni zadatak (tip sa kolokvijuma)</b>Program ima 5·10⁹ instrukcija. Na računaru A (takt 2,5 GHz) CPI = 1,6. Na računaru B (takt 3 GHz) CPI = 2,2. Koji je brži i koliko puta?
+<ol>
+<li>Vreme A = 5·10⁹ × 1,6 / 2,5·10⁹ = 8 / 2,5 = <strong>3,2 s</strong>.</li>
+<li>Vreme B = 5·10⁹ × 2,2 / 3·10⁹ = 11 / 3 = <strong>3,67 s</strong>.</li>
+<li>A je brži: 3,67 / 3,2 = <strong>1,15 puta</strong> (15% brži), iako ima niži takt.</li>
+</ol></div>
+
+<h3>Brzina nije samo jedan broj (slajd 39)</h3>
+<p>Do sada je „brže“ značilo „kraće vreme jednog programa“. Slajd 39 podseća da postoji više aspekata performansi, i da su za različite sisteme važni različiti:</p>
+<div class="tbl"><table>
+<tr><th>Pojam</th><th>Značenje</th><th>Primer</th></tr>
+<tr><td><strong>Latency</strong> (latentnost, kašnjenje)</td><td>Vreme od početka do kraja jednog posla</td><td>Za koliko se otvori jedna veb strana</td></tr>
+<tr><td><strong>Throughput</strong> (propusnost, propusni opseg)</td><td>Broj poslova završenih u jedinici vremena</td><td>Koliko zahteva u sekundi server obradi</td></tr>
+<tr><td><strong>Availability</strong> (raspoloživost)</td><td>Deo vremena kada sistem radi</td><td>99,9% znači oko 8,8 sati prekida godišnje</td></tr>
+<tr><td><strong>Power consumption</strong> (potrošnja)</td><td>Meri se kao performanse po vatu</td><td>Bitno za telefone (baterija) i data centre (račun za struju)</td></tr>
+</table></div>
+<p>Latentnost je „za koliko jedan auto stigne od Beograda do Novog Sada“, a propusnost „koliko auta prođe kroz naplatnu rampu za sat“. Dodavanje traka na autoputu (više jezgara) povećava propusnost, ali jedan auto ne stiže brže. To je druga strana Amdalovog zakona: više jezgara odlično povećava propusnost servera koji opslužuje hiljade nezavisnih korisnika, a malo pomaže latentnosti jednog programa sa velikim sekvencijalnim delom.</p>
+
+<h3>Završni primer: koje poboljšanje izabrati (slajdovi 46–50)</h3>
+<p>Sad imamo sve alate da rešimo najteži primer sa predavanja, koji spaja CPI, takt i Amdalov zakon.</p>
+<figure class="slide"><img src="img/m2-46.jpg" alt="Primer 4 koje poboljšanje je najbolje" loading="lazy"><figcaption><b>Slajd 46 · Primer 4</b></figcaption></figure>
+<div class="task"><b>Primer 4</b>Procesor radi na 2 GHz. Instrukcije programa: INT 40% vremena (CPI 1), Branch 20% (CPI 4), Load 30% (CPI 2), Store 10% (CPI 3). Koje od tri ponuđena poboljšanja je najbolje?
+<ol>
+<li><strong>Branch CPI 4 → 3</strong> (slajd 47). Ubrzava se deo f = 0,2; F = staro/novo = 4/3 = 1,33. S = 1 / (0,8 + 0,2/1,33) = 1 / (0,8 + 0,15) = <strong>1,05</strong>.</li>
+<li><strong>Takt 2 → 2,3 GHz</strong> (slajd 48). Takt ubrzava <em>ceo</em> program, pa je f = 1; F = 2,3/2 = 1,15. S = 1 / (0 + 1/1,15) = <strong>1,15</strong>.</li>
+<li><strong>Store CPI 3 → 2</strong> (slajd 49). f = 0,1; F = 3/2 = 1,5. S = 1 / (0,9 + 0,1/1,5) = 1 / 0,967 = <strong>1,034</strong>.</li>
+</ol>
+<strong>Najbolja je druga opcija</strong> (slajd 50): iako takt raste samo 15%, on deluje na 100% programa. To je „make the common case fast“ u čistom obliku.</div>
+<details class="stop"><summary>Zašto je kod povećanja takta f = 1?</summary><div>Jer svaka instrukcija, bilo koje klase, traje određen broj <em>ciklusa</em>, a svaki ciklus postaje kraći. Dakle ubrzava se ceo program, 100% vremena.</div></details>
+<div class="bridge">Formula kaže da program ubrzavamo ako smanjimo IC, CPI ili T. Takt više ne može mnogo da raste, a IC zavisi od programa. Ostaje CPI: kako procesor uspeva da izvrši instrukciju za manje ciklusa, pa čak i za manje od jednog? Odgovor je paralelizam unutar samog procesora, tema poslednjeg dela.</div>
+<div class="quiz" data-ch="c8"></div>
+</section>

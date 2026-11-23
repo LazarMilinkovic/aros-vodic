@@ -1,0 +1,61 @@
+<section class="ch" id="c2">
+<div class="ch-head"><span class="ch-num">M1</span><span class="ch-src">Modul 1 · deo 2 od 6 · slajdovi 11–15</span></div>
+<h2>Od zadatka do programa, i dogovor između hardvera i softvera</h2>
+
+<h3>Računar zna samo sitne korake (slajd 11)</h3>
+<p>Sve što se oko nas dešava (kretanje automobila, kamata u banci, prosek ocena) opisujemo <strong>funkcijama</strong>: nešto uđe, nešto izađe. Problem je što računar ne ume da izračuna „prosek“ niti bilo koju složenu funkciju odjednom. On ume samo mali broj <strong>elementarnih operacija</strong>: da sabere i oduzme dva broja, da ih uporedi, da premesti podatak sa jednog mesta na drugo i da „skoči“ na drugo mesto u programu.</p>
+<p>Zato slajd 11 kaže: da bi se funkcija <code>f(x)</code> izračunala na računaru, mora se predstaviti kao <strong>niz jednostavnijih funkcija f1, f2, …, fn</strong>, od kojih se svaka može izraziti pomoću elementarnih operacija koje računar zna. Kad takve funkcije poređamo u pravilnom redosledu tako da daju rešenje, taj niz se zove <strong>program</strong>, a aparat koji ume da ga izvrši zove se <strong>računar</strong>. Evo kako to izgleda za naš prosek:</p>
+<figure class="ill"><div class="sx"><svg class="rsvg" viewBox="0 0 640 222" role="img" aria-label="Razlaganje funkcije prosek na jednostavnije funkcije i elementarne operacije">
+<text x="10" y="18" class="s-tm">složena funkcija</text>
+<path class="s-line" d="M320 46 L200 90 M320 46 L440 90 M200 124 L66 166 M200 124 L190 166 M200 124 L314 166 M440 124 L438 166 M440 124 L568 166"/>
+<rect x="210" y="8" width="220" height="38" rx="8" class="s-acc"/><text x="320" y="32" text-anchor="middle" class="s-th">f = prosek(a, b, c)</text>
+<text x="10" y="84" class="s-tm">f1 … fn</text>
+<rect x="100" y="90" width="200" height="34" rx="8" class="s-box"/><text x="200" y="112" text-anchor="middle" class="s-t">f1: S = a + b + c</text>
+<rect x="340" y="90" width="200" height="34" rx="8" class="s-box"/><text x="440" y="112" text-anchor="middle" class="s-t">f2: P = S / 3</text>
+<g><rect x="10" y="166" width="112" height="46" rx="8" class="s-sig"/><text x="66" y="185" text-anchor="middle" class="s-t">uzmi a</text><text x="66" y="203" text-anchor="middle" class="s-tm">LOAD a</text></g>
+<g><rect x="134" y="166" width="112" height="46" rx="8" class="s-sig"/><text x="190" y="185" text-anchor="middle" class="s-t">dodaj b</text><text x="190" y="203" text-anchor="middle" class="s-tm">ADD b</text></g>
+<g><rect x="258" y="166" width="112" height="46" rx="8" class="s-sig"/><text x="314" y="185" text-anchor="middle" class="s-t">dodaj c</text><text x="314" y="203" text-anchor="middle" class="s-tm">ADD c</text></g>
+<g><rect x="382" y="166" width="112" height="46" rx="8" class="s-sig"/><text x="438" y="185" text-anchor="middle" class="s-t">podeli sa 3</text><text x="438" y="203" text-anchor="middle" class="s-tm">DIV 3</text></g>
+<g><rect x="506" y="166" width="124" height="46" rx="8" class="s-sig"/><text x="568" y="185" text-anchor="middle" class="s-t">zapamti P</text><text x="568" y="203" text-anchor="middle" class="s-tm">STORE P</text></g>
+</svg></div><figcaption>Dopunska ilustracija: prosek se razlaže na dve jednostavnije funkcije, a one na pet elementarnih operacija (donji red: to računar zna da uradi). Tih pet koraka, tačno ovim redom, jeste program.</figcaption></figure>
+<p>Obrati pažnju na donji red: ti nazivi (LOAD, ADD, DIV, STORE) su pravi nazivi instrukcija kakve ćeš pisati u Modulu 3. Već sada vidiš da „program“ za računar nije ništa magično, nego spisak ovakvih sitnih koraka.</p>
+
+<h3>Kad je postupak algoritam (slajd 12)</h3>
+<p>Postupak kojim se rešava neki zadatak opisujemo <strong>algoritmom</strong>. Algoritam definiše dve stvari: <strong>(a) skup operacija</strong> koje treba izvršiti i <strong>(b) redosled</strong> njihovog izvršavanja. Redosled je jednako važan kao i same operacije: „podeli sa 3, pa saberi“ daje pogrešan prosek iako su operacije iste.</p>
+<p>Da bi neki skup operacija uopšte bio algoritam, mora da ima dve osobine:</p>
+<ul>
+<li><strong>Konačnost</strong>: mora da se završi u konačnom broju koraka. Postupak koji se vrti u krug zauvek nije algoritam.</li>
+<li><strong>Determinisanost</strong>: svaka operacija je precizno definisana i može se protumačiti samo na jedan način. „Dodaj malo soli“ nije determinisano (koliko je malo?), „dodaj 5 g soli“ jeste.</li>
+</ul>
+<p>Ove dve osobine nisu tu slučajno. Računar nema zdrav razum: ne može da „pretpostavi“ šta si mislio i ne zna kad da odustane. Zato mu svaki korak mora biti jednoznačan, a ceo postupak mora da ima kraj.</p>
+<details class="stop"><summary>Recept kaže: „Mešaj testo dok ne postane glatko.“ Da li je to algoritam po definiciji sa slajda 12?</summary><div>Nije. Nije <strong>determinisano</strong>, jer „glatko“ dva čoveka tumače različito, i nije sigurno <strong>konačno</strong>, jer nema jasnog uslova kraja. Algoritamska verzija bi bila npr. „mešaj 5 minuta brzinom 2“.</div></details>
+<details class="stop"><summary>Da li je naš program za prosek (5 koraka sa slike iznad) algoritam?</summary><div>Jeste: ima tačno 5 koraka (konačan je), svaki korak ima jedno značenje (determinisan je), a definisani su i operacije i redosled.</div></details>
+
+<div class="bridge">Algoritam je napisan za ljude. Računar, međutim, zna samo svoje elementarne operacije. Ko određuje koje operacije neki računar zna, koliko bita ima broj i kako se pristupa memoriji? Na to odgovara pojam <strong>arhitekture računara</strong>.</div>
+
+<h3>Arhitektura: ugovor između mašine i softvera (slajdovi 13–14)</h3>
+<p>Slajd 13 ima samo jednu rečenicu, ali je ona osnova celog predmeta. Rekao ju je Andris Padegs, glavni arhitekta čuvenih IBM-ovih računara 360/370:</p>
+<blockquote>„The architecture of a computer is the interface between the machine and the software.“<br><small>Arhitektura računara je interfejs (dodirna tačka) između mašine i softvera.</small></blockquote>
+<p>Interfejs je mesto gde se dve strane sreću i dogovaraju. Hardver kaže „ja ću umeti da izvršim ove instrukcije, sa ovim registrima, nad brojevima od ovoliko bita“, a softver kaže „ja ću koristiti samo to“. Dokle god se obe strane drže dogovora, softver radi, bez obzira kako je hardver iznutra napravljen.</p>
+<p>Slajd 14 to precizira: <strong>arhitektura računara ≠ organizacija računara</strong>. Arhitektura je oblast koja odgovara na pitanje <em>„kako projektovati delove računarskog sistema koji su <strong>vidljivi programeru</strong>?“</em>. Primeri atributa arhitekture:</p>
+<ul>
+<li><strong>skup instrukcija</strong> (naredbi) koje procesor zna, npr. ima li instrukciju za množenje,</li>
+<li><strong>načini adresiranja</strong> memorije, tj. kako instrukcija kaže gde je podatak,</li>
+<li><strong>U/I mehanizmi</strong>, tj. kako program komunicira sa uređajima,</li>
+<li><strong>broj bitova</strong> kojim se predstavljaju tipovi podataka (brojevi, znakovi).</li>
+</ul>
+<p>Sve su to stvari koje programer koji piše u mašinskom jeziku ili asembleru <em>mora</em> da zna, inače mu program neće raditi.</p>
+
+<h3>Organizacija: kako je ugovor ispunjen (slajd 15)</h3>
+<figure class="slide"><img src="img/m1-15.jpg" alt="Slajd Organizacija računara" loading="lazy"><figcaption><b>Slajd 15 · Organizacija računara</b></figcaption></figure>
+<p>Druga strana medalje je <strong>organizacija računara</strong>: ona prikazuje <strong>strukturne veze unutar računara koje programer ne vidi</strong>, odnosno kako je arhitektura stvarno izvedena u hardveru. Na slajdu 15, ispod definicije, četiri kućice daju primere šta sve organizacija obuhvata: interfejse ka periferijskim uređajima; učestanost takta i tehnologiju kojom je napravljena memorija; tok informacija između komponenti; mogućnosti i performanse funkcijskih jedinica (registara, ALU, „shifter“-a, to jest sklopa za pomeranje bitova). Strelica vodi ka sažetku na dnu: tipični atributi organizacije su upotrebljena memorijska tehnologija, upravljački signali i interfejsi.</p>
+<p>Najlakše je da zapamtiš poređenje sa automobilom. <strong>Arhitektura</strong> je sve što vozač vidi i koristi: volan, pedale gas-kočnica, menjač, žmigavci. <strong>Organizacija</strong> je ono ispod haube: da li je motor benzinski, dizel ili električni, koliko ima cilindara, kakva je kočiona instalacija. Vozač koji zna da vozi jedan auto vozi i drugi, jer je „interfejs“ isti, iako je motor potpuno drugačiji. Isto tako, program napisan za x86 radi i na jeftinom Intel Core i3 i na skupom i9: arhitektura im je ista, a organizacija (broj jezgara, keš, takt) vrlo različita.</p>
+<div class="simple">Test koji rešava skoro svako ispitno pitanje ove vrste: <em>„Da li programer koji piše u asembleru mora ovo da zna da bi mu program radio ispravno?“</em> Ako mora, to je <strong>arhitektura</strong>. Ako ne mora (program bi radio isto, samo možda brže ili sporije), to je <strong>organizacija</strong>.</div>
+<p>Na primeru množenja: to <em>da li</em> procesor ima instrukciju <code>MUL</code> je arhitektura, jer programer mora da zna sme li da je napiše. To <em>kako</em> se množenje izvodi, posebnim brzim sklopom ili nizom sabiranja, je organizacija: program daje isti rezultat, samo za različito vreme.</p>
+<div class="lab" id="archLab"><div class="lab-title">Vežba: arhitektura ili organizacija?</div>
+<p class="lab-sub">Za svaku stavku izaberi gde pripada. Posle odgovora dobijaš objašnjenje. Ovo je jedno od najčešćih ispitnih pitanja iz Modula 1.</p>
+<div id="archList" class="sort"></div><p class="score" id="archScore"></p></div>
+<details class="stop"><summary>Novi model procesora ima veći keš i brži takt, a iste instrukcije kao stari. Da li se promenila arhitektura?</summary><div>Ne. Promenila se samo <strong>organizacija</strong>. Svi stari programi rade bez ikakve izmene, samo brže. Da je dodata nova instrukcija, to bi bila promena arhitekture.</div></details>
+<div class="bridge">Sad znamo da je arhitektura obećanje, a organizacija konkretna izvedba od fizičkih delova. Sledeće logično pitanje: od kojih delova je računar napravljen, i gde se u njemu nalazi naš program za prosek dok radi?</div>
+<div class="quiz" data-ch="c2"></div>
+</section>

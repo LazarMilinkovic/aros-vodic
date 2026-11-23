@@ -1,0 +1,57 @@
+<section class="ch" id="c5">
+<div class="ch-head"><span class="ch-num">M1</span><span class="ch-src">Modul 1 · deo 5 od 6 · slajdovi 24–27 · uz Modul 4 (M4_02) slajdove 3–5</span></div>
+<h2>Kako se nosimo sa složenošću: slojevi apstrakcije</h2>
+
+<h3>„The Big Picture“ (slajd 24)</h3>
+<p>Slajd 24 je citat iz najpoznatije knjige o arhitekturi računara (Hennessy i Patterson, dobitnici Tjuringove nagrade). Prevod, rečenicu po rečenicu, sa objašnjenjem:</p>
+<ol>
+<li><em>„I hardver i softver se sastoje od hijerarhijskih slojeva, gde svaki niži sloj skriva detalje od višeg.“</em> Programer u Javi ne zna u kom registru je promenljiva; kompajler zna. Kompajler ne zna kako je sabirač napravljen od tranzistora; projektant procesora zna.</li>
+<li><em>„Ovaj princip apstrakcije je način na koji se i projektanti hardvera i softvera nose sa složenošću računarskih sistema.“</em> Svako radi na svom sloju i mora da poznaje samo sloj ispod kao „crnu kutiju“: šta ona radi, ne i kako.</li>
+<li><em>„Jedan ključni interfejs između nivoa apstrakcije je arhitektura skupa instrukcija (ISA): interfejs između hardvera i softvera niskog nivoa.“</em> To je ista misao kao Padegsova sa slajda 13: arhitektura je granica i dogovor.</li>
+<li><em>„Ovaj apstraktni interfejs omogućava mnogo implementacija različite cene i performansi koje izvršavaju identičan softver.“</em> To je ideja familije modela sa slajda 21: ista ISA, različite organizacije.</li>
+</ol>
+<p>Vidiš kako se priča zatvara: arhitektura (deo 2), familija (deo 4) i apstrakcija (ovde) su tri pogleda na istu ideju.</p>
+
+<h3>Interfejs kaže „šta“, a krije „kako“ (slajd 25)</h3>
+<figure class="slide"><img src="img/m1-25.jpg" alt="Slajd Apstrakcija i upravljanje složenim sistemima" loading="lazy"><figcaption><b>Slajd 25 · Apstrakcija i upravljanje složenim sistemima</b></figcaption></figure>
+<p>Stub desno ide odozgo nadole: <strong>aplikacija → operativni sistem → prevodilac → mašinski jezik (ISA) → digitalna logika → elektronska kola → poluprovodnički uređaji</strong>. Tekst levo kaže da apstrakcija omogućava upravljanje složenim sistemima pomoću <strong>interfejsa</strong> koji <strong>specificiraju šta treba uraditi</strong>, a <strong>skrivaju detalje kako</strong> se to radi.</p>
+<p>Kao u restoranu: gost naruči „ćevape i pomfrit“ (šta), a ne zanima ga kako kuhinja radi, ko je čistio krompir i na kojoj ringli se pržilo (kako). Meni je interfejs. Kuhinja može da promeni šporet ili kuvara, a gost to ni ne primeti, dokle god dobije ono što je naručio. Isto tako, Excel kaže operativnom sistemu „otvori fajl ocene.xlsx“ i ne zanima ga na kom sektoru diska je fajl.</p>
+
+<h3>Devet nivoa, od problema do elektrona (slajd 27)</h3>
+<figure class="slide"><img src="img/m1-27.jpg" alt="Slajd Nivoi transformacije" loading="lazy"><figcaption><b>Slajd 27 · Nivoi transformacije</b></figcaption></figure>
+<p>Levo je stub koji smo videli na slajdu 18, sada sa crvenim okvirom samo oko <strong>ISA</strong>, jer je ISA <strong>granica</strong>: sve iznad je softver, sve ispod je hardver. Prođimo kroz sve nivoe na našem prosek primeru:</p>
+<div class="tbl"><table>
+<tr><th>Nivo</th><th>Šta je to</th><th>Naš primer</th></tr>
+<tr><td>Problem</td><td>Šta želimo, rečima</td><td>„Izračunaj prosek ocena“</td></tr>
+<tr><td>Algoritam</td><td>Precizan, konačan i determinisan postupak</td><td>Saberi sve ocene, podeli sa brojem ocena</td></tr>
+<tr><td>Program / jezik</td><td>Algoritam zapisan u programskom jeziku</td><td><code>p = (a+b+c)/3;</code> u C-u</td></tr>
+<tr><td>Runtime sistem (VM, OS, MM)</td><td>Okruženje u kome program radi: virtuelna mašina, operativni sistem, upravljanje memorijom</td><td>Windows učitava program u RAM i daje mu procesor</td></tr>
+<tr><td><strong>ISA</strong></td><td>Instrukcije koje procesor razume</td><td><code>LOAD a, ADD b, ADD c, DIV 3, STORE p</code></td></tr>
+<tr><td>Mikroarhitektura</td><td>Kako je ISA izvedena u konkretnom čipu (organizacija)</td><td>Koraci kojima procesor donosi i izvršava ADD</td></tr>
+<tr><td>Logika</td><td>Logička kola: I, ILI, NE, sabirači, flip-flopovi</td><td>Sabirač u ALU koji sabira bit po bit</td></tr>
+<tr><td>Kola (Circuits)</td><td>Elektronska kola od tranzistora</td><td>CMOS kola od kojih je sabirač napravljen</td></tr>
+<tr><td>Elektroni</td><td>Fizika poluprovodnika</td><td>Napon na tranzistoru: visok = 1, nizak = 0</td></tr>
+</table></div>
+<p>Desna strana slajda je ista ideja kako je opisuje naš udžbenik, kao niz <strong>nivoa</strong>: nivo viših programskih jezika, nivo asemblera, nivo operativnog sistema, konvencionalni mašinski nivo, mikroprogramski nivo i nivo hardvera. Važnije od imena nivoa su <strong>reči na strelicama</strong>, jer kažu kako se prelazi naniže: <em>prevodilac</em> (viši jezik → asembler), <em>asembler</em> (asembler → mašinski kod), <em>parcijalna interpretacija</em> (operativni sistem neke stvari izvršava sam, a ostalo propušta hardveru), <em>interpretacija</em> (mikroprogram tumači mašinske instrukcije) i <em>direktno izvršavanje mikroprograma</em> u hardveru.</p>
+
+<h3>Računar kao niz virtuelnih mašina (slajd 26)</h3>
+<figure class="slide"><img src="img/m1-26.jpg" alt="Slajd Računar kao mašina sa više nivoa apstrakcije" loading="lazy"><figcaption><b>Slajd 26 · Računar kao mašina sa više nivoa apstrakcije (nivoi transformacije)</b></figcaption></figure>
+<p>Slajd 26 istu ideju kaže apstraktnije. Na dnu je <strong>stvarni računar M0</strong> sa svojim mašinskim jezikom <strong>L0</strong>: to je jedini jezik koji hardver zaista izvršava. Iznad njega je <strong>virtuelna mašina M1</strong> sa jezikom L1, pa M2 sa L2, i tako do <strong>Mn</strong> sa <strong>Ln</strong>. „Virtuelna“ znači da ta mašina ne postoji kao hardver: programer koji piše u L2 ponaša se kao da postoji mašina koja direktno razume L2, a zapravo se njegov program pretvara u L1, pa u L0. Pretvaranje se radi na jedan od dva načina:</p>
+<ul>
+<li><strong>Prevođenje (kompilacija)</strong>: ceo program se unapred pretvori u niži jezik, pa se tek onda izvršava. Tako radi C.</li>
+<li><strong>Interpretacija</strong>: program se čita naredba po naredba, i svaka se prevodi i izvršava u trenutku kad na nju dođe red. Tako radi Python.</li>
+</ul>
+<p>Prednost ovog pogleda: kad pišeš u višem jeziku, uopšte ne moraš da misliš o nižim mašinama. To je apstrakcija na delu.</p>
+<p>Sada možemo da uradimo ono što je ceo ovaj deo najavio: da pratimo <strong>jednu naredbu</strong> kroz sve slojeve. Uzećemo korak <code>A = B + C</code>, isti oblik kao „S = a + b“ u našem proseku. Klikni redom na slojeve i gledaj kako se ista stvar opisuje sve detaljnije:</p>
+<div class="lab" id="layLab">
+<div class="lab-title">Put naredbe A = B + C kroz slojeve</div>
+<p class="lab-sub">Primeri koriste jednostavnu akumulatorsku mašinu sa kojom ćeš raditi u Modulu 3 (B je na adresi 4, C na 5, A na 6). Neki detalji (mikrooperacije, nazivi registara) biće ti potpuno jasni tek tada, ovde je bitan osećaj kako se korak „cepa“ na sve sitnije delove.</p>
+<div class="chips" id="layBtns"></div>
+<div class="layview" id="layView"></div>
+</div>
+<details class="stop"><summary>Na kom nivou prestaje softver, a počinje hardver? I zašto je baš taj nivo toliko važan?</summary><div>Na nivou <strong>ISA</strong>. Važan je jer je to <strong>ugovor</strong>: sav softver iznad zavisi samo od ISA, a ne od toga kako je hardver ispod napravljen. Zato isti program radi na celoj familiji procesora (slajdovi 21 i 24).</div></details>
+<details class="stop"><summary>Programer piše u Javi. Koje sve „mašine“ (nivoi) rade ispod njegovog programa?</summary><div>Java kod se prevodi u bajtkod koji izvršava <strong>Java virtuelna mašina</strong> (runtime nivo), ona radi pod <strong>operativnim sistemom</strong>, sve se na kraju svodi na <strong>mašinske instrukcije</strong> (ISA), koje izvodi <strong>mikroarhitektura</strong> od <strong>logičkih kola</strong>, napravljenih od <strong>tranzistora</strong>. Programer ne mora da zna ništa od toga, i to je poenta apstrakcije.</div></details>
+<p>U Modulu 4 profesor ovu temu zaokružuje sa dve „velike ideje“. Prva: <strong>univerzalni računarski uređaj</strong>. Uz dovoljno vremena i memorije, svi računari, od džepnog uređaja do superračunara, mogu da izračunaju iste stvari; razlikuju se samo po brzini i kapacitetu. Druga: <strong>problem se rešava transformacijama kroz slojeve</strong>, tačno onim strelicama sa slajda 27: problem → algoritam (projektovanje softvera) → program (programiranje) → ISA (prevođenje) → mikroarhitektura (projektovanje procesora) → kola (logičko projektovanje) → uređaji (proizvodnja čipa).</p>
+<div class="bridge">Spustili smo se kroz slojeve do samog hardvera. Sada otvaramo kutiju i gledamo hardver iznutra: šta on u suštini radi (četiri funkcije) i od čega je sastavljen. To je završni deo Modula 1, slajdovi 29–40.</div>
+<div class="quiz" data-ch="c5"></div>
+</section>

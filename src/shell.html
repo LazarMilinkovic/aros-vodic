@@ -1,0 +1,131 @@
+<header class="top">
+ <div class="top-in">
+  <a class="brand" href="#pocetna"><span class="mk">AR</span><span><b>AROS vodič</b><small>Arhitektura računara i OS</small></span></a>
+  <nav class="mainnav" aria-label="Glavna navigacija">
+   <a href="#pocetna" data-nav="pocetna"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Početna</a>
+   <a href="#c1" data-nav="gradivo" id="navLearn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M8 7h7"/></svg>Gradivo</a>
+   <a href="#ispit" data-nav="ispit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>Generator ispita</a>
+   <a href="#pitanja" data-nav="pitanja"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><path d="M12 17.5h.01"/></svg>Banka pitanja</a>
+   <a href="#kartice" data-nav="kartice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="14" height="14" rx="2"/><path d="M7 2h12a2 2 0 0 1 2 2v12"/></svg>Kartice</a>
+  </nav>
+  <div class="tools">
+   <button class="ibtn" id="searchBtn" type="button" aria-label="Pretraži gradivo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="lbl">Pretraga</span><kbd>/</kbd></button>
+   <button class="ibtn" id="fontBtn" type="button" aria-label="Veličina slova"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19 9 5l5 14M5.8 14h6.4"/><path d="M15 19l3-8 3 8M16 16.5h4"/></svg></button>
+   <button class="ibtn" id="themeBtn" type="button" aria-label="Promeni temu"><svg id="themeIc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></svg></button>
+  </div>
+ </div>
+ <div class="readbar" id="readbar"></div>
+</header>
+
+<div class="wrap">
+
+<!-- ============ POČETNA ============ -->
+<section class="view home" id="v-pocetna" aria-label="Početna">
+ <div class="hero2">
+  <div>
+   <div class="eyebrow">FON · Arhitektura računara i operativni sistemi</div>
+   <h1>Gradivo za oba kolokvijuma, ispričano <em>kao predavanje</em>.</h1>
+   <p>Svaka lekcija prati slajdove redom i objašnjava slike sa njih. Na kraju svake lekcije znaš da odgovoriš na ispitna pitanja iz tog dela, a generator ispita te preslišava kao na pravom testu.</p>
+   <div class="acts"><a class="btn" id="heroGo" href="#c1">Kreni od početka</a><a class="btn ghost" href="#ispit">Generiši ispit</a></div>
+  </div>
+  <div class="memmap" aria-label="Mapa napretka">
+   <h4>Memorijska mapa napretka <span id="memSum">0 / 0</span></h4>
+   <div class="memgrid" id="memGrid"></div>
+   <div class="legend"><span>nije početo</span><span class="l2">početo</span><span class="l3">test urađen</span><span class="l4">ovde si stao</span></div>
+  </div>
+ </div>
+ <div class="resumecard" id="resumeCard" hidden>
+  <div class="t"><b id="resumeT"></b><span id="resumeS"></span></div>
+  <a class="btn" id="resumeGo" href="#c1">Nastavi gde si stao</a>
+ </div>
+ <div class="stats" id="stats"></div>
+ <div>
+  <div class="sechead"><h2>Dva dela predmeta</h2><span class="eyebrow" id="partsNote"></span></div>
+  <div class="parts" id="parts"></div>
+ </div>
+ <div>
+  <div class="sechead"><h2>Vežbaj</h2></div>
+  <div class="tools3">
+   <a class="toolcard" href="#ispit"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></span><b>Generator ispita</b><span>Nasumična pitanja iz jednog ili oba dela, sa tajmerom i ocenom na kraju.</span></a>
+   <a class="toolcard" href="#pitanja"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></span><b>Banka pitanja</b><span>Sva ispitna pitanja na jednom mestu, sa odgovorom i vezom ka lekciji.</span></a>
+   <a class="toolcard" href="#kartice"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="6" width="14" height="14" rx="2"/><path d="M7 2h12a2 2 0 0 1 2 2v12"/></svg></span><b>Kartice pojmova</b><span>Pojmovi i definicije sa ponavljanjem u razmacima: teški se vraćaju češće.</span></a>
+  </div>
+ </div>
+</section>
+
+<!-- ============ GRADIVO ============ -->
+<section class="view reader" id="v-gradivo" aria-label="Gradivo" hidden>
+ <nav class="side" id="side" aria-label="Sadržaj predmeta">
+  <button class="sidetoggle" id="sideToggle" type="button" aria-expanded="false"><span id="sideCur">Sadržaj</span><span>☰</span></button>
+  <div class="sidebody" id="sideBody"></div>
+ </nav>
+ <article class="page" id="page">
+{{CHAPTERS}}
+  <div class="chfoot" id="chfoot"></div>
+ </article>
+ <aside class="otp" id="otp" aria-label="Na ovoj strani"></aside>
+</section>
+
+<!-- ============ ISPIT ============ -->
+<section class="view" id="v-ispit" aria-label="Generator ispita" hidden>
+ <div class="examgrid">
+  <div class="panel setup">
+   <div class="eyebrow">Generator ispita</div>
+   <h3>Sastavi test</h3>
+   <div class="f"><span class="lab2">Gradivo</span><div class="pills" id="exScope">
+     <button type="button" data-v="1" class="on">1. kolokvijum</button><button type="button" data-v="2">2. kolokvijum</button><button type="button" data-v="all">Ceo ispit</button></div>
+     <div class="hint" id="exScopeHint"></div></div>
+   <div class="f"><span class="lab2">Vrsta pitanja</span><div class="pills" id="exType">
+     <button type="button" data-v="open" class="on">Otvorena (kao na ispitu)</button><button type="button" data-v="mc">Test na klik</button><button type="button" data-v="mix">Mešano</button></div></div>
+   <div class="f"><span class="lab2">Broj pitanja</span><div class="pills" id="exN">
+     <button type="button" data-v="5">5</button><button type="button" data-v="10" class="on">10</button><button type="button" data-v="15">15</button><button type="button" data-v="20">20</button></div></div>
+   <div class="f"><span class="lab2">Izbor pitanja</span><div class="pills" id="exPick">
+     <button type="button" data-v="smart" class="on">Pametno</button><button type="button" data-v="rand">Potpuno nasumično</button><button type="button" data-v="weak">Samo slaba</button></div>
+     <div class="hint">Pametno: češće bira pitanja koja još nisi video ili si ih ocenio kao „ne znam“.</div></div>
+   <div class="f"><span class="lab2">Tajmer</span><div class="pills" id="exTime">
+     <button type="button" data-v="0" class="on">Bez</button><button type="button" data-v="2">2 min po pitanju</button><button type="button" data-v="4">4 min po pitanju</button></div></div>
+   <div class="go"><button class="btn" type="button" id="exGo">Generiši ispit</button></div>
+   <div class="hist" id="exHist"></div>
+  </div>
+  <div class="sheet" id="sheet"></div>
+ </div>
+</section>
+
+<!-- ============ BANKA ============ -->
+<section class="view" id="v-pitanja" aria-label="Banka pitanja" hidden>
+ <div class="eyebrow">Banka pitanja</div>
+ <h1 style="margin:.2em 0 .2em;font-size:clamp(1.8rem,4vw,2.6rem)">Sva ispitna pitanja</h1>
+ <p style="color:var(--muted);max-width:66ch;margin:0">Otvori pitanje, prvo odgovori u glavi, pa pogledaj odgovor i oceni se. Ocena se pamti i koristi je generator ispita.</p>
+ <div class="bankbar">
+  <input type="search" id="bankQ" placeholder="Traži pitanje, na primer „prekid“ ili „keš“">
+  <div class="pills" id="bankPart"><button type="button" data-v="all" class="on">Sve</button><button type="button" data-v="1">1. kolokvijum</button><button type="button" data-v="2">2. kolokvijum</button></div>
+  <div class="pills" id="bankG"><button type="button" data-v="all" class="on">Svi statusi</button><button type="button" data-v="0">Ne znam</button><button type="button" data-v="1">Delimično</button><button type="button" data-v="2">Znam</button><button type="button" data-v="n">Neocenjeno</button></div>
+ </div>
+ <div id="bankList"></div>
+</section>
+
+<!-- ============ KARTICE ============ -->
+<section class="view" id="v-kartice" aria-label="Kartice" hidden>
+ <div class="cardsgrid">
+  <div>
+   <div class="eyebrow">Kartice pojmova</div>
+   <h1 style="margin:.2em 0 .5em;font-size:clamp(1.8rem,4vw,2.6rem)">Ponavljanje u razmacima</h1>
+   <div class="fc" id="fc"><div class="fc-in" id="fcIn" tabindex="0" role="button" aria-label="Okreni karticu"><div class="fc-f" id="fcF"></div><div class="fc-b" id="fcB"></div></div></div>
+   <div class="fcacts" id="fcActs"></div>
+  </div>
+  <div class="panel">
+   <h3 style="margin:0 0 4px;font-size:1.1rem">Kako radi</h3>
+   <p style="margin:0;color:var(--muted);font-size:.9rem">Svaka kartica je u jednoj od 5 kutija. Kad znaš, ide u sledeću kutiju i vraća se ređe. Kad ne znaš, vraća se u prvu. Cilj je da sve stignu u petu.</p>
+   <div class="boxes" id="fcBoxes"></div>
+   <div class="f"><span class="lab2" style="font-weight:600;font-size:.86rem">Špil</span><div class="pills" id="fcDeck" style="margin-top:6px"><button type="button" data-v="all" class="on">Sve</button><button type="button" data-v="1">1. kolokvijum</button><button type="button" data-v="2">2. kolokvijum</button></div></div>
+   <p class="hint" style="font-size:.8rem;color:var(--muted)">Prečice: razmak okreće karticu, 1 = ne znam, 2 = znam.</p>
+  </div>
+ </div>
+</section>
+
+</div>
+<footer class="foot" id="foot">Napravljeno na osnovu slajdova sa predavanja (prof. dr Dejan Simić i saradnici, FON), udžbenika D. Simić, P. Bataveljić i dodatnih izvora navedenih u lekcijama. Slike slajdova su iz materijala sa predavanja i služe samo za učenje. Za konačne definicije i bodovanje važe udžbenik i predavanja.</footer>
+
+<div class="sov" id="sov" hidden><div class="sbox" role="dialog" aria-label="Pretraga gradiva"><input id="sIn" type="search" placeholder="Pretraži lekcije, na primer „DMA“ ili „Amdal“" autocomplete="off"><div class="sres" id="sRes"></div></div></div>
+<div class="lightbox" id="lb" hidden><img id="lbImg" alt=""></div>
+<div class="toast" id="toast" hidden></div>

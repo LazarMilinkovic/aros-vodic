@@ -1,0 +1,167 @@
+<section class="ch" id="c7">
+<div class="ch-head"><span class="ch-num">M2</span><span class="ch-src">Modul 2 · deo 1 od 3 · Lecture 2 AROS-Amdahl's_law.pdf, slajdovi 3–23 i 40–45</span></div>
+<h2>Kad takt prestane da raste: više jezgara i Amdalov zakon</h2>
+<p class="lead">Modul 1 se završio jednim neprijatnim otkrićem: oko 2005. takt procesora je stao na nekoliko GHz, jer bi brži čip počeo da se topi. Proizvođači su višak tranzistora iskoristili za <strong>više jezgara</strong>. Danas laptop ima 8 ili 16 jezgara. Da li to znači da je program 16 puta brži? Modul 2 odgovara na to pitanje, i uči te kako se brzina računara uopšte meri.</p>
+<p>Kroz ceo modul pratimo jedan program: <strong>aplikaciju koja obrađuje 1000 fotografija sa putovanja</strong> (smanji ih, popravi boje i spakuje u jedan album). Na jednom jezgru ona radi <strong>100 sekundi</strong>, i to ovako:</p>
+<div class="roadmap">
+<div><b>1</b><span><strong>25 s priprema</strong>: učitava spisak fajlova, proverava ih, pravi prazan album. Ovo mora redom, korak po korak.</span></div>
+<div><b>2</b><span><strong>50 s obrada</strong>: svaka od 1000 slika se obrađuje posebno, i nijedna ne zavisi od druge.</span></div>
+<div><b>3</b><span><strong>25 s pakovanje</strong>: sve obrađene slike se redom upisuju u jedan fajl albuma.</span></div>
+</div>
+<p>Ova podela 25 + 50 + 25 nije izmišljena: to su tačno brojevi iz primera koji profesor radi na slajdovima 19–20. Videćemo da je u njoj sakriven odgovor na pitanje o 16 jezgara.</p>
+
+<h3>Računarski sistem i gde se gubi vreme (slajd 3)</h3>
+<figure class="slide"><img src="img/m2-3.jpg" alt="Osnovne komponente računarskog sistema" loading="lazy"><figcaption><b>Slajd 3 · Osnovne komponente računarskog sistema</b></figcaption></figure>
+<p>Modul počinje slikom celog sistema, da bi se videlo gde su delovi čije performanse merimo. Levo je <strong>procesor</strong> (žuti krug) sa <strong>hijerarhijom keša</strong> (zeleno), dakle ono što smo u Modulu 1 zvali registri, L1, L2, L3. Oni su <strong>sistemskom memorijskom magistralom</strong> (System Memory Bus, debela vertikalna linija) povezani sa <strong>memorijskim sistemom</strong> gore, koji ima svoj memorijski kontroler (MEM CONTR). Preko <strong>mosta</strong> (Bridge Controller) brza sistemska magistrala je spojena sa sporijom <strong>U/I magistralom</strong> (I/O Bus), na kojoj su mrežna kartica (NIC) ka lokalnoj mreži LAN i dalje preko rutera ka internetu (WAN), disk kontroler (SCSI/SATA) sa diskovima i mrežni adapter ka SAN-u (posebnoj mreži za skladištenje, nizu diskova).</p>
+<p>Natpis ispod slike je teza celog modula: <strong>performanse se mogu poboljšati dodavanjem procesora ili jezgara</strong>. Ostatak modula proverava koliko je to tačno. Isti crtež ćeš videti i na početku Modula 4, gde je naglašen spoj procesora i memorije.</p>
+
+<h3>Ima mesta „na vrhu“ (slajdovi 4–5)</h3>
+<figure class="slide"><img src="img/m2-4.jpg" alt="Računarski sistem, There's plenty of room at the Top" loading="lazy"><figcaption><b>Slajd 4 · Računarski sistem</b> (Leiserson i dr., <em>Science</em>, 2020)</figcaption></figure>
+<p>Desno na slajdu 4 je stari poznanik iz Modula 1: stub nivoa od <em>problema</em> do <em>elektrona</em>, sa žuto obeleženom ISA. Levo je tumačenje iz čuvenog članka „There's plenty of room at the Top“ (ima mnogo mesta na vrhu). Naslov je igra reči sa predavanjem fizičara Ričarda Fajnmana iz 1959, „There's plenty of room at the Bottom“, koje je najavilo minijaturizaciju. Pedeset godina je ubrzanje dolazilo sa <strong>dna</strong> (The Bottom, poluprovodnička tehnologija, sve manji tranzistori). Sada, kad se dno usporilo, ubrzanje mora da dođe sa <strong>vrha</strong>, iz tri izvora:</p>
+<ul>
+<li><strong>Softver</strong>: izbacivanje nepotrebnog koda (software bloat) i prilagođavanje softvera mogućnostima hardvera.</li>
+<li><strong>Algoritmi</strong>: novi, efikasniji algoritmi i novi modeli mašina.</li>
+<li><strong>Hardverska arhitektura</strong>: pojednostavljenje procesora i specijalizovani čipovi (grafički, za veštačku inteligenciju).</li>
+</ul>
+<figure class="slide"><img src="img/m2-5.jpg" alt="Slajd Software and hardware optimization, množenje matrica" loading="lazy"><figcaption><b>Slajd 5 · Software and hardware optimization</b></figcaption></figure>
+<p>Slajd 5 pokazuje koliko je to „mesta“. Zadatak je množenje dve matrice 4096 × 4096 (tri ugnježdene petlje, kod je gore levo, a primer množenja manjih matrica desno). Tabela pokazuje koliko traje <strong>isti algoritam na istom računaru</strong>, napisan na različite načine:</p>
+<div class="tbl"><table>
+<tr><th>Verzija</th><th class="num">Vreme</th><th class="num">Ubrzanje</th><th>Šta je promenjeno</th></tr>
+<tr><td>Python</td><td class="num">25 552 s (≈7 h)</td><td class="num">1×</td><td>polazna tačka, jezik koji se interpretira</td></tr>
+<tr><td>Java</td><td class="num">2 372 s</td><td class="num">11×</td><td>jezik koji se prevodi (uz JIT)</td></tr>
+<tr><td>C</td><td class="num">542 s</td><td class="num">47×</td><td>prevodi se direktno u mašinski kod</td></tr>
+<tr><td>Paralelne petlje</td><td class="num">69,8 s</td><td class="num">366×</td><td>posao podeljen na sva jezgra</td></tr>
+<tr><td>Paralelno „podeli pa vladaj“</td><td class="num">3,8 s</td><td class="num">6 727×</td><td>bolji algoritam, koji pametno koristi keš</td></tr>
+<tr><td>+ vektorizacija</td><td class="num">1,1 s</td><td class="num">23 224×</td><td>jedna instrukcija radi nad više brojeva</td></tr>
+<tr><td>+ AVX instrukcije</td><td class="num">0,41 s</td><td class="num">62 806×</td><td>direktno korišćenje vektorskih instrukcija procesora</td></tr>
+</table></div>
+<p>Crveno uokvirena su poslednja dva reda: najveći skokovi dolaze kad softver iskoristi <strong>arhitekturu</strong> procesora (vektorske instrukcije). Poruka je ona ista iz Modula 1: programer koji razume arhitekturu može da dobije ubrzanje veće nego decenije napretka tehnologije. Primeti i četvrti red: posao podeljen na jezgra dao je „samo“ oko 8 puta u odnosu na C. Zašto ne više? Na to odgovara Amdalov zakon.</p>
+
+<h3>Kratko skretanje: RISC, CISC i RISC-V (slajdovi 6–9)</h3>
+<p>Pre Amdala profesor ubacuje četiri slajda o vrstama procesora, jer je vrsta procesora jedan od faktora brzine. <strong>RISC</strong> (Reduced Instruction Set Computing) koristi <em>mnogo jednostavnih</em> instrukcija da završi posao, a <strong>CISC</strong> (Complex Instruction Set Computing) <em>manji broj složenih</em> instrukcija (slajd 6). <strong>RISC-V</strong> je konkretna RISC arhitektura nastala na Berkliju od 2010, peta generacija Berkeley RISC-a, i otvorena je: bilo ko sme da projektuje i prodaje RISC-V procesor bez licence (slajdovi 7–8). Slajd 9 poredi tri današnje ISA: <strong>x86</strong> (zatvorena, Intel i AMD, većina desktop računara i servera), <strong>ARM</strong> (zatvorena, licencira se, Android i iOS uređaji i noviji Apple računari) i <strong>RISC-V</strong> (otvorena).</p>
+<p>Detaljno ovo radimo u Modulu 3, u delu o CISC i RISC procesorima. Ovde zapamti samo vezu sa brzinom: CISC program ima <em>manje</em> instrukcija, ali svaka traje duže; RISC ima <em>više</em> instrukcija, ali kratkih. Koji je brži, saznaćemo kad u delu 2 naučimo formulu za CPU vreme.</p>
+<div class="bridge">Vratimo se našem albumu. Imamo procesor sa 5 jezgara. Koliko brže će raditi aplikacija od 100 sekundi? To je tačno pitanje koje je postavio Gene Amdahl.</div>
+
+<h3>Amdalov zakon: ideja (slajdovi 10–12)</h3>
+<figure class="slide"><img src="img/m2-10.jpg" alt="Amdahl's law, Gene Amdahl" loading="lazy"><figcaption><b>Slajd 10 · Gene Myron Amdahl, 1967, IBM</b></figcaption></figure>
+<p>Gene Amdahl je bio jedan od arhitekata računara IBM 360 (one prve familije iz Modula 1). Godine 1967. pokazao je zašto dodavanje procesora ne ubrzava program onoliko koliko bi se očekivalo. Grafik na slajdu 10 to pokazuje u jednoj slici: na horizontalnoj osi je udeo <strong>sekvencijalnog dela programa</strong> (deo koji mora redom), od 0 do 5%, a na vertikalnoj najveće ubrzanje koje se može postići sa 1024 procesora. Ako je sekvencijalni deo 0%, ubrzanje je 1024 puta. Ali već pri samo 1% pada na oko <strong>91</strong>, pri 2% na oko 48, a pri 5% na oko <strong>20</strong>. Mali deo programa koji ne može paralelno „pojede“ skoro sve procesore.</p>
+<div class="slides2">
+<figure class="slide"><img src="img/m2-11.jpg" alt="Sekvencijalno izvršavanje programa" loading="lazy"><figcaption><b>Slajd 11 · Sekvencijalno izvršavanje</b></figcaption></figure>
+<figure class="slide"><img src="img/m2-12.jpg" alt="Paralelno izvršavanje programa" loading="lazy"><figcaption><b>Slajd 12 · Paralelno izvršavanje</b></figcaption></figure>
+</div>
+<p>Slajdovi 11 i 12 pokazuju razliku. <strong>Sekvencijalno</strong> (slajd 11): problem se razloži na niz instrukcija i sve one idu redom kroz <strong>jedan CPU</strong>. <strong>Paralelno</strong> (slajd 12): problem se prvo podeli na <strong>delove</strong> (crveni blokovi levo), svaki deo je svoj niz instrukcija, i svaki deo ide na <strong>svoj CPU</strong>, istovremeno. Važan uslov: to može samo za delove problema koji su <strong>međusobno nezavisni</strong>. U našem albumu, obrada slike 37 ne zavisi od slike 36, pa 50 sekundi obrade može da se podeli na jezgra. Ali pakovanje u album mora redom, slika po slika, u jedan fajl.</p>
+
+<h3>Zašto neki delovi moraju redom (slajd 15)</h3>
+<figure class="slide"><img src="img/m2-15.jpg" alt="Ograničenja u izvršavanju instrukcija programa" loading="lazy"><figcaption><b>Slajd 15 · Ograničenja u izvršavanju instrukcija programa</b></figcaption></figure>
+<p>Slajd 15 daje najmanji mogući primer. Programi imaju <strong>sekvencijalne delove (S)</strong> i delove koji se mogu <strong>paralelizovati (P)</strong>:</p>
+<pre>1  a = b + c;           ┐
+2  d = a + 1;           │ S: red 2 treba a iz reda 1, red 3 treba d iz reda 2
+3  e = d + a;           ┘    → svaki korak čeka prethodni, mora redom
+4  for (k=0; k&lt;e; k++)   ┐ P: M[0]=1, M[1]=1, M[2]=1 … ne zavise jedno od drugog
+5      M[k] = 1;          ┘    → svako jezgro može da popuni svoj deo niza</pre>
+<p>Redovi 1–3 su lanac zavisnosti: ne možeš izračunati <code>d</code> dok ne znaš <code>a</code>, ni <code>e</code> dok ne znaš <code>d</code>. Ni hiljadu jezgara ne pomaže, jer drugo jezgro nema šta da radi dok prvo ne završi. Petlja u redovima 4–5 je suprotna: ako je e = 1000, jedno jezgro može da upiše M[0] do M[249], drugo M[250] do M[499], i tako dalje, sva u isto vreme.</p>
+<details class="stop"><summary>U našoj aplikaciji, koji od tri dela (priprema, obrada, pakovanje) je „S“, a koji „P“?</summary><div>Priprema (25 s) i pakovanje (25 s) su <strong>S</strong>, jer moraju redom. Obrada (50 s) je <strong>P</strong>, jer je svaka slika nezavisna. Dakle paralelni deo je f = 50/100 = <strong>0,5</strong>.</div></details>
+
+<h3>Kako se računa ubrzanje (slajdovi 13–14 i 16)</h3>
+<figure class="slide"><img src="img/m2-13.jpg" alt="Ubrzanje izvršavanja programa" loading="lazy"><figcaption><b>Slajd 13 · Ubrzanje izvršavanja programa</b></figcaption></figure>
+<p>Gore levo na slajdu 13 isti program se izvršava na 1, 2, 3 i 4 jezgra. Ružičasti deo je sekvencijalni (<em>serial</em>, s), zeleni je paralelni (<em>parallelizable</em>, f). Pogledaj šta se dešava: ružičasti deo <strong>uvek ostaje iste dužine</strong>, a zeleni se deli na 2, 3, 4 komada koji se rade istovremeno. Desno je to zapisano: ako je vreme na jednom jezgru 1 = s + f, na P jezgara sekvencijalni deo i dalje traje s, a paralelni f/P. Novo vreme je <strong>s + f/P</strong>.</p>
+<figure class="slide"><img src="img/m2-14.jpg" alt="Grafički prikaz Amdahl-ovog zakona" loading="lazy"><figcaption><b>Slajd 14 · Grafički prikaz Amdalovog zakona</b></figcaption></figure>
+<p>Slajd 14 je ista priča u stubovima: vreme izvršavanja na 1, 2, 4 i „beskonačno“ jezgara. Plavi (paralelni) deo se svaki put prepolovi, a zeleni (sekvencijalni) ostaje isti. Na beskonačno jezgara ostaje <strong>samo sekvencijalni deo</strong>. Tekst gore desno to kaže najbolje: „Sekvencijalni deo ne nestaje i ne smanjuje se. Samo postaje sve dominantniji.“</p>
+<p>Sad možemo da izvedemo formulu sa slajda 16. Oznake:</p>
+<ul>
+<li><strong>f</strong>: deo programa (udeo u <em>vremenu</em> izvršavanja) koji se može paralelno izvršavati, i to bez dodatnog opterećenja za raspoređivanje posla (scheduling overhead);</li>
+<li><strong>1 − f</strong>: deo koji je prirodno sekvencijalan;</li>
+<li><strong>T</strong>: ukupno vreme izvršavanja programa na jednom procesoru (jezgru);</li>
+<li><strong>N</strong>: broj procesora (jezgara).</li>
+</ul>
+<p>Na jednom procesoru program traje T = T(1 − f) + Tf. Na N procesora sekvencijalni deo traje isto, T(1 − f), a paralelni se podeli na N delova, Tf/N. <strong>Ubrzanje</strong> (speedup) je odnos starog i novog vremena; T se skrati:</p>
+<div class="formula">Ubrzanje S = T / (T(1−f) + Tf/N) = 1 / ((1 − f) + f/N)</div>
+<p>Slajd 16 dodaje i da je ubrzanje <strong>metrika za kvantitativno merenje performansi</strong>: broj koji kaže „koliko puta brže“. Ubrzanje 1 znači „isto“, 2 znači „duplo brže“.</p>
+
+<h3>Naš album na 5 jezgara (slajdovi 19–20)</h3>
+<div class="slides2">
+<figure class="slide"><img src="img/m2-19.jpg" alt="Primer ubrzavanja izvršavanja programa" loading="lazy"><figcaption><b>Slajd 19 · Primer ubrzavanja</b></figcaption></figure>
+<figure class="slide"><img src="img/m2-20.jpg" alt="Primer ubrzavanja nastavak" loading="lazy"><figcaption><b>Slajd 20 · Nastavak</b></figcaption></figure>
+</div>
+<p>Na slajdu 19 program od 100 s ima 25 s sekvencijalnog dela, 50 s dela koji se može paralelizovati i opet 25 s sekvencijalnog, baš kao naš album. Paralelni deo se raspodeli na 5 niti (T1 do T5), po jedna na svakom jezgru.</p>
+<div class="task"><b>Rešenje, korak po korak</b>
+<ol>
+<li>Paralelni deo na 5 jezgara: 50 / 5 = <strong>10 s</strong>.</li>
+<li>Novo ukupno vreme: 25 + 10 + 25 = <strong>60 s</strong>.</li>
+<li>Ubrzanje = vreme pre / vreme posle = 100 / 60 = <strong>1,67</strong>.</li>
+<li>Provera formulom: f = 0,5, N = 5 → S = 1 / (0,5 + 0,5/5) = 1 / 0,6 = 1,67. ✓</li>
+</ol>
+Pet jezgara, a ubrzanje ni duplo. Slajd 20 ide do kraja: čak i kad bi paralelni deo teorijski trajao <strong>0 sekundi</strong> (beskonačno jezgara), ostaje 25 + 25 = 50 s, pa je najveće moguće ubrzanje 100 / 50 = <strong>2</strong>. Sekvencijalni deo ograničava ubrzanje.</div>
+
+<h3>Zaključci i grafici (slajdovi 17, 21–22)</h3>
+<p>Iz formule direktno slede dva zaključka sa slajda 17:</p>
+<ul>
+<li><strong>Ako je f malo</strong>, paralelni procesori imaju mali efekat. Ako je paralelno samo 10% programa, ni 1000 jezgara ne daje više od 1,11 puta.</li>
+<li><strong>Kada N → ∞</strong>, član f/N → 0, pa je ubrzanje ograničeno sa <strong>1/(1 − f)</strong>. Sa svakim novim procesorom dobit je sve manja.</li>
+</ul>
+<div class="formula">Najveće moguće ubrzanje (N → ∞): S_max = 1 / (1 − f)</div>
+<div class="slides2">
+<figure class="slide"><img src="img/m2-21.jpg" alt="Amdahl's Law grafik" loading="lazy"><figcaption><b>Slajd 21 · Amdahl's Law, grafik</b></figcaption></figure>
+<figure class="slide"><img src="img/m2-22.jpg" alt="Ubrzanje prema Amdahl-ovom zakonu" loading="lazy"><figcaption><b>Slajd 22 · Ubrzanje za f = 0,80…0,99</b></figcaption></figure>
+</div>
+<p>Na slajdu 21 su tri krive ubrzanja u zavisnosti od broja jezgara. Zelena je <strong>idealno, linearno ubrzanje</strong> (N jezgara = N puta brže), koje u praksi ne postoji. Plava je <strong>gornja granica po Amdalu</strong>: savija se i približava 1/(1 − f). Crvena je ono što se <strong>stvarno meri</strong>: posle nekog broja jezgara ubrzanje čak počinje da opada, jer jezgra troše sve više vremena na međusobnu komunikaciju i usklađivanje (onaj „scheduling overhead“ iz definicije f). Slajd 22 crta krive za 80%, 90%, 95% i 99% paralelnog koda: čak i sa 99% (ljubičasta) ubrzanje ne prelazi 100, a sa 80% (crvena) staje na 5.</p>
+<p>Isprobaj sam. Postavi f = 0,50 i N = 5 i dobićeš naš album:</p>
+<div class="lab" id="amdLab">
+<div class="lab-title">Laboratorija: Amdalov zakon uživo</div>
+<div class="row">
+<label for="fR">f (paralelni deo): <b id="fV">0,90</b></label><input type="range" id="fR" min="0" max="1" step="0.01" value="0.9">
+<label for="nR">N (broj jezgara / F): <b id="nV">8</b></label><input type="range" id="nR" min="1" max="128" step="1" value="8">
+</div>
+<div class="row"><span>Ubrzanje S =</span><span class="big" id="sOut">4,71</span><span class="score" id="sLim">maksimum za N→∞: 10,00</span></div>
+<figure style="margin:6px 0 0"><svg id="amdChart" viewBox="0 0 560 250" width="560" role="img" aria-label="Grafik ubrzanja u zavisnosti od broja jezgara"></svg>
+<figcaption>Sive krive: f = 0,80, 0,90, 0,95, 0,99 (kao na slajdu 22). Zelena kriva i tačka: tvoj izbor.</figcaption></figure>
+<div class="lab-sub">Isto to kao vreme izvršavanja (kao na slajdu 14): narandžasto je sekvencijalni deo, zeleno paralelni.</div>
+<div id="amdBars" class="tbars"></div>
+</div>
+<details class="stop"><summary>Koliko jezgara bi trebalo našem albumu (f = 0,5) da dostigne ubrzanje 2?</summary><div>Beskonačno mnogo. S_max = 1/(1 − 0,5) = <strong>2</strong>, i ta granica se samo približava. Sa 100 jezgara S = 1/(0,5 + 0,005) ≈ 1,98. Da bi album bio mnogo brži, moramo da ubrzamo <strong>sekvencijalni deo</strong> (pripremu i pakovanje), a ne da dodajemo jezgra.</div></details>
+<details class="stop"><summary>Program je 95% paralelan. Koliko je najviše moguće ubrzanje, ma koliko jezgara dodali?</summary><div>1/(1 − 0,95) = 1/0,05 = <strong>20</strong>. To je ona tačka „5%“ sa grafika na slajdu 10.</div></details>
+
+<h3>Zakon ne važi samo za jezgra (slajd 18)</h3>
+<figure class="slide"><img src="img/m2-18.jpg" alt="Generalizacija Amdahl-ovog zakona" loading="lazy"><figcaption><b>Slajd 18 · Generalizacija Amdalovog zakona</b></figcaption></figure>
+<p>Pogledaj formulu još jednom: N u njoj zapravo znači „koliko puta brže radi paralelni deo“. Ništa ne mora biti paralelno. Ako bilo koji deo programa f ubrzamo <strong>F puta</strong> (brža jedinica za računanje sa decimalnim brojevima, brži disk, bolji algoritam baš za taj deo), važi ista formula, samo sa F umesto N. To je <strong>generalizacija Amdalovog zakona</strong> sa slajda 18:</p>
+<div class="formula">S = 1 / ((1 − f) + f/F)</div>
+<p>gde je S ukupno ubrzanje, f deo vremena koji poboljšavamo, 1 − f deo koji ostaje isti, a F koliko puta je poboljšani deo brži. Odatle i <strong>princip dizajna</strong> koji je profesor stavio u rezime: <strong>„make the common case fast“</strong>, ubrzaj ono što zauzima najviše vremena. Ubrzati za 100 puta deo koji traje 1% vremena skoro ništa ne donosi; ubrzati za 20% deo koji traje 90% vremena donosi mnogo.</p>
+<div class="warn">Recept za svaki zadatak sa Amdalovim zakonom: 1) napiši <strong>f</strong>, deo koji se ubrzava, kao udeo u <em>vremenu</em> (ne u broju instrukcija, osim ako zadatak tako kaže); 2) napiši <strong>F</strong> = staro / novo (za CPI 4 → 3, F = 4/3; za takt 2 → 2,3 GHz, F = 2,3/2); 3) ako se ubrzava ceo program, f = 1; 4) zameni u S = 1/((1−f) + f/F). Kad se traži f ili F (obrnut zadatak), zameni poznato i reši jednačinu.</div>
+
+<h3>Rešeni primeri sa predavanja (slajdovi 40–45)</h3>
+<p>Profesor primere radi na kraju predavanja, ali logično pripadaju ovde, odmah posle formule. Primer 4 zahteva i CPI i takt, pa njega radimo na kraju dela 2.</p>
+<div class="task"><b>Primer 1 (slajdovi 40–41)</b>FP instrukcije (rad sa brojevima u pokretnom zarezu, decimalnim brojevima) su poboljšane da se izvršavaju 2 puta brže, ali samo 10% svih instrukcija koje se izvršavaju su tipa FP. Koliko je ukupno ubrzanje?
+<ol>
+<li>f = 0,1 (ubrzava se 10%), F = 2.</li>
+<li>S = 1 / (0,9 + 0,1/2) = 1 / (0,9 + 0,05) = 1 / 0,95 = <strong>1,053</strong>.</li>
+</ol>
+Samo 5,3% brže, iako je FP jedinica duplo brža: ubrzali smo mali deo programa.</div>
+<div class="task"><b>Primer 2, obrnut zadatak (slajdovi 42–43)</b>Želimo ukupno ubrzanje 2, a FP instrukcije možemo ubrzati 4 puta. Koliki mora biti udeo FP instrukcija (f)?
+<ol>
+<li>Zamenimo poznato: 2 = 1 / ((1 − f) + f/4).</li>
+<li>Okrenemo obe strane: (1 − f) + f/4 = 1/2 = 0,5.</li>
+<li>Sredimo: 1 − f + 0,25f = 0,5 → 1 − 0,75f = 0,5 → 0,75f = 0,5.</li>
+<li>f = 0,5 / 0,75 = <strong>0,667, to jest 66,7%</strong>.</li>
+</ol>
+FP instrukcije moraju zauzimati bar dve trećine vremena. Provera: 1/(0,333 + 0,667/4) = 1/(0,333 + 0,167) = 1/0,5 = 2. ✓</div>
+<div class="task"><b>Primer 3 (slajdovi 44–45)</b>75% od ukupnog vremena izvršavanja programa može se poboljšati 3 puta. Koliko je ukupno ubrzanje?
+<ol>
+<li>f = 0,75, F = 3.</li>
+<li>S = 1 / ((1 − 0,75) + 0,75/3) = 1 / (0,25 + 0,25) = 1 / 0,5 = <strong>2</strong>.</li>
+</ol></div>
+<p>Za vežbu, ovde možeš da rešiš bilo koji zadatak ovog tipa, i unapred i unazad. Izaberi šta se traži, upiši ostalo i pogledaj korake:</p>
+<div class="lab" id="amdSolve"><div class="lab-title">Vežba: rešavač Amdalovih zadataka</div>
+<div class="seg" id="asMode"><button type="button" class="on" data-m="S">Traži se S</button><button type="button" data-m="f">Traži se f</button><button type="button" data-m="F">Traži se F</button></div>
+<div class="row">
+<label id="asLf">f = <input type="text" id="asf" value="0,1" size="6" inputmode="decimal"></label>
+<label id="asLF">F = <input type="text" id="asF" value="2" size="6" inputmode="decimal"></label>
+<label id="asLS" hidden>S = <input type="text" id="asS" value="2" size="6" inputmode="decimal"></label>
+</div>
+<div class="simlog" id="asOut"></div>
+<p class="score">Primeri sa predavanja: Primer 1 (traži S: f = 0,1, F = 2), Primer 2 (traži f: S = 2, F = 4), Primer 3 (traži S: f = 0,75, F = 3).</p></div>
+
+<h3>Gde se paralelizacija stvarno isplati (slajd 23)</h3>
+<p>Ako je Amdalov zakon toliko strog, gde onda više procesora ima smisla? Tamo gde je f blizu 1, to jest gde je skoro sav posao sastavljen od nezavisnih pod-zadataka. Slajd 23 nabraja primere: <strong>serveri</strong> koji paralelno opslužuju mnogo klijenata (transakcioni server banke: svaki klijent je nezavisan), <strong>proračuni nad velikim bazama podataka</strong> (podaci se podele na delove koji se obrađuju paralelno), <strong>Big Data integracija</strong>, i naučne simulacije: <strong>interakcija molekula</strong>, <strong>seizmički talasi</strong>, <strong>prognoza vremena</strong> (atmosfera se podeli na kocke koje se računaju istovremeno). Upravo za takve poslove se grade superračunari sa stotinama hiljada jezgara.</p>
+<div class="bridge">Rekli smo da album traje 100 sekundi. Ali zašto baš 100? Od čega zavisi koliko dugo procesor izvršava program, i kako se to računa? To je CPU vreme, tema slajdova 24–31.</div>
+<div class="quiz" data-ch="c7"></div>
+</section>

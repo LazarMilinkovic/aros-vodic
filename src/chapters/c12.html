@@ -1,0 +1,137 @@
+<section class="ch" id="c12">
+<div class="ch-head"><span class="ch-num">M3</span><span class="ch-src">Modul 3 · deo 3 od 4 · M3_01, slajdovi 43–48 · M3_02, slajdovi 14–15</span></div>
+<h2>Od simboličkog koda do mašinskog, i memorija koja hrani procesor</h2>
+
+<h3>Put od izvornog koda do programa koji radi (slajd 43)</h3>
+<figure class="slide"><img src="img/m3a-43.jpg" alt="Asembler, linker, loader" loading="lazy"><figcaption><b>Slajd 43 · Asembler</b></figcaption></figure>
+<p>Slajd 43 pokazuje lanac alata kroz koji prolazi svaki program pre nego što ga procesor izvrši:</p>
+<ul>
+<li><strong>Izvorni program</strong> (Source Program): program u asemblerskom jeziku, sa simboličkim imenima (LOAD, ADD, oznake promenljivih kao A, B, C).</li>
+<li><strong>Asembler</strong> prevodi simboličke instrukcije u binarni mašinski kod. Rezultat je <strong>objektni kod</strong> (Object Code): mašinski kod, ali još sa „rupama“ za adrese koje su u drugim fajlovima.</li>
+<li><strong>Linker</strong> (povezivač) spaja više objektnih fajlova i biblioteka u jedan <strong>izvršni kod</strong> (Executable Code) i popunjava te „rupe“ (npr. adresu funkcije <code>printf</code> iz biblioteke).</li>
+<li><strong>Loader</strong> (punilac) je deo operativnog sistema koji učitava izvršni program u memoriju, podešava adrese prema mestu gde je program smešten i postavlja BN na prvu instrukciju. To je onaj korak sa slajda 21, pre prvog ciklusa.</li>
+</ul>
+<div class="ex">Kad u C-u klikneš „Run“: kompajler pretvori tvoj kod u asembler ili objektni kod, linker ga spoji sa bibliotekama u .exe fajl, a kad pokreneš .exe, loader ga učita u RAM i procesor počne da ga izvršava.</div>
+
+<h3>Zašto asembler čita program dva puta (slajdovi 44–45)</h3>
+<p>Asembler na prvi pogled ima lak posao: zameni LOAD sa 0001, ADD sa 0011 i tako dalje. Problem su <strong>adrese</strong>. Program može da koristi simboličku adresu <strong>pre nego što je ona definisana</strong> (referenca unapred, forward reference). Na primer <code>JMP KRAJ</code> na početku programa, a oznaka <code>KRAJ</code> je tek na kraju. Isto važi i za naše promenljive A, B i C: one dobijaju adrese tek kad se zna koliko je dug program, jer se smeštaju iza njega. Kad asembler čita program redom, u trenutku kad vidi <code>LOAD B</code> još ne zna gde će B biti. Rešenje: <strong>pročitaj program dva puta</strong>. Prvi put samo zapiši gde je šta, drugi put prevedi do kraja.</p>
+<figure class="slide"><img src="img/m3a-44.jpg" alt="Two Pass Assembler" loading="lazy"><figcaption><b>Slajd 44 · Asembler sa 2 prolaza (Two Pass Assembler)</b></figcaption></figure>
+<p>Slajd 44 to crta kao tok: izvorni program ulazi u <strong>Pass 1</strong>, koji koristi dve tabele: <strong>OPTAB</strong> (tabela operacionih kodova: koji simbolički opkod odgovara kom binarnom, npr. ADD → 0011) i <strong>SYMTAB</strong> (tabela simbola: koja oznaka je na kojoj adresi). Pass 1 pravi <strong>međufajl</strong> (Intermediate file). <strong>Pass 2</strong> čita međufajl, iz SYMTAB-a uzima adrese i pravi konačan <strong>objektni kod</strong>.</p>
+<figure class="slide"><img src="img/m3a-45.jpg" alt="Asembler sa dva prolaza, algoritam" loading="lazy"><figcaption><b>Slajd 45 · Asembler sa dva prolaza: primer i algoritam</b></figcaption></figure>
+<p>Slajd 45 to radi na <strong>našoj naredbi</strong>. Gore desno je tabela instrukcija akumulatorske mašine (ista kao na slajdu 7). Levo je tok, koji se čita <strong>zdesna nalevo</strong>: naredba u višem jeziku <code>A = B + C</code> → (prevodilac, compiler, 1:n jer jedna naredba daje više instrukcija) → simbolički oblik <code>LOAD B / ADD C / STORE A / HALT</code> → <strong>prvi prolaz</strong> → binarno-simbolički oblik <code>0001 B / 0011 C / 0010 A / 0111 0000</code> (opkodi su binarni, adrese još simboličke) → <strong>međufaza</strong>: tabela simbola dobija fizičke adrese pomoću brojača lokacija BL (B = 4 = 0100, C = 5 = 0101, A = 6 = 0110) → <strong>drugi prolaz</strong> → binarni oblik <code>0001 0100 / 0011 0101 / 0010 0110 / 0111 0000</code>. Desno je algoritam u pseudokodu.</p>
+<p>Primeti da su ovde B, C i A na adresama 4, 5 i 6, a na slajdu 12 su bili na 8, 9 i 10. To nije greška: program je ovde smešten od adrese 0, pa promenljive dolaze odmah iza njega (0–3 je program, 4–6 su promenljive). Na slajdu 12 program je bio na 4–7, a podaci iza. <strong>Gde će šta biti, odlučuje se pri prevođenju i učitavanju</strong>, a sam program je isti.</p>
+<p>Algoritam sa slajda, objašnjen red po red:</p>
+<pre>begin
+  inicijalizuj tabelu simbola
+  (* PRVI PROLAZ *)
+  while nije kraj simboličkog programa do
+     uzmi instrukciju simboličkog programa
+     prevedi opkod u binarni oblik pomoću tabele instrukcija
+     if simbolička adresa nije u tabeli simbola
+        then upiši je u tabelu simbola
+     prepiši instrukciju u binarno-simboličkom obliku
+     BL := BL + 1                    (* brojač lokacija: sledeća adresa *)
+  (* MEĐUFAZA *)
+  while nije kraj tabele simbola do
+     upiši S(BL) u sledeći nepopunjen red tabele simbola
+     BL := BL + 1                    (* svaka promenljiva dobija svoju adresu *)
+  (* DRUGI PROLAZ *)
+  while nije kraj binarno-simboličkog programa do
+     uzmi instrukciju
+     simboličku adresu zameni fizičkom adresom iz tabele simbola
+     prepiši instrukciju u binarnom obliku
+end</pre>
+<p>Pusti algoritam da radi na nekoliko programa i prati kako se puni tabela simbola:</p>
+<div class="lab" id="asmLab"><div class="lab-title">Laboratorija: asembler sa dva prolaza, korak po korak</div>
+<p class="lab-sub">Program počinje od adrese 0, a promenljive se smeštaju odmah iza programa, redom kojim se prvi put pojave (kao na slajdu 45).</p>
+<div class="row"><label for="asmSel">Program</label><select id="asmSel">
+<option value="0">A = B + C (slajd 45)</option>
+<option value="1">Z = X − Y</option>
+<option value="2">P = (A + B) × C</option>
+<option value="3">S = A + B + C (prosek bez deljenja)</option>
+</select></div>
+<div class="row"><button class="btn" id="asmNext" type="button">Sledeći korak</button><button class="btn ghost" id="asmReset" type="button">Ispočetka</button><span class="score" id="asmCount"></span></div>
+<div class="asm3">
+<div><h5>Simbolički program</h5><div class="mem" id="asmSrc"></div></div>
+<div><h5>Tabela simbola</h5><div class="mem" id="asmSym"></div></div>
+<div><h5>Rezultat prevođenja</h5><div class="mem" id="asmOut"></div></div>
+</div>
+<div class="simlog" id="asmLog"></div></div>
+<div class="task"><b>Proveri se: prevedi sam</b>Program: <code>LOAD X / SUB Y / STORE Z / HALT</code>, program počinje od adrese 0, a promenljive se smeštaju odmah iza programa redom kojim se pojave.
+<ol>
+<li>Prvi prolaz: <code>0001 X / 0100 Y / 0010 Z / 0111 0000</code>; tabela simbola: X, Y, Z (bez adresa). BL posle programa = 4.</li>
+<li>Međufaza: X = 4 (0100), Y = 5 (0101), Z = 6 (0110).</li>
+<li>Drugi prolaz: <code>0001 0100 / 0100 0101 / 0010 0110 / 0111 0000</code>.</li>
+</ol>Uporedi sa programom „Z = X − Y“ u laboratoriji.</div>
+
+<div class="bridge">Sada znamo kako program postaje niz bitova u memoriji i kako ga procesor izvršava. Ali pogledaj ponovo niz adresa sa slajda 12: 4, 8, 5, 9, 6, 10, 7. Svaka instrukcija znači bar jedan, a obično dva pristupa memoriji, a memorija je mnogo sporija od procesora. Kako sprečiti da procesor stalno čeka? Odgovor je poslednja tema predavanja M3_01: skrivena memorija.</div>
+
+<h3>Problem: memorija kasni za procesorom (slajd 46)</h3>
+<p>Slajd 46 kaže: operativne memorije su za oko <strong>red veličine (10 puta) sporije</strong> od procesora. (Tako piše na slajdu; po brojevima iz Modula 1, deo 1.3, razlika između registra i RAM-a je danas i veća, 100–300 puta, pa je keš još važniji.) Kod aplikacija gde je brzina obrade najvažnija, operativna memorija je <strong>„usko grlo“</strong> sistema: procesor stalno čeka podatke. To je Von Neumann-ovo usko grlo iz Modula 1, sada izraženo brojem.</p>
+<p>Rešenje sa slajda: pored operativne memorije uvodi se još jedan <strong>hijerarhijski nivo</strong>, čija je brzina pristupa porediva sa brzinom procesora. Zbog visoke cene on ima mali kapacitet. Crtež na dnu slajda pokazuje polaznu situaciju bez keša: CPU (registri i ALU) i memorija (RAM, „niz bajtova“) povezani magistralom podataka i adresnom magistralom.</p>
+
+<h3>Hijerarhija memorije (M3_02, slajdovi 14–15)</h3>
+<p>Drugo predavanje Modula 3 isti problem crta šire, pa ga ovde spajamo:</p>
+<div class="slides2">
+<figure class="slide"><img src="img/m3b-14.jpg" alt="Hijerarhija memorije piramida" loading="lazy"><figcaption><b>M3_02, slajd 14 · Hijerarhija memorije</b></figcaption></figure>
+<figure class="slide"><img src="img/m3b-15.jpg" alt="Relativne karakteristike troškova veličine i brzine" loading="lazy"><figcaption><b>M3_02, slajd 15 · Cena, veličina i brzina</b></figcaption></figure>
+</div>
+<p>Piramida na slajdu 14, odozgo: registri → keš (više nivoa, SRAM) → glavna memorija (DRAM, SDRAM, DDR) → SSD memorija → flash i disk → virtuelna memorija i baze podataka. Strelice desno je dele na <em>On-chip storage</em> (na samom čipu procesora), <em>Onboard storage</em> (na matičnoj ploči) i <em>Outboard storage</em> (van ploče). Grafik na slajdu 15 to kaže brojevima: horizontalno je vreme pristupa i veličina memorije, vertikalno brzina prenosa i cena po bitu. Kriva ide od registara gore levo (najbrži, najskuplji po bitu, najmanji) do trake dole desno (najsporija, najjeftinija, najveća). Nijedna memorija nije istovremeno i brza i velika i jeftina, i zato se pravi hijerarhija. Ovo je slika sa slajda 17 Modula 1, samo detaljnija.</p>
+
+<h3>Skrivena (keš) memorija (slajdovi 47–48)</h3>
+<p>Novi nivo između procesora i operativne memorije zove se <strong>cache</strong> (keš, „skrivena memorija“). Cilj je, kaže slajd 47, da se stvori <strong>utisak da cela operativna memorija ima brzinu blisku ultra brzoj memoriji</strong>: program misli da radi sa velikim i brzim RAM-om, a zapravo najčešće dobija podatke iz malog keša.</p>
+<div class="slides2">
+<figure class="slide"><img src="img/m3a-47.jpg" alt="Skrivena memorija nastavak" loading="lazy"><figcaption><b>Slajd 47 · Registri, keš, fizička memorija</b></figcaption></figure>
+<figure class="slide"><img src="img/m3a-48.jpg" alt="Hijerarhijski sistem memorije u sprezi sa procesorom" loading="lazy"><figcaption><b>Slajd 48 · Hijerarhijski sistem memorije u sprezi sa procesorom</b></figcaption></figure>
+</div>
+<p>Na slajdu 47 tri kutije su tri nivoa koje procesor vidi kad traži podatak: <strong>Registers</strong> (unutar procesora), <strong>Cache</strong> i <strong>Physical Memory (RAM)</strong>. Slajd 48 pokazuje gde je keš umetnut: gore je klasična veza bez keša, CPU i RAM povezani <strong>magistralom podataka</strong> (dvosmerne strelice) i <strong>adresnom magistralom</strong> (strelice samo od CPU ka memoriji, jer adresu uvek zadaje procesor). Dole je ista stvar sa kešom: CPU ↔ <strong>skrivena memorija</strong> ↔ <strong>operativna memorija</strong>. Procesor keš ne „vidi“ kao posebnu memoriju i ne adresira ga posebno; zato se i zove skrivena.</p>
+<p>Slajd 47 uz to daje i nekoliko definicija koje se pitaju:</p>
+<ul>
+<li>Prema dostupnosti programeru, memorija može biti <strong>neskrivena</strong> (programer mora sam da je koristi i vodi računa o njoj, to je za njega dodatno opterećenje) i <strong>skrivena</strong> (keš: programer je ne vidi, hardver njome automatski upravlja).</li>
+<li>Primarna (RAM) i sekundarna memorija (disk) se često povezuju preko posebnog <strong>ulazno-izlaznog procesora</strong> (vidi DMA u Modulu 4).</li>
+<li>Najčešće se memorijskoj lokaciji pristupa pomoću <strong>adrese</strong>: to je <strong>adresni pristup</strong>.</li>
+<li>Ponekad znamo samo deo sadržaja lokacije, koji se zove <strong>ključ</strong>. <strong>Asocijativna memorija</strong> je memorija kod koje se ćelija pronalazi po ključu, a ne po adresi. Ona paralelno uporedi ključ sa svim ćelijama odjednom. Koristi se upravo u kešu (traženje po tag-u) i u TLB-u (prevođenje adresa).</li>
+</ul>
+<div class="ex">Adresni pristup je kao „daj mi knjigu sa police broj 1534“. Asocijativni je kao „daj mi knjigu čiji je autor Andrić“: bibliotekar pregleda sve police odjednom i nađe je po sadržaju.</div>
+
+<h3>Kako keš radi (dopuna, ovo profesor objašnjava na tabli)</h3>
+<ol>
+<li>Procesor traži podatak sa adrese X. Prvo pita keš.</li>
+<li>Ako je podatak u kešu, to je <strong>pogodak (hit)</strong>: dobija ga za 1–2 ns.</li>
+<li>Ako nije, to je <strong>promašaj (miss)</strong>: podatak se donosi iz RAM-a (50–100 ns), ali ne samo taj bajt, nego ceo <strong>blok (keš linija)</strong>, npr. 64 susedna bajta. Blok se smesti u keš.</li>
+<li>Sledeći put kad procesor traži taj ili susedni podatak, biće pogodak, zahvaljujući vremenskoj i prostornoj lokalnosti (Modul 2).</li>
+</ol>
+<p>U našem programu: posle prvog promašaja na instrukciji LOAD, cela linija sa LOAD, ADD, STORE i HALT (susedne adrese) stiže u keš odjednom, pa su sledeća tri donošenja instrukcija pogoci. To je prostorna lokalnost na delu.</p>
+<div class="formula">prosečno vreme pristupa = h × t_keš + (1 − h) × t_RAM&nbsp;&nbsp;&nbsp;(h = procenat pogodaka)</div>
+<div class="ex">Keš 1 ns, RAM 100 ns, pogodaka 95%. Prosečno: 0,95 × 1 + 0,05 × 100 = 0,95 + 5 = 5,95 ns. Bez keša bi bilo 100 ns, dakle keš ubrzava pristup memoriji oko 17 puta. (Ovo je u stvari Amdalov zakon primenjen na memoriju.)</div>
+<p><strong>Gde se blok smešta u keš (načini mapiranja):</strong></p>
+<ul>
+<li><strong>Direktno mapiranje (direct-mapped)</strong>: svaki blok RAM-a može ići samo na <strong>jedno tačno određeno mesto</strong> u kešu: broj_linije = broj_bloka mod broj_linija_u_kešu. Najjednostavnije i najbrže, ali ako dva često korišćena bloka idu na isto mesto, stalno se izbacuju. Adresa se deli na tri dela: <strong>tag | indeks linije | offset u liniji</strong>. Ovo treba za domaći zadatak 1 (završno poglavlje ★).</li>
+<li><strong>Potpuno asocijativno</strong>: blok može na bilo koje mesto; keš traži po sadržaju (tag-u), kao asocijativna memorija. Najfleksibilnije, ali najskuplje.</li>
+<li><strong>Skupno-asocijativno (set-associative)</strong>: kompromis; blok može na bilo koje od npr. 8 mesta u jednom skupu. Ovo koristi većina modernih procesora.</li>
+</ul>
+
+<h3>Direktno mapiranje korak po korak</h3>
+<p>Ovo je deo koji se najčešće ne razume, a treba za domaći. Keš je podeljen na <strong>linije</strong> (blokove) iste veličine. Svaka memorijska adresa se deli na tri polja:</p>
+<div class="bits big3"><span class="tg">TAG</span><span class="ix">INDEKS (linija)</span><span class="of">OFFSET (bajt u liniji)</span></div>
+<ol>
+<li><strong>Offset</strong>: koji bajt unutar linije. Ako linija ima 2ᵒ bajtova, offset ima <strong>o bita</strong>. Linija od 32 B → 5 bita.</li>
+<li><strong>Indeks</strong>: u koju liniju keša blok sme da ide. Ako keš ima 2ⁱ linija, indeks ima <strong>i bita</strong>. 2048 linija → 11 bita.</li>
+<li><strong>Tag</strong>: svi preostali (gornji) biti adrese. Pošto u istu liniju može da dođe mnogo različitih blokova, keš uz svaku liniju pamti tag, da bi znao <em>koji</em> blok je trenutno tu.</li>
+</ol>
+<p><strong>Šta se dešava pri pristupu</strong>: iz adrese se uzme indeks i pogleda ta jedna linija. Ako je linija popunjena (bit <em>valid</em> = 1) i njen tag je jednak tagu adrese, to je <strong>pogodak</strong>: bajt se čita na poziciji offset. Ako nije, to je <strong>promašaj</strong>: ceo blok se donese iz RAM-a u tu liniju (ono što je bilo tu se izbaci), i upiše se novi tag.</p>
+<div class="ex">Mali keš: memorija 256 B (adresa 8 bita), keš od 8 linija po 4 B. Offset = log₂ 4 = 2 bita, indeks = log₂ 8 = 3 bita, tag = 8 − 3 − 2 = 3 bita. Adresa 45 = <code>001 011 01</code>: tag 1, linija 3, bajt 1. Adresa 13 = <code>000 011 01</code> ima isti indeks 3, ali drugi tag (0), pa se 45 i 13 „svađaju“ oko linije 3.</div>
+<div class="lab" id="cacheLab"><div class="lab-title">Laboratorija: direktno mapiran keš (8 linija × 4 B, adresa 8 bita)</div>
+<div class="row"><label for="cacheIn">Adresa (0–255): <input type="number" id="cacheIn" value="45" min="0" max="255" style="width:6em"></label><button class="btn" id="cacheGo" type="button">Pristupi</button><button class="btn ghost" id="cacheReset" type="button">Isprazni keš</button></div>
+<div class="row"><span class="score">Gotove sekvence:</span><button class="btn ghost" type="button" data-seq="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15">Niz redom 0–15</button><button class="btn ghost" type="button" data-seq="13,45,13,45,13,45">Sukob 13 i 45</button><button class="btn ghost" type="button" data-seq="0,4,8,12,0,4,8,12,0,4,8,12">Petlja 3 puta</button></div>
+<div class="bits" id="cacheBits"></div>
+<div class="tbl" id="cacheTbl"></div>
+<div class="simlog" id="cacheLog"></div>
+</div>
+<p>Šta da primetiš u laboratoriji: kod <em>niza redom</em> promašaj je samo na prvom bajtu svake linije (0, 4, 8, 12), a ostali su pogoci; to je <strong>prostorna lokalnost</strong>. Kod <em>petlje</em> prvi krug su promašaji, a drugi i treći sve pogoci; to je <strong>vremenska lokalnost</strong>. Kod <em>sukoba</em> svaki pristup je promašaj iako je keš skoro prazan; to je mana direktnog mapiranja koju rešava (skupno-)asocijativni keš.</p>
+<div class="formula">offset = log₂(veličina linije)&nbsp;&nbsp;·&nbsp;&nbsp;indeks = log₂(broj linija)&nbsp;&nbsp;·&nbsp;&nbsp;tag = broj bita adrese − indeks − offset</div>
+<details class="stop"><summary>Adresa ima 32 bita, keš ima 1024 linije po 64 B. Koliko bita ima tag, indeks i offset?</summary><div>Offset = log₂ 64 = <strong>6</strong>, indeks = log₂ 1024 = <strong>10</strong>, tag = 32 − 10 − 6 = <strong>16</strong> bita.</div></details>
+<div class="bridge">Ceo ovaj modul smo radili na jednoj izmišljenoj mašini sa osam instrukcija. Kako izgledaju skupovi instrukcija pravih procesora, po čemu se razlikuju, i zašto je tvoj laptop „x86“, a telefon „ARM“? To je drugo predavanje Modula 3, M3_02.</div>
+<p class="src">Dodatni izvori: <a href="https://www.cs.princeton.edu/courses/archive/spr09/cos217/lectures/16AssemblersAndLinkers.pdf">Princeton, Assemblers and Linkers (predavanje)</a> · <a href="https://www.geeksforgeeks.org/?p=287930">GeeksforGeeks, Introduction of Assembler</a></p>
+<div class="quiz" data-ch="c12"></div>
+</section>

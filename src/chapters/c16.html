@@ -1,0 +1,184 @@
+<section class="ch" id="c16">
+<div class="ch-head"><span class="ch-num">M4</span><span class="ch-src">Modul 4 · deo 3 od 3 · M4_02, slajdovi 29–45</span></div>
+<h2>Na pravom Intel procesoru: registri, instrukcije, bajtovi i slova</h2>
+
+<h3>Registri Intel procesora (slajd 29)</h3>
+<p>Naša instrukcija koristi registre <strong>AL</strong> i <strong>SI</strong>. Odakle ta imena? Slajd 29 nabraja registre za podatke i adrese kod Intela, po širini:</p>
+<figure class="slide"><img src="img/m4b-29.jpg" alt="Registri za podatke i adresni registri u Intelovim mikroprocesorima" loading="lazy"><figcaption><b>Slajd 29 · Registri za podatke i adrese kod Intela</b></figcaption></figure>
+<div class="tbl"><table>
+<tr><th>Širina</th><th>Registri</th><th>Od kog procesora</th></tr>
+<tr><td class="num">8 bita</td><td><code>AH, AL, BH, BL, CH, CL, DH, DL</code></td><td>8080/8086</td></tr>
+<tr><td class="num">16 bita</td><td><code>AX, BX, CX, DX, SP, BP, SI, DI</code></td><td>8086 (1978)</td></tr>
+<tr><td class="num">32 bita</td><td><code>EAX, EBX, ECX, EDX, ESP, EBP, ESI, EDI</code></td><td>80386 (1985), „E“ = extended</td></tr>
+<tr><td class="num">64 bita</td><td><code>RAX, RBX, RCX, RDX, RSP, RBP, RSI, RDI, R8–R15</code></td><td>x86-64 (AMD, 2003)</td></tr>
+</table></div>
+<p>Ovo nisu različiti registri, nego <strong>delovi istog registra</strong>. To je ideja <strong>familije modela</strong> iz Modula 1 na delu: da bi stari programi radili na novim procesorima, svaki novi procesor je samo „proširio“ stare registre, a stara imena su ostala da označavaju njihove donje delove:</p>
+<figure>
+<svg viewBox="0 0 600 130" width="600" class="rsvg" role="img" aria-label="Delovi registra RAX">
+ <g font-size="13">
+ <rect class="s-box" x="20" y="20" width="560" height="26"/><text class="s-t" x="300" y="38" text-anchor="middle">RAX (64 bita)</text>
+ <rect class="s-acc" x="300" y="50" width="280" height="26"/><text class="s-t" x="440" y="68" text-anchor="middle">EAX (donja 32 bita)</text>
+ <rect class="s-sig" x="440" y="80" width="140" height="26"/><text class="s-t" x="510" y="98" text-anchor="middle">AX (donjih 16)</text>
+ <rect class="s-box" x="440" y="104" width="70" height="22"/><text class="s-t" x="475" y="120" text-anchor="middle">AH</text>
+ <rect class="s-box" x="510" y="104" width="70" height="22"/><text class="s-t" x="545" y="120" text-anchor="middle">AL</text>
+ <text class="s-tm" x="20" y="14">bit 63</text><text class="s-tm" x="555" y="14">bit 0</text>
+ </g>
+</svg>
+<figcaption>RAX ⊃ EAX ⊃ AX ⊃ AH + AL. Ako upišeš 0x1234 u AX, onda je AH = 0x12, a AL = 0x34.</figcaption>
+</figure>
+<p>Naš zbir ocena (najviše 40 za četiri desetke) staje u jedan bajt, pa koristimo AL, najmanji deo registra RAX. Upiši neku vrednost i vidi kako se registar deli:</p>
+<div class="lab" id="regLab"><div class="lab-title">Laboratorija: upiši vrednost u RAX i vidi delove</div>
+<div class="row"><label for="regIn">RAX = 0x<input type="text" id="regIn" value="1122334455667788" size="18" maxlength="16"></label></div>
+<div class="tbl" id="regOut"></div>
+<p class="score" style="margin:4px 0 0">Napomena za radoznale: kad se kod x86-64 upiše nešto u EAX, gornja 32 bita RAX-a se obrišu; upis u AX, AH ili AL ostavlja ostatak registra netaknutim.</p>
+</div>
+<p>Imena registara nisu slučajna. Svaki ima tipičnu namenu, i sad vidiš zašto je u našem primeru indeks baš SI:</p>
+<div class="tbl"><table>
+<tr><th>Registar</th><th>Ime</th><th>Tipična upotreba</th></tr>
+<tr><td>AX</td><td>Accumulator</td><td>Rezultati aritmetike, povratna vrednost funkcije (akumulator iz Modula 1 i 3)</td></tr>
+<tr><td>BX</td><td>Base</td><td>Bazni registar za adresiranje (<code>[BX+SI]</code>)</td></tr>
+<tr><td>CX</td><td>Count</td><td>Brojač u petljama (u našem primeru: koliko je ocena ostalo)</td></tr>
+<tr><td>DX</td><td>Data</td><td>Podaci, U/I portovi, gornja polovina rezultata kod množenja</td></tr>
+<tr><td>SP</td><td>Stack Pointer</td><td>Pokazuje na vrh steka (prekidi iz dela 1, PUSH/POP)</td></tr>
+<tr><td>BP</td><td>Base Pointer</td><td>Početak okvira funkcije na steku</td></tr>
+<tr><td>SI / DI</td><td>Source / Destination Index</td><td>Indeksni registri (indeksno adresiranje, kopiranje nizova)</td></tr>
+</table></div>
+
+<h3>Načini adresiranja kod Pentium-a (slajdovi 30–32)</h3>
+<p>Intel ima sve načine iz dela 2, i još nekoliko kombinacija. Ali kod njega postoji i dodatni sloj, <strong>segmenti</strong>. Memorija je podeljena na segmente (za kod, za podatke, za stek), pa je postupak sa slajda 30 ovakav:</p>
+<ul>
+<li><strong>Virtuelna ili efektivna adresa</strong> je <em>offset</em> (pomeraj) unutar segmenta. To je ono što izračunaju načini adresiranja iz dela 2.</li>
+<li><strong>Linearna adresa</strong> se dobija kad se na offset doda početna adresa segmenta.</li>
+<li>Ako je uključen rad sa stranicama (paging), linearna adresa još prolazi kroz <strong>prevođenje stranice</strong> da bi se dobila fizička. To je posao MMU iz dela 1.</li>
+</ul>
+<p>Pentium podržava ove načine: <strong>Immediate</strong> (trenutno), <strong>Register operand</strong> (registarsko), <strong>Displacement</strong> (samo pomeraj, odnosno direktno), <strong>Base</strong> (samo bazni registar, odnosno indirektno registarsko), <strong>Base with displacement</strong> (bazno), <strong>Scaled index with displacement</strong> (indeks × skala + pomeraj, za nizove), <strong>Base with index and displacement</strong> (bazno + indeksno), <strong>Base scaled index with displacement</strong> (sve zajedno) i <strong>Relative</strong> (relativno u odnosu na PC, za skokove).</p>
+<div class="slides2">
+<figure class="slide"><img src="img/m4b-31.jpg" alt="Način izračunavanja adrese kod Pentium procesora" loading="lazy"><figcaption><b>Slajd 31 · Izračunavanje adrese kod Pentium-a</b></figcaption></figure>
+<figure class="slide"><img src="img/m4b-32.jpg" alt="Format instrukcija Pentium procesora" loading="lazy"><figcaption><b>Slajd 32 · Format instrukcija Pentium-a</b></figcaption></figure>
+</div>
+<p><strong>Slajd 31</strong> crta celo izračunavanje. Gore desno su <strong>Base Register</strong> i <strong>Index Register</strong>; indeks se množi sa <strong>Scale</strong> (1, 2, 4 ili 8, veličina jednog elementa niza u bajtovima), pa se sve sabere sa <strong>Displacement</strong> (pomeraj iz instrukcije, 0, 8 ili 32 bita). Rezultat je <strong>Effective Address</strong>. Levo su <strong>segmentni registri</strong> (CS, DS, SS, ES, FS, GS) koji biraju <strong>deskriptor</strong> segmenta sa tri podatka: Base Address (gde segment počinje), Limit (koliki je, da program ne bi izašao iz njega) i Access Rights (prava pristupa). Base Address segmenta + efektivna adresa = <strong>Linear Address</strong>, koja pokazuje u segment u memoriji.</p>
+<div class="formula">EA = Base + Index × Scale + Displacement</div>
+<p>Zašto <strong>Scale</strong>? Zato što elementi niza nisu uvek bajtovi. Da su naše ocene 32-bitni brojevi (4 bajta), bile bi na adresama 2000, 2004, 2008, 2012. Sa Scale = 4 indeks i dalje ide 0, 1, 2, 3, a procesor sam množi: <code>ADD EAX, [ESI*4+2000]</code>. To je indeksno adresiranje iz dela 2, prilagođeno pravim tipovima podataka.</p>
+<p><strong>Slajd 32</strong> pokazuje format x86 instrukcije, i jasno je da je to <strong>CISC</strong> procesor iz Modula 3: instrukcija ima promenljivu dužinu. Ima do 4 bajta <strong>prefiksa</strong> (npr. promena veličine operanda ili segmenta), 1–3 bajta <strong>opkoda</strong>, 0–1 bajt <strong>ModR/M</strong> (bira način adresiranja: polja Mod, Reg/Opcode i R/M), 0–1 bajt <strong>SIB</strong> (Scale, Index, Base), 0/1/2/4 bajta <strong>Displacement</strong> i 0/1/2/4 bajta <strong>Immediate</strong> (trenutna vrednost). Ukupno od 1 do 15 bajtova. Svaki način adresiranja koji smo naučili ima svoje polje u ovom formatu.</p>
+<details class="stop"><summary>Niz 64-bitnih brojeva počinje na adresi 3000, a RSI = 5. Koja je adresa elementa sa indeksom 5 ako se koristi Scale = 8?</summary><div>EA = 3000 + 5 × 8 = <strong>3040</strong>. Scale = 8 jer jedan 64-bitni broj zauzima 8 bajtova.</div></details>
+
+<h3>Prave instrukcije (Dodatak, slajdovi 40, 42–45)</h3>
+<p>Na kraju prezentacije profesor je dodao primere stvarnih Intel instrukcija. Oni su najbolja vežba za sve što smo naučili, jer u svakoj možeš da prepoznaš način adresiranja.</p>
+<figure class="slide"><img src="img/m4b-40.jpg" alt="Primeri asemblerskih instrukcija" loading="lazy"><figcaption><b>Slajd 40 · Primeri asemblerskih instrukcija</b></figcaption></figure>
+<pre>mov ebx, 123     ; ebx = 123          (trenutno adresiranje)
+mov eax, ebx     ; eax = ebx          (registarsko)
+add ebx, ecx     ; ebx += ecx
+sub ebx, edx     ; ebx -= edx
+mul ebx          ; eax *= ebx         (implicitno koristi eax: akumulator!)
+div edx          ; eax /= edx</pre>
+<p>Obrati pažnju na <code>mul</code> i <code>div</code>: imaju samo jedan operand, a drugi je <em>implicitno</em> EAX. To je ostatak akumulatorske mašine iz Modula 3 u modernom procesoru.</p>
+<div class="slides2">
+<figure class="slide"><img src="img/m4b-42.jpg" alt="Primeri MOV instrukcija" loading="lazy"><figcaption><b>Slajd 42 · MOV instrukcije</b></figcaption></figure>
+<figure class="slide"><img src="img/m4b-43.jpg" alt="Primeri baznog i indeksnog adresiranja" loading="lazy"><figcaption><b>Slajd 43 · Bazno i indeksno kod Intela</b></figcaption></figure>
+<figure class="slide"><img src="img/m4b-44.jpg" alt="Primeri PUSH i POP" loading="lazy"><figcaption><b>Slajd 44 · PUSH i POP</b></figcaption></figure>
+<figure class="slide"><img src="img/m4b-45.jpg" alt="Primeri instrukcija za sabiranje" loading="lazy"><figcaption><b>Slajd 45 · Instrukcije za sabiranje</b></figcaption></figure>
+</div>
+<ul>
+<li><strong>MOV</strong> (slajd 42) kopira sadržaj izvornog operanda u odredišni; <strong>izvor se nikad ne menja</strong>. Operandi moraju biti iste veličine: <code>MOV AL, BL</code> (8 bita), <code>MOV AX, CX</code> (16), <code>MOV ECX, EBX</code> (32), <code>MOV RAX, RDX</code> (64). Neke kombinacije nisu dozvoljene (npr. <code>MOV R8B, CH</code>).</li>
+<li><strong>Bazno i indeksno</strong> (slajd 43): <code>MOV CX, [BX+DI]</code> kopira 16-bitnu reč sa adrese BX + DI u CX; slično <code>MOV CH, [BP+SI]</code>, <code>MOV [BX+SI], SP</code> (upis u memoriju), <code>MOV CL, [EDX+EDI]</code>, <code>MOV [EAX+EBX], ECX</code>, <code>MOV [RSI+RBX], RAX</code>.</li>
+<li><strong>PUSH / POP</strong> (slajd 44): <code>PUSH AX</code> stavlja AX na stek, <code>POP BX</code> skida vrh steka u BX, <code>PUSHF/POPF</code> čuvaju zastavice (EFLAGS, Intelov PSW), <code>PUSHA/POPA</code> sve registre odjednom, <code>PUSH 1234H</code> stavlja konstantu. <code>POP CS</code> je zabranjena (kodni segment se ne sme menjati direktno). Ovo je stek iz dela 1: prekid radi isto što i PUSH PC i PUSHF, samo automatski.</li>
+<li><strong>ADD</strong> (slajd 45): <code>ADD AL, BL</code>, <code>ADD CX, DI</code>, <code>ADD EBP, EAX</code>, <code>ADD CL, 44H</code> (trenutno), <code>ADD BX, 245FH</code>, <code>ADD [BX], AL</code> (sabira AL sa bajtom u memoriji na adresi BX i rezultat upisuje u memoriju: indirektno registarsko), <code>ADD CL, [BP]</code>, <code>ADD BX, [SI+2]</code>, <code>ADD CL, TEMP</code> (direktno memorijsko, TEMP je simboličko ime promenljive), <code>ADD BX, TEMP[DI]</code> (indeksno).</li>
+</ul>
+<p>Sada možemo da napišemo ceo program za zbir ocena koji smo pratili kroz modul. Svaka linija koristi nešto što smo naučili:</p>
+<pre>        MOV  AL, 0             ; zbir = 0                     (trenutno)
+        MOV  SI, 0             ; indeks prve ocene            (trenutno)
+        MOV  CX, 4             ; broj ocena                   (trenutno)
+petlja: ADD  AL, [SI+2000]     ; zbir += ocena[SI]            (indeksno)
+        INC  SI                ; sledeća ocena                (registarsko)
+        DEC  CX                ; jedna manje                  (registarsko)
+        JNZ  petlja            ; ako CX nije 0, ponovi        (relativno, skok)
+        MOV  [2010], AL        ; sačuvaj zbir 34              (direktno memorijsko)</pre>
+<p><code>JNZ</code> („skoči ako nije nula“) gleda zastavicu nule iz PSW koju je postavio <code>DEC</code>. Zato prekid iz dela 1 mora da sačuva PSW: da je tastatura prekinula program između <code>DEC</code> i <code>JNZ</code>, bez PSW-a bi skok pogledao pogrešnu zastavicu.</p>
+
+<div class="bridge">Zbir je sačuvan na adresi 2010. Ali šta tačno stoji u memoriji, bajt po bajt? Za broj 34 to je jedan bajt. Šta je sa brojevima koji zauzimaju više bajtova, i sa imenima studenata, koja nisu brojevi? O tome su slajdovi 33–38.</div>
+
+<h3>Bit, bajt, reč i tipovi podataka (slajdovi 34–35, 41)</h3>
+<div class="slides2">
+<figure class="slide"><img src="img/m4b-34.jpg" alt="Predstavljanje podataka pomoću bitova bajtova i reči" loading="lazy"><figcaption><b>Slajd 34 · Bit, nibl, bajt, 16-bitna reč</b></figcaption></figure>
+<figure class="slide"><img src="img/m4b-35.jpg" alt="64-bitne i 128-bitne reči" loading="lazy"><figcaption><b>Slajd 35 · 64-bitne i 128-bitne reči</b></figcaption></figure>
+</div>
+<ul>
+<li><strong>Bit</strong>: 0 ili 1.</li>
+<li><strong>Nibl</strong> (nibble): 4 bita, jedna heksadecimalna cifra (0–F). Npr. 1001 = 9.</li>
+<li><strong>Bajt</strong>: 8 bita, dve hex cifre. Npr. 1111 0000 = F0h = 240. Naš zbir 34 je bajt 0010 0010 = 22h.</li>
+<li><strong>Reč</strong> (word): veličina zavisi od arhitekture. Kod Intela „word“ = 16 bita, „double word“ = 32, „quad word“ = 64. Slajd 35 pokazuje 64-bitnu reč (8 bajtova) i 128-bitnu (16 bajtova, koristi se u vektorskim SSE instrukcijama, onima koje su u Modulu 2 ubrzale množenje matrica).</li>
+</ul>
+<figure class="slide"><img src="img/m4b-41.jpg" alt="x86-64 tipovi podataka" loading="lazy"><figcaption><b>Slajd 41 · x86-64 tipovi podataka</b></figcaption></figure>
+<p>Slajd 41 (iz dodatka) povezuje tipove iz C-a sa veličinama na x86-64:</p>
+<div class="tbl"><table>
+<tr><th>C deklaracija</th><th class="num">Bajtova</th><th>Asemblerski sufiks</th><th>x86-64 tip</th></tr>
+<tr><td>char</td><td class="num">1</td><td>b</td><td>Byte</td></tr>
+<tr><td>short</td><td class="num">2</td><td>w</td><td>Word</td></tr>
+<tr><td>int, unsigned int</td><td class="num">4</td><td>l ili d</td><td>Double word</td></tr>
+<tr><td>long, unsigned long</td><td class="num">8</td><td>q</td><td>Quad word</td></tr>
+<tr><td>pokazivač (char *)</td><td class="num">8</td><td>q</td><td>Quad word</td></tr>
+<tr><td>float / double</td><td class="num">4 / 8</td><td>s / d</td><td>Single / double precision</td></tr>
+</table></div>
+
+<h3>Kojim redom idu bajtovi: big i little endian (slajdovi 33, 36)</h3>
+<p>Kad je vrednost veća od jednog bajta (npr. <code>int</code> od 4 bajta), a memorija je adresirana po bajtovima, postavlja se pitanje koje zvuči sitno, a pravi velike probleme: <strong>kojim redom</strong> se bajtovi upisuju na uzastopne adrese? Slajd 33 kaže da postoje dva dogovora:</p>
+<ul>
+<li><strong>Big endian</strong> („veliki kraj prvi“): <strong>najznačajniji bajt</strong> ide na <strong>najnižu adresu</strong>, isto kao što mi pišemo brojeve. Koriste ga: <strong>Java virtuelna mašina, Internet</strong> (mrežni protokoli, „network byte order“), HP, IBM i Motorola 68000.</li>
+<li><strong>Little endian</strong> („mali kraj prvi“): <strong>najmanje značajan bajt</strong> ide na <strong>najnižu adresu</strong>. Koriste ga: <strong>Intel 8086</strong> (i svi x86 posle njega) i VAX DEC. Danas i ARM, podrazumevano.</li>
+</ul>
+<figure class="slide"><img src="img/m4b-36.jpg" alt="Redosled bajtova primer" loading="lazy"><figcaption><b>Slajd 36 · Primer: 0x12345678 od adrese 00</b></figcaption></figure>
+<p>Slajd 36 daje primer koji se pita na ispitu: 32-bitna vrednost <code>0x12345678</code> upisuje se od adrese 00.</p>
+<div class="tbl"><table>
+<tr><th>Adresa</th><th class="num">00</th><th class="num">01</th><th class="num">02</th><th class="num">03</th></tr>
+<tr><td>Big endian</td><td class="num">12</td><td class="num">34</td><td class="num">56</td><td class="num">78</td></tr>
+<tr><td>Little endian</td><td class="num">78</td><td class="num">56</td><td class="num">34</td><td class="num">12</td></tr>
+</table></div>
+<p>Postupak: broj podeli na bajtove sleva, po dve hex cifre: <code>12</code> (najznačajniji), <code>34</code>, <code>56</code>, <code>78</code> (najmanje značajan). Big endian ih piše tim redom, little endian obrnutim. <strong>Bitovi unutar bajta se ne obrću</strong>, i hex cifre unutar bajta ostaju iste (78 ostaje 78, ne postaje 87); obrće se samo redosled bajtova.</p>
+<div class="ex">Ime dolazi iz „Guliverovih putovanja“: Liliputanci su ratovali oko toga da li jaje treba razbiti sa velikog (big end) ili malog kraja (little end). Nijedan redosled nije „bolji“, ali kad Intel računar šalje broj preko interneta, mora prvo da ga pretvori u big endian, inače bi primalac pročitao pogrešan broj (0x78563412 umesto 0x12345678).</div>
+<div class="lab" id="endLab">
+<div class="lab-title">Laboratorija: upiši svoj broj</div>
+<div class="row"><label for="endIn">32-bitni heksadecimalni broj: 0x</label><input type="text" id="endIn" value="12345678" size="10" maxlength="8"></div>
+<div class="tbl" id="endOut"></div>
+</div>
+<details class="stop"><summary>Ocena 10 je sačuvana kao 32-bitni int na Intel računaru, od adrese 2000. Šta piše na adresama 2000–2003?</summary><div>10 = 0x0000000A. Intel je little endian, pa najmanje značajan bajt ide prvi: <strong>0A 00 00 00</strong>. Na big endian mašini bi bilo 00 00 00 0A.</div></details>
+
+<h3>Kako se pamte slova: ASCII i Unicode (slajdovi 37–38)</h3>
+<p>Uz ocene, tabela ima i imena studenata. Računar, međutim, čuva samo brojeve, pa se i svaki znak mora kodirati brojem. Slajdovi 37 i 38 prikazuju dve tabele kodova:</p>
+<div class="slides2">
+<figure class="slide"><img src="img/m4b-37.jpg" alt="ASCII tabela kodova" loading="lazy"><figcaption><b>Slajd 37 · ASCII tabela</b></figcaption></figure>
+<figure class="slide"><img src="img/m4b-38.jpg" alt="UNICODE tabela kodova" loading="lazy"><figcaption><b>Slajd 38 · Unicode tabela</b></figcaption></figure>
+</div>
+<ul>
+<li><strong>ASCII</strong> (American Standard Code for Information Interchange) koristi <strong>7 bita, dakle 128 znakova</strong>: 0–31 su upravljački znaci (NUL, LF = novi red = 10, CR = 13, ESC = 27), 32 je razmak, 48–57 su cifre '0'–'9', 65–90 velika slova 'A'–'Z', 97–122 mala slova. Korisni trikovi: 'a' − 'A' = 32 (razlikuju se u jednom bitu), a cifra '7' − '0' = 7.</li>
+<li><strong>Unicode</strong> dodeljuje broj (code point) svakom znaku svih pisama sveta: č (U+010D), ž (U+017E), ćirilica, kineski znaci, emoji. Prvih 128 Unicode znakova su isti kao ASCII. Najčešće se zapisuje kao <strong>UTF-8</strong>: ASCII znak zauzima 1 bajt, č ili ž 2 bajta, kineski znak 3, emoji 4.</li>
+</ul>
+<div class="tbl"><table>
+<tr><th>Znak</th><th class="num">Decimalno</th><th class="num">Hex</th><th class="num">Binarno</th></tr>
+<tr><td>'0'</td><td class="num">48</td><td class="num">30</td><td class="num">0011 0000</td></tr>
+<tr><td>'A'</td><td class="num">65</td><td class="num">41</td><td class="num">0100 0001</td></tr>
+<tr><td>'a'</td><td class="num">97</td><td class="num">61</td><td class="num">0110 0001</td></tr>
+<tr><td>razmak</td><td class="num">32</td><td class="num">20</td><td class="num">0010 0000</td></tr>
+</table></div>
+<p>Ime „Ana“ je u memoriji tri bajta: <code>41 6E 61</code>. Ime „Đorđe“ u UTF-8 zauzima 7 bajtova, jer su oba slova đ/Đ po dva bajta. Upiši svoje ime i vidi:</p>
+<div class="lab" id="ascLab"><div class="lab-title">Laboratorija: kako računar vidi tekst</div>
+<div class="row"><label for="ascIn">Tekst: <input type="text" id="ascIn" value="Aa0 č" size="18" maxlength="12"></label></div>
+<div class="tbl" id="ascOut"></div>
+</div>
+<details class="stop"><summary>Zašto se kod ASCII teksta ne postavlja pitanje big ili little endian?</summary><div>Zato što je svaki ASCII znak <strong>jedan bajt</strong>, a endianness se tiče samo redosleda bajtova <em>unutar</em> jedne višebajtne vrednosti. Niz znakova se uvek piše redom, prvi znak na najnižoj adresi.</div></details>
+
+<h3>Ceo Modul 4 u jednom pogledu</h3>
+<p>Ovo je cela priča Modula 4, ispričana kroz jednu instrukciju <code>ADD AL, [SI+2000]</code>. Ako svaku rečenicu umeš da objasniš svojim rečima, Modul 4 znaš:</p>
+<ol class="recap">
+<li>Procesor je <strong>mašina stanja</strong>, pa je svako čitanje iz memorije niz stanja (adresa na magistralu, RD, čekanje na <strong>READY</strong>, podatak na magistralu, upis u registar) (M4_01 sl. 2–4).</li>
+<li><strong>ASM dijagram</strong> to crta po taktovima (t1–t4, romb READY); spora memorija dodaje <strong>stanja čekanja</strong> tw (sl. 5–6).</li>
+<li>Pravo čitanje instrukcije: MAR ← PC, <strong>MMU</strong> prevodi adresu, rezerviši magistralu, Read, PC + 1, MBR ← MEM, oslobodi, IR ← MBR. Indirektno adresiranje traži <strong>dva čitanja</strong> (sl. 7–8).</li>
+<li><strong>Prekid</strong>: posle tekuće instrukcije PC i PSW idu na <strong>stek</strong>, procesor prelazi u privilegovan režim i zabranjuje prekide, a adresu rutine čita iz <strong>tabele vektora</strong> bez MMU (sl. 9, 11).</li>
+<li>U/I: <strong>polling</strong> (procesor čeka), <strong>prekidi</strong> (uređaj javlja), <strong>DMA</strong> (kontroler sam prenosi blok); više uređaja deli liniju INT preko <strong>8259A</strong> (sl. 10, 12).</li>
+<li>Načini adresiranja: <strong>trenutno</strong> (vrednost, 0 pristupa), <strong>direktno</strong> (adresa, 1), <strong>indirektno</strong> (adresa adrese, 2 kod memorijskog), registarske varijante su kraće i brže (M4_02 sl. 6–19).</li>
+<li>Izračunavanje adrese: <strong>indeksno</strong> k + S(IR) za nizove, <strong>bazno</strong> S(BR) + P za premestive programe, <strong>bazno + indeksno</strong> S(BR) + D + S(IR) (sl. 20–27).</li>
+<li>Intel: AL ⊂ AX ⊂ EAX ⊂ RAX; EA = Base + Index × Scale + Displacement, pa segment; instrukcije promenljive dužine (CISC) (sl. 29–32, 40–45).</li>
+<li>Podaci: bajt, reč, tipovi; <strong>big endian</strong> (najznačajniji bajt prvi: Internet, JVM) i <strong>little endian</strong> (Intel); tekst kao <strong>ASCII</strong> (7 bita) ili <strong>Unicode</strong>/UTF-8 (sl. 33–38, 41).</li>
+</ol>
+<div class="bridge">Time je ispričano sve gradivo prvog dela predmeta. Poslednje poglavlje skuplja na jedno mesto sve formule, rešene domaće zadatke i veliki test iz svih modula, za ponavljanje pred kolokvijum.</div>
+<div class="quiz" data-ch="c16"></div>
+</section>

@@ -1,0 +1,158 @@
+<section class="ch" id="c13">
+<div class="ch-head"><span class="ch-num">M3</span><span class="ch-src">Modul 3 · deo 4 od 4 · CPU_Instruction_Set_M3_02.pdf, slajdovi 2, 16–28 · Tabela arhitektura procesora.pdf · Modul 2, slajdovi 6–9</span></div>
+<h2>Skup instrukcija kao celina: modeli mašina, CISC i RISC</h2>
+<p>Drugo predavanje Modula 3 (M3_02) po sadržaju na slajdu 2 ide ovim redom: procesor i memorija (Von Neumann), ključni faktori performansi i načini da se one poboljšaju, primer skupa instrukcija, vrste ISA arhitektura, CISC i RISC. Prvi deo toga već znaš: Von Neumann i klasifikaciju računara (slajdovi 3–5) radili smo u Modulu 1, a procesor, Hyper-Threading i faktore performansi (slajdovi 6–13) u Modulu 2. Hijerarhiju memorije (14–15) smo upravo uradili uz keš. Ostaje ono što je novo: <strong>skup instrukcija kao celina</strong>.</p>
+
+<h3>Skup instrukcija pravog procesora (slajdovi 16–18)</h3>
+<div class="slides2">
+<figure class="slide"><img src="img/m3b-16.jpg" alt="Skup instrukcija procesora primer" loading="lazy"><figcaption><b>M3_02, slajd 16 · Skup instrukcija procesora (primer)</b></figcaption></figure>
+<figure class="slide"><img src="img/m3b-17.jpg" alt="Skup instrukcija procesora primer sa IN i OUT" loading="lazy"><figcaption><b>M3_02, slajd 17 · Isti skup, dopunjen sa OUT i IN</b></figcaption></figure>
+</div>
+<p>Slajd 16 nabraja šest instrukcija jednostavnog procesora: <strong>LOAD</strong> (broj iz RAM-a u CPU), <strong>ADD</strong> (saberi dva broja), <strong>STORE</strong> (broj iz CPU nazad u RAM), <strong>COMPARE</strong> (uporedi dva broja), <strong>JUMP IF</strong> uslov (skok na drugu adresu u RAM-u ako važi uslov) i <strong>JUMP</strong> (bezuslovni skok). Slajd 17 dodaje <strong>OUT</strong> (izlaz na uređaj kao što je monitor) i <strong>IN</strong> (ulaz sa uređaja kao što je tastatura). Desno je deo memorije: svaka instrukcija je binarni kod (npr. 01100001 = LOAD), a iza nje sledi adresa ili podatak. Na slajdu 17 vidiš i ceo mali program: učitaj (LOAD 9), uzmi znak sa tastature (IN Keyboard), uporedi (COMPARE), skoči ako je jednako (JUMP IF = 10100001), ispiši na monitor (OUT Monitor) slovo „G“. Poruka je ista kao kod Von Neumann-a: u memoriji su instrukcije i podaci izmešani i izgledaju isto. Prepoznaj i grupe sa slajdova 17–18 iz M3_01: prenos podataka, aritmetika, logika (COMPARE), prenos upravljanja (JUMP) i U/I (IN, OUT).</p>
+<figure class="slide"><img src="img/m3b-18.jpg" alt="Kako radi centralni procesor u delu između upravljačke jedinice i ALU" loading="lazy"><figcaption><b>M3_02, slajd 18 · Kako radi CPU u delu između upravljačke jedinice i ALU</b></figcaption></figure>
+<p>Slajd 18 gleda instrukciju iz ugla ALU. Upravljačka jedinica dobija instrukciju i iz nje izdvaja <em>tip operacije</em> (šta ALU treba da radi: sabiranje, poređenje) i <em>ulaze</em> (koji podaci). ALU dobija ta dva ulaza (Input 1, Input 2) i signal operacije, i daje izlaz (rezultat) i <em>flags</em> (zastavice, koje idu u PSW). Desno je ista ideja u Von Neumann-ovom bloku: Memory iznad, Control Unit i Arithmetic Logic Unit kao CPU. Upravo ove zastavice koristi instrukcija <code>JUMP IF</code>: COMPARE ih postavi, a skok ih pročita.</p>
+
+<div class="bridge">Instrukcija ADD treba dva operanda. Ali odakle tačno dolaze ti operandi: iz akumulatora, iz registara, sa steka, direktno iz memorije? Od odgovora na to pitanje zavisi kakav je ceo procesor.</div>
+
+<h3>Pet modela mašina: odakle dolaze operandi (slajdovi 19–21)</h3>
+<p>Slajd 19 deli sve mašine u <strong>pet modela</strong> prema kriterijumu odakle dolaze operandi. Ovo je proširenje podele po broju adresa iz dela 1:</p>
+<div class="slides2">
+<figure class="slide"><img src="img/m3b-20.jpg" alt="Broj operanada kod različitih modela mašina" loading="lazy"><figcaption><b>Slajd 20 · Broj operanada kod različitih modela</b></figcaption></figure>
+<figure class="slide"><img src="img/m3b-21.jpg" alt="Izvršavanje instrukcije C=A+B na različitim modelima mašina" loading="lazy"><figcaption><b>Slajd 21 · C = A + B na različitim modelima</b></figcaption></figure>
+</div>
+<p>Na slikama su četiri kolone; u svakoj je gore procesor (plavo), dole memorija (ljubičasto). Žute kutije su mesta na kojima su operandi, a strelice pokazuju odakle ALU uzima ulaze i gde vraća rezultat. <strong>Stack</strong>: ALU uzima oba operanda sa vrha steka (TOS, top of stack) i vraća rezultat na vrh; instrukcija ne navodi nijedan operand. <strong>Accumulator</strong>: jedan ulaz je uvek akumulator, drugi iz memorije; navodi se jedan operand (to je naša mašina iz dela 1). <strong>Register-Memory</strong>: jedan operand iz registra, drugi može direktno iz memorije. <strong>Register-Register</strong>: oba operanda iz registara, a memoriji pristupaju samo Load i Store. Slajd 21 dole ispisuje naš primer, samo sa drugim imenima: <strong>C = A + B</strong>.</p>
+<div class="tbl"><table>
+<tr><th>Model</th><th>Primeri</th><th class="num">Eksplicitnih operanada</th><th>C = A + B</th></tr>
+<tr><td>1. Stek</td><td>Burroughs B5000, HP 3000, JVM, Intel x87 FPU</td><td class="num">0</td><td><code>Push A; Push B; Add; Pop C</code></td></tr>
+<tr><td>2. Akumulator</td><td>Motorola 6800</td><td class="num">1</td><td><code>Load A; Add B; Store C</code></td></tr>
+<tr><td>3. Registar–memorija</td><td>x86, IBM 360</td><td class="num">2 ili 3</td><td><code>Load R1,A; Add R3,R1,B; Store R3,C</code></td></tr>
+<tr><td>4. Memorija–memorija</td><td>VAX</td><td class="num">2 ili 3</td><td><code>Add C, A, B</code></td></tr>
+<tr><td>5. Registar–registar (load/store)</td><td>ARM, MIPS, SPARC, RISC-V</td><td class="num">2 ili 3</td><td><code>Load R1,A; Load R2,B; Add R3,R1,R2; Store R3,C</code></td></tr>
+</table></div>
+<p>Zašto su danas skoro sve nove arhitekture <strong>registar–registar</strong>? Registri su brzi, a ako samo Load i Store diraju memoriju, sve ostale instrukcije su jednostavne, iste dužine i traju isto. To olakšava protočnu obradu iz Modula 2. To je suština RISC pristupa, do koga upravo stižemo.</p>
+<details class="stop"><summary>Na kom od pet modela program za C = A + B ima najmanje instrukcija, a na kom najviše pristupa registrima?</summary><div>Najmanje instrukcija ima <strong>memorija–memorija</strong> (VAX): jedna, <code>Add C, A, B</code>. Najviše rada sa registrima ima <strong>registar–registar</strong>: četiri instrukcije, ali je sabiranje čisto nad registrima, a memoriji se pristupa samo pri Load i Store.</div></details>
+
+<h3>Stvarni skupovi instrukcija (slajdovi 22–23)</h3>
+<figure class="slide"><img src="img/m3b-22.jpg" alt="Primeri skupova instrukcija" loading="lazy"><figcaption><b>M3_02, slajd 22 · Primeri skupova instrukcija</b></figcaption></figure>
+<p>Tabela na slajdu 22 svrstava stvarne procesore u te modele. Kolone su: <strong>Type</strong> (model), <strong># Oper</strong> (koliko operanada ima aritmetička instrukcija), <strong># Mem</strong> (koliko od njih sme da bude u memoriji), <strong>Data Size</strong> (širina podataka), <strong># Regs</strong> (broj registara), <strong>Addr Size</strong> (širina adrese) i <strong>Use</strong> (gde se koristi). Profesor je crvenim uokvirio tri reda:</p>
+<ul>
+<li><strong>ARM</strong>: Reg-Reg, 3 operanda, <strong>0 u memoriji</strong>, 16 registara, telefoni i ugrađeni sistemi.</li>
+<li><strong>x86</strong>: Reg-Mem, 2 operanda, <strong>1 sme biti u memoriji</strong>, 4/8/24 registara (zavisno od generacije), lični računari.</li>
+<li><strong>VAX</strong>: Mem-Mem, 3 operanda, <strong>sva 3 mogu biti u memoriji</strong>, miniračunari.</li>
+</ul>
+<p>Ostali redovi (Alpha, MIPS, SPARC, TI C6000) su svi Reg-Reg sa 32 registra, IBM 360 je Reg-Mem, a Motorola 6800 je akumulatorska mašina sa jednim operandom i 0 registara opšte namene. Uoči obrazac: što je arhitektura novija, to više registara i manje pristupa memoriji.</p>
+<figure class="slide"><img src="img/m3b-23.jpg" alt="Arhitekture savremenih skupova instrukcija" loading="lazy"><figcaption><b>M3_02, slajd 23 · Arhitekture savremenih skupova instrukcija (ISA)</b></figcaption></figure>
+<p>Slajd 23 nabraja savremene ISA: <strong>ARM</strong>, <strong>80x86/Pentium/K6</strong>, <strong>PowerPC</strong>, <strong>MIPS</strong> (32-bitni ugrađeni mikrokontroleri, 64-bitni serveri i mrežna infrastruktura), <strong>Arduino</strong> (ploča sa mikrokontrolerom AVR, memorijom i programabilnim U/I, sa besplatnim razvojnim alatom) i <strong>PIC</strong> (Peripheral Interface Controller).</p>
+
+<div class="bridge">Neke od ovih arhitektura imaju malo jednostavnih instrukcija, a neke mnogo složenih. To je najvažnija podela procesora danas: CISC i RISC.</div>
+
+<h3>CISC i RISC: dužina instrukcije (slajd 24)</h3>
+<p>Slajd 24 daje polaznu definiciju: <strong>CISC</strong> (Complex Instruction Set Computer) ima <strong>instrukcije promenljive dužine</strong>, a <strong>RISC</strong> (Reduced Instruction Set Computer) <strong>instrukcije fiksne dužine</strong>. Iako ne postoji strogo pravilo da instrukcijama promenljive dužine odgovara CISC, a fiksne dužine RISC, takva veza je najčešća.</p>
+<p>Odakle potiče podela? U 1960-im i 1970-im memorija je bila skupa i spora, a kompajleri slabi. Zato su projektanti pravili procesore sa što <strong>moćnijim instrukcijama</strong>: jedna instrukcija radi mnogo posla, program je kratak i zauzima malo memorije, a programeru u asembleru je lakše. To su CISC procesori: IBM System/360, VAX, Intel x86. Oko 1980. istraživači sa Berklija (David Patterson) i Stenforda (John Hennessy), isti oni čiji citat o apstrakciji si čitao u Modulu 1, primetili su da kompajleri <strong>skoro nikad ne koriste</strong> složene instrukcije: oko 80% vremena se izvršava 20% najjednostavnijih instrukcija (load, store, add, branch). Predložili su obrnut pristup: <strong>mali skup jednostavnih instrukcija</strong> koje se izvršavaju jako brzo, uz pametan kompajler. To je RISC: MIPS, SPARC, ARM, RISC-V.</p>
+
+<h3>Mikroprogram ili hardver (slajdovi 25–26)</h3>
+<figure class="slide"><img src="img/m3b-25.jpg" alt="CISC i RISC arhitektura, mikrokod" loading="lazy"><figcaption><b>M3_02, slajd 25 · CISC i RISC arhitektura</b></figcaption></figure>
+<p>Slajd 25 pokazuje šta se dešava sa mašinskom instrukcijom u svakoj od njih. <strong>RISC</strong> (levo): mašinska instrukcija → direktno izvršavanje u hardveru. Jedan korak. <strong>CISC</strong> (desno): mašinska instrukcija → <strong>konverzija u mikrokod</strong> (Microcode Conversion) → niz <strong>mikroinstrukcija</strong> → izvršavanje mikroinstrukcija. CISC instrukciju zapravo izvršava mali „program u programu“ (mikroprogram) zapisan u ROM-u procesora. To je onaj <em>uCode ROM</em> koji si video na Core 2 Duo (slajd 42 iz M3_01), i ona <em>upravljačka memorija</em> iz hijerarhijske dekompozicije u Modulu 1, deo 1.6. Ovo je i „mikroprogramski nivo“ iz sadržaja predmeta.</p>
+<p>Upravljačka jedinica, dakle, može da generiše upravljačke signale (naše mikrooperacije sa slajda 13) na dva načina:</p>
+<ul>
+<li><strong>Hardversko (ožičeno) upravljanje</strong>: signali se dobijaju direktno iz logičkih kola. Brzo, ali teško za menjanje i projektovanje kad ima mnogo složenih instrukcija. Koristi RISC.</li>
+<li><strong>Mikroprogramsko upravljanje</strong>: za svaku mašinsku instrukciju u upravljačkoj memoriji postoji niz mikroinstrukcija koje redom generišu signale. Sporije, ali lako je dodati novu složenu instrukciju: samo se napiše novi mikroprogram. Koristi CISC.</li>
+</ul>
+<figure class="slide"><img src="img/m3b-26.jpg" alt="CISC i RISC poređenje" loading="lazy"><figcaption><b>M3_02, slajd 26 · CISC i RISC, poređenje</b></figcaption></figure>
+<p>Na slajdu 26 levo (žuto) je ilustracija dužine koda: CISC instrukcije su različite dužine (neke dugačke, neke kratke), a RISC instrukcije su sve iste dužine, ali ih ima više. Desno su parovi osobina (zeleno CISC, crveno RISC), red po red:</p>
+<div class="tbl"><table>
+<tr><th>CISC</th><th>RISC</th></tr>
+<tr><td>Naglasak na hardveru</td><td>Naglasak na softveru (kompajleru)</td></tr>
+<tr><td>Složene instrukcije koje traju više ciklusa</td><td>Jednostavne instrukcije koje traju 1 ciklus</td></tr>
+<tr><td>Mnoge instrukcije mogu pristupati memoriji, mnogo načina adresiranja</td><td>Samo LOAD/STORE pristupaju memoriji, malo načina adresiranja</td></tr>
+<tr><td>Slabije protočna obrada</td><td>Izrazito protočna obrada (pipelining)</td></tr>
+<tr><td>Instrukcije interpretira mikroprogram</td><td>Instrukcije izvršava direktno hardver</td></tr>
+<tr><td>Promenljiv format i dužina instrukcija</td><td>Fiksan format i dužina instrukcija</td></tr>
+<tr><td>Malo registara, ponekad specijalne namene</td><td>Mnogo registara opšte namene</td></tr>
+<tr><td>Složenost je u mikroprogramu</td><td>Složenost je u kompajleru</td></tr>
+<tr><td>Kraći program (gust kod), jednostavniji kompajleri</td><td>Duži program (više instrukcija), energetski efikasniji</td></tr>
+<tr><td>Primeri: IBM System/360, x86, IA-32, AMD-64, x86-64</td><td>Primeri: MIPS, ARM, AVR, SPARC, RISC-V</td></tr>
+</table></div>
+
+<h3>Jedna CISC instrukcija prema pet RISC instrukcija (slajd 27)</h3>
+<p><strong>CISC:</strong> <code>ADD $4, 14(%eax, %ebx, 8)</code>. Ova jedna x86 instrukcija:</p>
+<ol>
+<li>izračuna adresu: 14 + sadržaj registra eax + sadržaj registra ebx × 8,</li>
+<li>pročita broj sa te adrese iz memorije,</li>
+<li>sabere ga sa konstantom 4,</li>
+<li>upiše rezultat nazad na istu adresu u memoriji.</li>
+</ol>
+<p>Za to su potrebna dva pristupa memoriji i složeno računanje adrese, pa traje više ciklusa. U jeziku 9 faza: ona prolazi gotovo sve faze, uključujući računanje adrese operanda (3), donošenje operanda (4) i upis rezultata (7).</p>
+<p><strong>RISC:</strong> <code>ADD R5 R7</code> znači R5 ← R5 + R7. Samo registri, jedan ciklus. Evo šta bi RISC procesor morao da uradi da bi dobio isti efekat kao gornja CISC instrukcija (uzmimo da je eax u R1, a ebx u R2):</p>
+<div class="two">
+<div><h5>CISC (x86): 1 instrukcija</h5><pre style="margin:0">ADD $4, 14(%eax,%ebx,8)</pre><p style="margin:8px 0 0;font-size:.9rem">Dugačka (više bajtova), traje više ciklusa. Unutra je dekoder ipak razbija na 3–4 mikro-operacije.</p></div>
+<div><h5>RISC: 5 instrukcija</h5><pre style="margin:0">SHL   R3, R2, 3    R3 = R2 × 8
+ADD   R3, R3, R1   R3 = R3 + R1
+LOAD  R4, 14(R3)   R4 = M[R3 + 14]
+ADD   R4, R4, #4   R4 = R4 + 4
+STORE R4, 14(R3)   M[R3 + 14] = R4</pre><p style="margin:8px 0 0;font-size:.9rem">Svaka je kratka, iste dužine, i u protočnoj obradi završava se po jedna u ciklusu. Memoriji pristupaju samo LOAD i STORE.</p></div>
+</div>
+<p>Pomeranje ulevo za 3 bita (<code>SHL</code>) isto je što i množenje sa 2³ = 8; tako procesori brzo množe stepenom dvojke. Oba programa imaju po dva pristupa memoriji; razlika je u tome ko razlaže posao na korake: kod CISC-a mikroprogram u procesoru, kod RISC-a kompajler.</p>
+<div class="ex">CISC je kao recept „napravi palačinke“: jedna komanda, ali kuvar mora da zna 15 koraka napamet. RISC je kao recept gde je svaki korak posebna kratka komanda: „uzmi jaje“, „razbij“, „dodaj mleko“. Više komandi, ali svaka je trivijalna i brza, i lako ih je izvršavati na pokretnoj traci.</div>
+<p><strong>Zašto je RISC lakši za protočnu obradu?</strong> Ako su sve instrukcije iste dužine i traju isto, svaka faza pokretne trake (Modul 2) uvek zna gde počinje sledeća instrukcija i koliko traje. Kod CISC-a instrukcija može biti od 1 do 15 bajtova i trajati od 1 do 100 ciklusa, pa se traka stalno „zaglavljuje“.</p>
+
+<h3>Veličina programa (slajd 28)</h3>
+<figure class="slide"><img src="img/m3b-28.jpg" alt="Veličina programa CISC i RISC" loading="lazy"><figcaption><b>M3_02, slajd 28 · Veličina programa CISC i RISC</b></figcaption></figure>
+<p>Slajd 28 je rukom nacrtana ilustracija istog „složenog zadatka“ (Complex Task) na dve mašine: levo, kod CISC-a, zadatak zauzima kratak niz dugačkih instrukcija; desno, kod RISC-a, dugačak niz kratkih instrukcija. Ispod su primeri (CISC: IBM System 360, x86, IA-32, AMD-64, x86_64; RISC: MIPS, ARM, AVR) i tri razlike uokvirene crvenom: kod CISC-a <strong>instrukcije se duže izvršavaju, dekodiranje je složenije, elektronska kola su složenija</strong>; kod RISC-a <strong>instrukcije se brže izvršavaju, dekodiranje je brzo, elektronska kola su jednostavnija</strong>. Ukupno vreme programa je, setićeš se iz Modula 2, broj instrukcija × CPI × trajanje takta: CISC smanjuje prvi činilac, RISC druga dva.</p>
+<div class="simple">Danas se razlika briše. Moderni x86 procesori (Intel, AMD) su spolja CISC, ali iznutra dekoder razbija svaku složenu instrukciju na jednostavne <strong>mikro-operacije (µops)</strong> nalik RISC instrukcijama, koje se onda izvršavaju protočno i superskalarno. Obrnuto, ARM je dodao i neke složenije instrukcije. Uspeh RISC filozofije vidi se u dominaciji ARM-a u telefonima i u rastu RISC-V.</div>
+<details class="stop"><summary>Jedan procesor ima instrukcije dužine od 1 do 15 bajtova i uCode ROM, a drugi sve instrukcije od 4 bajta i 32 registra opšte namene. Koji je CISC, a koji RISC?</summary><div>Prvi je <strong>CISC</strong> (promenljiva dužina, mikroprogram; to je x86). Drugi je <strong>RISC</strong> (fiksna dužina, mnogo registara; npr. ARM ili RISC-V).</div></details>
+
+<h3>ISA danas: x86, ARM i RISC-V (Modul 2, slajdovi 6–9)</h3>
+<p>Ovu temu profesor otvara još u Modulu 2, ali tek sada imaš sve pojmove da je razumeš do kraja:</p>
+<figure class="slide"><img src="img/m2-9.jpg" alt="Instruction Set Architectures x86 ARM RISC-V" loading="lazy"><figcaption><b>Modul 2, slajd 9 · Arhitekture skupova instrukcija</b></figcaption></figure>
+<div class="tbl"><table>
+<tr><th>ISA</th><th>Vrsta</th><th>Ko pravi</th><th>Gde se koristi</th></tr>
+<tr><td><strong>x86 (x86-64)</strong></td><td>Zatvorena ISA (CISC)</td><td>Intel i AMD</td><td>Većina desktop i laptop računara i servera</td></tr>
+<tr><td><strong>ARM</strong></td><td>Zatvorena ISA (RISC); firma ARM ne pravi čipove, nego <strong>licencira</strong> dizajn drugima</td><td>Apple, Qualcomm, Samsung, MediaTek…</td><td>Android i iOS uređaji, novi Apple računari (M serija)</td></tr>
+<tr><td><strong>RISC-V</strong></td><td><strong>Otvorena i besplatna ISA</strong> (RISC)</td><td>Bilo ko</td><td>Bilo ko može da projektuje i prodaje RISC-V procesor bez dozvole i licence</td></tr>
+</table></div>
+<p><strong>RISC-V</strong> (slajdovi 7–8): specifična RISC arhitektura. Razvoj je počeo <strong>maja 2010.</strong> u Parallel Computing Laboratory na Univerzitetu Kalifornija u Berkliju. Jedna od prvih RISC arhitektura nastala je na Berkliju 1980–1984 (Berkeley RISC I), pa je RISC-V <strong>5. generacija</strong> Berkeley RISC-a (odatle „V“, rimsko 5). Dizajneri RISC-V jezgara sami odlučuju da li će svoj dizajn (intelektualnu svojinu, IP) objaviti javno, pa <strong>nije sav RISC-V hardver otvoren</strong>; otvorena je sama ISA. ISA se može <strong>slobodno proširivati</strong> sopstvenim instrukcijama, što daje veliku fleksibilnost za specijalizovane procesore.</p>
+<div class="simple">Zašto je otvorena ISA važna? Setićeš se iz Modula 1 da je ISA ugovor između hardvera i softvera. Da bi neko napravio x86 procesor, treba mu licenca od Intela (a praktično je nemoguće dobiti). Za ARM treba plaćati licencu. RISC-V je kao otvoreni standard: bilo koji univerzitet, startap ili država može da napravi svoj procesor koji izvršava isti softver.</div>
+
+<h3>Sve vrste arhitektura u jednoj tabeli (Tabela arhitektura procesora.pdf)</h3>
+<p>Dodatni PDF iz Modula 3 upoređuje osnovne vrste arhitektura. Neke već znaš (Von Neumann i Harvard iz Modula 1, CISC i RISC iz ovog dela), a neke su nove:</p>
+<div class="tbl"><table>
+<tr><th>Arhitektura</th><th>Suština</th><th>Prednost</th><th>Nedostatak</th><th>Primena</th></tr>
+<tr><td><strong>Von Neumann</strong></td><td>Jedna memorija i jedna magistrala za program i podatke</td><td>Jednostavna i jeftina</td><td>Usko grlo magistrale</td><td>Opšti računari</td></tr>
+<tr><td><strong>Harvard</strong></td><td>Odvojene memorije i magistrale</td><td>Paralelan pristup instrukcijama i podacima</td><td>Složenija i skuplja</td><td>Mikrokontroleri, DSP, L1 keš</td></tr>
+<tr><td><strong>RISC</strong></td><td>Malo jednostavnih instrukcija fiksne dužine, hardversko upravljanje</td><td>Lako za proizvodnju i optimizaciju; energetski efikasan</td><td>Više instrukcija za složene zadatke</td><td>Telefoni, ugrađeni sistemi, Apple M</td></tr>
+<tr><td><strong>CISC</strong></td><td>Mnogo složenih instrukcija promenljive dužine, mikroprogramsko upravljanje</td><td>Gust kod, jednostavniji kompajleri</td><td>Složeniji hardver, promenljivo vreme</td><td>PC i serveri (Intel, AMD)</td></tr>
+<tr><td><strong>Superskalarna</strong></td><td>Više izvršnih jedinica (ALU, FPU); CPU sam nalazi nezavisne instrukcije i izvršava ih paralelno</td><td>Brže bez povećanja takta</td><td>Vrlo složeno upravljanje („out-of-order execution“)</td><td>Skoro svi moderni procesori</td></tr>
+<tr><td><strong>VLIW</strong> (Very Long Instruction Word)</td><td><strong>Kompajler</strong> unapred pakuje više operacija u jednu dugačku instrukciju, koje se izvršavaju paralelno (npr. Intel Itanium, EPIC)</td><td>Jednostavniji CPU (odgovornost je prebačena na kompajler)</td><td>Zavisi od pametnog kompajlera; loše performanse kod loše optimizovanog koda</td><td>Specifični serveri, DSP</td></tr>
+<tr><td><strong>Višejezgarna (CMP)</strong></td><td>Više procesorskih jezgara na jednom čipu; fizički paralelizam</td><td>Bolje performanse u multitaskingu i višenitnim programima</td><td>„Softversko usko grlo“: programi moraju biti pisani paralelno</td><td>Od telefona do superračunara</td></tr>
+<tr><td><strong>GPGPU</strong></td><td>Hiljade jednostavnih jezgara za istovremenu obradu velikih skupova podataka (SIMT: NVIDIA CUDA, OpenCL)</td><td>Izuzetne performanse za lako deljive zadatke</td><td>Neefikasan za sekvencijalne zadatke; specijalizovano programiranje</td><td>Veštačka inteligencija, nauka, grafika</td></tr>
+</table></div>
+<div class="simple">Razlika superskalarne i VLIW arhitekture: obe izvršavaju više instrukcija istovremeno, ali kod superskalarne <strong>hardver</strong> u toku rada odlučuje koje mogu paralelno (to su Schedulers i Reorder Buffer na Core 2 Duo), a kod VLIW to unapred odlučuje <strong>kompajler</strong>. Ista podela kao CISC i RISC: složenost je ili u hardveru, ili u kompajleru.</div>
+<p>Objašnjenja iz PDF-a, ukratko:</p>
+<ol>
+<li><strong>Von Neumann vs. Harvard</strong>: većina modernih procesora koristi modifikovanu Harvard arhitekturu (podela na L1 kešu, Von Neumann u RAM-u).</li>
+<li><strong>RISC vs. CISC</strong>: podela je sve manje oštra (µops kod x86, složenije instrukcije kod ARM-a).</li>
+<li><strong>Superskalarna i višejezgarna</strong> se koriste zajedno: moderni procesor ima više jezgara, a svako jezgro je superskalarno, baš kao Core 2 Duo.</li>
+<li><strong>Heterogene arhitekture, SoC (System on a Chip)</strong>: na jednom čipu su CPU jezgra (često <strong>big.LITTLE</strong>: kombinacija jakih i štedljivih jezgara), GPU, <strong>NPU</strong> (neuro-procesorska jedinica za AI), DSP, modemi. Cilj je maksimalna efikasnost i performanse po vatu. Primer: Apple M serija, procesori u telefonima. To je „dark silicon“ iz Modula 1 u praksi.</li>
+</ol>
+
+<h3>Ceo Modul 3 u jednom pogledu</h3>
+<p>Evo cele priče Modula 3 kao niza rečenica. Ako svaku umeš da objasniš svojim rečima, Modul 3 znaš:</p>
+<ol class="recap">
+<li>Procesor za svaku instrukciju: donosi je, dekodira, donosi podatke, izvršava i upisuje rezultat; za to koristi registre <strong>BN</strong> (adresa sledeće), <strong>RN</strong> (trenutna instrukcija), <strong>ARM</strong> (adresa), <strong>PRM</strong> (podatak), <strong>PSW</strong> (zastavice) i <strong>AK</strong> (M3_01, sl. 3–6).</li>
+<li>Instrukcija = <strong>opkod</strong> (šta) + <strong>adresni delovi</strong> (sa čim). Na akumulatorskoj mašini 4 + 4 bita; A = B + C je <code>LOAD B, ADD C, STORE A, HALT</code> (sl. 7–10).</li>
+<li>Po broju adresa instrukcije su tro-, dvo-, jedno- i nulaadresne: manje adresa znači kraće instrukcije, ali više njih (sl. 11).</li>
+<li>Svaka instrukcija se izvodi <strong>mikrooperacijama</strong>; donošenje je uvek ARM ← BN, PRM ← memorija, RN ← PRM, BN ← BN + 1 (sl. 12–13).</li>
+<li>Model sa <strong>9 faza</strong> opisuje svaku instrukciju; faze 3–7 su opcione, a faza 8 proverava prekid (sl. 14–16).</li>
+<li>Instrukcije se dele na prenos podataka, aritmetičke, logičke, prenos upravljanja, U/I i konverziju; skokovi jedini menjaju BN drugačije od +1 (sl. 17–40).</li>
+<li><strong>Asembler</strong> prevodi simbolički kod u dva prolaza zbog referenci unapred; linker spaja, loader učitava (sl. 43–45).</li>
+<li><strong>Keš</strong> je mala brza skrivena memorija između CPU i RAM-a koja radi zbog lokalnosti; kod direktnog mapiranja adresa = tag | indeks | offset (sl. 46–48, M3_02 sl. 14–15).</li>
+<li>Po tome odakle dolaze operandi postoji 5 modela mašina; nove arhitekture su <strong>registar–registar</strong> (M3_02, sl. 19–22).</li>
+<li><strong>CISC</strong>: složene instrukcije promenljive dužine, mikroprogram (x86). <strong>RISC</strong>: jednostavne instrukcije fiksne dužine, load/store, hardversko upravljanje, protočnost (ARM, RISC-V) (M3_02, sl. 24–28).</li>
+</ol>
+<div class="bridge">Kroz ceo Modul 3 smo za svaku instrukciju rekli samo „pročitaj podatak iz memorije“. Ali kako tačno procesor razgovara sa memorijom preko magistrale, takt po takt, šta se dešava kad uređaj traži pažnju (prekid), i na koje sve načine instrukcija može da kaže gde je podatak? To je Modul 4.</div>
+<p class="src">Dodatni izvori: <a href="https://youtu.be/nIwdhPOVOUk">How amateurs created the world's most popular processor (ARM, video sa slajda)</a> · <a href="https://www.youtube.com/watch?v=Ps0JFsyX2fU">Explaining RISC-V (video sa slajda)</a></p>
+<div class="quiz" data-ch="c13"></div>
+</section>
+
+<!-- ============ MODUL 4 kao jedna priča ============ -->

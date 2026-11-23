@@ -1,0 +1,39 @@
+<section class="ch" id="c3">
+<div class="ch-head"><span class="ch-num">M1</span><span class="ch-src">Modul 1 · deo 3 od 6 · slajdovi 16–20</span></div>
+<h2>Šta je u kutiji: komponente, memorija i ko ih pravi</h2>
+
+<h3>Hardverske komponente (slajd 16)</h3>
+<figure class="slide"><img src="img/m1-16.jpg" alt="Slajd Hardverske komponente" loading="lazy"><figcaption><b>Slajd 16 · Hardverske komponente</b></figcaption></figure>
+<p>Levo na slajdu je spisak onoga što bi video kad otvoriš računar: <strong>procesori, memorija, U/I (ulazno-izlazni) uređaji, magistrale</strong> (veze između njih), <strong>kućište i napajanje</strong>. Desno je ono što je za nas važnije, pojednostavljena šema rada procesora. Hajde da je pročitamo pomoću našeg programa za prosek:</p>
+<ol>
+<li>Program (onih pet instrukcija) i ocene 8, 9, 10 nalaze se u <strong>glavnoj memoriji</strong> (Main Memory, dole desno). Gore vidiš da između procesora i glavne memorije stoje još i <strong>L1 i L2 keš</strong>, manje i brže memorije, o kojima ćemo za trenutak.</li>
+<li>Registar <strong>PC</strong> (Program Counter, brojač naredbi) čuva adresu sledeće instrukcije. Procesor tu adresu pošalje memoriji linijom <em>Address</em>, a memorija vrati instrukciju linijom <em>Data</em>. Signal <em>Busy?</em> govori da li je memorija još zauzeta.</li>
+<li>Instrukcija stiže u <strong>Inst. Reg.</strong> (registar instrukcije). Odatle je čita <strong>Control</strong>, upravljačka jedinica: ona shvati šta treba uraditi (npr. „saberi“) i šalje <em>Control Lines</em>, upravljačke signale ostalim delovima.</li>
+<li>Sabiranje radi <strong>ALU</strong> (aritmetičko-logička jedinica) u delu koji se zove <strong>Datapath</strong> (put podataka), zajedno sa <strong>registrima</strong> u kojima se čuva međuzbir. Upravljačka jedinica preko linije <em>Condition?</em> proverava rezultat (npr. da li je nula), što joj treba za odluke tipa „ako je…, skoči“.</li>
+</ol>
+<p>Ovaj krug (donesi instrukciju, shvati je, izvrši je, pređi na sledeću) je srce celog predmeta. Ovde ga samo vidimo izdaleka; u Modulu 3 ćemo ga raditi korak po korak.</p>
+<details class="stop"><summary>U kom registru je adresa instrukcije koja će se sledeća izvršiti, a u kom sama instrukcija koja se upravo izvršava?</summary><div>Adresa sledeće je u <strong>PC</strong> (brojač naredbi). Instrukcija koja se izvršava je u <strong>registru instrukcije</strong> (Inst. Reg., IR).</div></details>
+
+<h3>Zašto memorija ima „spratove“ (slajd 17)</h3>
+<p>Na slajdu 16 si video da između procesora i glavne memorije stoje keševi. Zašto? Zato što procesor radi neuporedivo brže nego što memorija može da mu dostavlja podatke. Slajd 17 to pokazuje brojevima:</p>
+<figure class="slide"><img src="img/m1-17.jpg" alt="Hijerarhija memorije sa veličinama i brzinama" loading="lazy"><figcaption><b>Slajd 17 · Hijerarhija memorije</b></figcaption></figure>
+<p>Slika se čita sleva nadesno: što je memorija <strong>dalje od procesora</strong>, to je <strong>veća, sporija i jeftinija po bajtu</strong>. Registri (oko 1000 bajtova) odgovaraju za 300 pikosekundi, L1 keš (64 KB) za oko 1 ns, L2 (256 KB) za 3–10 ns, L3 (nekoliko MB) za 10–20 ns, glavna memorija (gigabajti) za 50–100 ns, a disk (terabajti) za 5–10 milisekundi.</p>
+<div class="lab" id="hierLab"><div class="lab-title">Infografika: koliko procesor čeka na podatak</div>
+<div class="seg" id="hierMode"><button type="button" class="on" data-m="real">Stvarno vreme</button><button type="button" data-m="human">Kao da je registar 1 sekunda</button></div>
+<div id="hierBars" class="hbars"></div>
+<p class="score">Trake su na logaritamskoj skali: svaki podeok udesno znači 10 puta duže. Na običnoj skali disk bi bio traka dugačka oko 5 km, a registar tačka. SSD nije na slajdu; dodat je radi poređenja.</p></div>
+<p>Prebaci infografiku na „kao da je registar 1 sekunda“. Ako bi čitanje registra trajalo jednu sekundu, čitanje iz RAM-a bi trajalo nekoliko minuta, a sa diska oko <strong>8 meseci</strong>. Zato procesor ne sme stalno da ide u RAM, a pogotovo ne na disk.</p>
+<p>Prati sada naše ocene. Excel fajl je na <strong>disku</strong>. Kad ga otvoriš, operativni sistem ga prenese u <strong>RAM</strong>. Kad program počne da sabira, ocene se kopiraju u <strong>keš</strong>, pa u <strong>registre</strong>, i tek tamo ALU može da ih sabere. Hijerarhija radi zato što programi imaju osobinu koja se zove <strong>lokalnost</strong>: ako je upotrebljen neki podatak, verovatno će uskoro biti upotrebljen opet (npr. međuzbir u petlji), ili podatak odmah do njega (sledeća ocena u nizu). Zato se isplati držati malu količinu „vrućih“ podataka blizu procesora. Keš ćemo detaljno raditi u Modulu 3.</p>
+<details class="stop"><summary>Zašto ne napravimo celu memoriju od registara, kad su najbrži?</summary><div>Zato što su brze memorije <strong>skupe po bajtu, zauzimaju mnogo mesta na čipu i troše mnogo energije</strong>, a i fizički moraju biti blizu procesora. Gigabajti registara ne bi stali na čip niti bi se mogli ohladiti. Hijerarhija daje kompromis: skoro brzina registra, a skoro kapacitet diska.</div></details>
+
+<h3>Gde se na mapi nalazi ovaj predmet (slajd 18)</h3>
+<figure class="slide"><img src="img/m1-18.jpg" alt="Hijerarhija transformacije, crveno uokvireni ISA, mikroarhitektura i logika" loading="lazy"><figcaption><b>Slajd 18 · Hijerarhija transformacije</b></figcaption></figure>
+<p>Ovde profesor prvi put pokazuje stub od devet nivoa: od <em>problema</em> na vrhu do <em>elektrona</em> na dnu. Detaljno ćemo ga raditi u delu 5, a sada samo obrati pažnju na <strong>crveni okvir</strong>: on obuhvata <strong>ISA</strong> (arhitekturu skupa instrukcija, žuto), <strong>mikroarhitekturu</strong> i <strong>logiku</strong>. To je teritorija predmeta Arhitektura računara. Sve iznad (algoritmi, programski jezici, operativni sistem) je softver, a sve ispod (uređaji, elektroni) je fizika i elektronika. Mi stojimo na granici između njih.</p>
+
+<h3>Ko pravi ove delove i gde se sve nalaze (slajdovi 19–20)</h3>
+<p>Hardver koji smo opisali projektuje mali broj kompanija. <strong>Intel</strong> pravi procesore, grafičke i mrežne čipove, matične ploče i disk kontrolere. <strong>AMD</strong> pravi procesore, grafičke čipove i čipsete za matične ploče. <strong>IBM</strong> pravi procesore (npr. za servere i mejnfrejm računare), diskove i kontrolere. <strong>ARM</strong> projektuje procesore za <em>SoC</em> (System on Chip, ceo računar na jednom čipu, kakav je u telefonu) i te projekte licencira drugima. <strong>NVIDIA</strong> pravi grafičke čipove i specijalne uređaje na osnovu ARM SoC-a. Na listi je i <strong>Apple</strong>, koji danas sam projektuje svoje procesore na ARM osnovi.</p>
+<p>Slajd 20 dodaje važnu misao: <strong>iste komponente</strong> (procesor, memorija, magistrale, U/I) nalaze se u desktop i laptop računarima, serverima, telefonima, tabletima i IoT uređajima (pametne sijalice, satovi, senzori). Razlikuju se samo veličina, potrošnja struje i količina podataka koju obrade u jedinici vremena. Zato je ono što učiš u ovom predmetu primenljivo na svaki uređaj oko tebe.</p>
+<details class="stop"><summary>Telefon i server imaju „iste komponente“. Šta je onda razlika između njih, u jezicima ovog predmeta?</summary><div>Razlika je pre svega u <strong>organizaciji</strong>: broju jezgara, veličini keša i memorije, taktu, potrošnji. Arhitektura može biti ista ili različita (telefon je skoro uvek ARM, server najčešće x86 ili ARM), ali osnovna građa (CPU, memorija, magistrale, U/I) je ista.</div></details>
+<div class="bridge">Telefon u tvom džepu je danas jači od superračunara iz 1990-ih, a sastoji se od istih vrsta delova. Šta se onda promenilo? Promenila se <strong>tehnologija</strong>, i o tome govore slajdovi 21–23.</div>
+<div class="quiz" data-ch="c3"></div>
+</section>
