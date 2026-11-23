@@ -25,6 +25,7 @@ button{font:inherit;color:inherit}
 .mainnav a:hover{color:var(--ink);background:var(--panel-2)}
 .mainnav a.on{color:var(--accent);background:var(--accent-soft)}
 .mainnav svg{width:17px;height:17px;flex:none}
+.mainnav .ns{display:none}
 .tools{margin-left:auto;display:flex;gap:6px;align-items:center;flex:none}
 .ibtn{display:inline-flex;align-items:center;gap:8px;height:38px;min-width:38px;justify-content:center;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);cursor:pointer}
 .ibtn:hover{border-color:var(--accent)}
@@ -36,6 +37,11 @@ button{font:inherit;color:inherit}
   .top-in{height:auto;flex-wrap:wrap;padding-block:8px 0;gap:8px}
   .mainnav{order:3;flex-basis:100%;margin:0 -4px;padding-bottom:6px}
   .mainnav a{padding:6px 10px;font-size:.86rem}
+}
+@media (max-width:560px){
+  .mainnav{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin:0;overflow:visible}
+  .mainnav a{flex-direction:column;gap:3px;padding:6px 2px;font-size:.72rem;border-radius:10px}
+  .mainnav .nl{display:none}.mainnav .ns{display:inline}
 }
 .readbar{position:absolute;left:0;bottom:-1px;height:2px;background:var(--accent);width:0;transition:width .15s linear}
 
