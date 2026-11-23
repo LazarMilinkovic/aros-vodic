@@ -1,0 +1,77 @@
+<section class="ch" id="o6">
+<div class="ch-head"><span class="ch-num">D2</span><span class="ch-src">Dopuna za 2. kolokvijum · nadovezuje se na slajd 18 Modula 9 i problem filozofa; izvori: Silberschatz gl. 8, knjiga Simić i Bataveljić</span></div>
+<h2>Potpuni zastoj: kad niko ne može dalje, i kako to sprečiti</h2>
+<p class="lead">Na slajdu 18 Modula 9 videli smo dva procesa koji jedan drugom drže resurs i zauvek čekaju. Kod filozofa isto, samo u krug od pet. Slajdovi tu staju, ali ispitna pitanja ne: traže se uslovi za nastanak zastoja, skup stanja sistema, formula za broj resursa i inverzija prioriteta. Ova lekcija sve to povezuje u jednu priču: šta je zastoj, zašto nastaje baš onda kad su ispunjena četiri uslova, i tri strategije borbe protiv njega.</p>
+
+<h3>Definicija</h3>
+<p><strong>Potpuni zastoj</strong> (deadlock, međusobno blokiranje) je situacija kada proces trajno ostaje u stanju čekanja, jer u isto vreme postoje drugi procesi koji su takođe u stanju čekanja, a zauzeli su resurse koje zahteva dati proces i drže ih zauzetim. U takvoj situaciji dati proces <b>nikada ne dobija</b> zahtevane resurse. Kraće, rečima sa slajda 20: dva procesa su blokirana ako nijedan od njih ne može da nastavi sa radom dok drugi ne nastavi, a <b>sistem je blokiran</b> ako su svi procesi blokirani.</p>
+<div class="simple">Raskrsnica sa četiri automobila, svaki čeka da prođe onaj sa desne strane. Svako ima pravo da čeka, niko ne radi ništa pogrešno, i niko nikad ne prođe.</div>
+<p><b>Resursi</b> o kojima je reč su sve što proces mora ekskluzivno da koristi neko vreme: štampač, traka, zapis u bazi, datoteka zaključana za pisanje, semafor, okvir memorije. Proces sa resursom radi uvek isto: <b>zahteva</b> ga (ako nije slobodan, čeka), <b>koristi</b> ga, i <b>oslobađa</b> ga.</p>
+<div class="warn"><b>Zastoj nije isto što i gladovanje.</b> Kod gladovanja proces čeka dugo (možda zauvek) jer ga drugi stalno preteču, ali sistem radi i drugi procesi napreduju (npr. dug proces kod SJF-a). Kod zastoja grupa procesa stoji, i <em>niko</em> iz te grupe ne može da napreduje, bez obzira na planer.</div>
+
+<h3>Četiri uslova za nastanak zastoja</h3>
+<p>Zastoj može da nastane <b>samo ako su istovremeno ispunjena sva četiri</b> uslova (Coffman, 1971). Ovo je najčešće pitanje iz ove oblasti:</p>
+<ol>
+<li><b>Međusobno isključenje</b> (mutual exclusion): bar jedan resurs je nedeljiv, tj. u jednom trenutku može da ga koristi samo jedan proces. (Štapić drži jedan filozof.)</li>
+<li><b>Posedovanje i čekanje</b> (hold and wait): proces drži bar jedan resurs i čeka na dodatni resurs koji drži neko drugi. (Filozof drži levi štapić i čeka desni.)</li>
+<li><b>Nema prekidanja</b> (no preemption): resurs ne može da se oduzme procesu na silu; oslobađa ga samo proces koji ga drži, dobrovoljno, kad završi. (Niko ne otima štapić iz ruke.)</li>
+<li><b>Kružno čekanje</b> (circular wait): postoji lanac procesa P<sub>0</sub>, P<sub>1</sub>, …, P<sub>n</sub> takav da P<sub>0</sub> čeka resurs koji drži P<sub>1</sub>, P<sub>1</sub> čeka resurs koji drži P<sub>2</sub>, …, a P<sub>n</sub> čeka resurs koji drži P<sub>0</sub>. (Svaki filozof čeka suseda zdesna, a peti prvog.)</li>
+</ol>
+<p>Ako bilo koji od četiri uslova ne važi, zastoj je nemoguć. Na tome počiva prva strategija.</p>
+<figure class="diag"><svg viewBox="0 0 520 190" role="img" aria-label="Graf dodele resursa sa ciklusom: P1 drži R1 i čeka R2, P2 drži R2 i čeka R1"><defs><marker id="dl1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+<g font-family="Inter,sans-serif" font-size="14" fill="none" stroke="currentColor" stroke-width="1.6">
+<circle cx="110" cy="95" r="30"/><circle cx="410" cy="95" r="30"/>
+<rect x="230" y="12" width="60" height="44" rx="4"/><rect x="230" y="134" width="60" height="44" rx="4"/>
+<path d="M230 34 Q160 34 128 70" marker-end="url(#dl1)"/>
+<path d="M136 112 Q170 156 228 156" marker-end="url(#dl1)" stroke-dasharray="5 4"/>
+<path d="M290 156 Q360 156 392 120" marker-end="url(#dl1)"/>
+<path d="M384 78 Q350 34 292 34" marker-end="url(#dl1)" stroke-dasharray="5 4"/>
+</g>
+<g font-family="Inter,sans-serif" font-size="14" fill="currentColor" text-anchor="middle"><text x="110" y="100">P1</text><text x="410" y="100">P2</text><text x="260" y="39">R1</text><text x="260" y="161">R2</text>
+<text x="150" y="26" font-size="11">dodeljen</text><text x="370" y="176" font-size="11">dodeljen</text><text x="150" y="168" font-size="11">zahtev</text><text x="372" y="28" font-size="11">zahtev</text></g></svg>
+<figcaption>Graf dodele resursa za primer sa slajda 18 Modula 9. Krug je proces, pravougaonik resurs. Puna strelica resurs → proces znači „dodeljen“, isprekidana proces → resurs znači „čeka“. Graf ima ciklus P1 → R2 → P2 → R1 → P1: to je kružno čekanje. Kada svaki resurs ima samo jedan primerak, ciklus u grafu znači zastoj.</figcaption></figure>
+
+<h3>Prva strategija: sprečavanje (prevencija)</h3>
+<p>Sistem se projektuje tako da jedan od četiri uslova <em>nikad</em> ne bude ispunjen:</p>
+<div class="tbl"><table><thead><tr><th>Uslov</th><th>Kako se razbija</th><th>Cena</th></tr></thead><tbody>
+<tr><td>Međusobno isključenje</td><td>Resurs se učini deljivim (datoteka samo za čitanje; štampač preko spool-a: svi „štampaju“ u red na disku, a samo jedan servis drži štampač)</td><td>Mnogi resursi su suštinski nedeljivi</td></tr>
+<tr><td>Posedovanje i čekanje</td><td>Proces traži <b>sve</b> resurse odjednom pre početka, ili sme da traži nove samo kad ne drži ništa (filozof uzima štapiće samo ako su <b>oba</b> slobodna)</td><td>Slabo iskorišćenje resursa, moguće gladovanje</td></tr>
+<tr><td>Nema prekidanja</td><td>Ako proces ne dobije traženo, oduzmu mu se svi resursi koje drži i mora da ih traži ponovo</td><td>Moguće samo za resurse čije stanje može da se sačuva (procesor, memorija), ne za štampač</td></tr>
+<tr><td>Kružno čekanje</td><td>Svi resursi se numerišu, a proces sme da ih traži samo rastućim redom (paran/neparan filozof)</td><td>Programer mora da poštuje redosled</td></tr>
+</tbody></table></div>
+<p>Tri rešenja problema filozofa sa slajda 65 Modula 9 su upravo prevencija: „najviše četiri za stolom“ onemogućava da se krug zatvori (kružno čekanje), „samo ako su oba slobodna“ razbija posedovanje i čekanje, a asimetrično uzimanje (neparni levi pa desni, parni desni pa levi) razbija kružno čekanje.</p>
+
+<h3>Druga strategija: izbegavanje. Skup stanja sistema</h3>
+<p>Izbegavanje ne zabranjuje ništa unapred, ali pre <em>svake</em> dodele resursa OS proverava da li ga ta dodela vodi u opasnost. Za to mora da zna, za svaki proces, <b>najveći broj resursa koji će mu ikad trebati</b>.</p>
+<p>Stanje sistema je <b>bezbedno</b> ako postoji redosled (bezbedna sekvenca) u kome svi procesi mogu da dobiju sve što im treba i završe: prvi završi sa onim što je slobodno, oslobodi svoje resurse, s njima završi sledeći, i tako redom. Stanje je <b>nebezbedno</b> ako takav redosled ne postoji. Nebezbedno stanje još <em>nije</em> zastoj (možda procesi neće tražiti svoj maksimum), ali sistem više ne može da garantuje da do zastoja neće doći. Zato je skup mogućih stanja sistema, sa stanovišta potpunog zastoja, ovakav (ovaj crtež se traži na ispitu):</p>
+<figure class="diag"><svg viewBox="0 0 520 230" role="img" aria-label="Skup stanja sistema: bezbedna stanja, nebezbedna stanja i u njima zastoj"><g font-family="Inter,sans-serif" font-size="14" fill="none" stroke="currentColor" stroke-width="1.6">
+<rect x="10" y="10" width="500" height="210" rx="10"/>
+<ellipse cx="330" cy="115" rx="170" ry="95" stroke-dasharray="6 4"/>
+<ellipse cx="380" cy="120" rx="80" ry="48"/>
+</g><g font-family="Inter,sans-serif" font-size="14" fill="currentColor" text-anchor="middle">
+<text x="90" y="110" font-weight="600">Bezbedno</text><text x="90" y="128" font-size="12">stanje</text>
+<text x="235" y="58" font-weight="600">Nebezbedno</text><text x="235" y="76" font-size="12">stanje</text>
+<text x="380" y="125" font-weight="700">ZASTOJ</text></g></svg>
+<figcaption>Sva moguća stanja sistema. Bezbedna stanja (van isprekidane elipse) nikad ne vode u zastoj. Nebezbedna stanja (isprekidana elipsa) mogu, ali ne moraju. Zastoji su podskup nebezbednih stanja. Izbegavanje zastoja = sistem se drži samo u bezbednim stanjima.</figcaption></figure>
+<div class="ex"><b>Bankarov algoritam</b> (Dijkstra) je postupak izbegavanja: kao bankar koji ne daje kredit ako posle toga ne bi mogao da isplati sve klijente. Primer: 12 trake, tri procesa. P0 traži najviše 10 i drži 5; P1 najviše 4, drži 2; P2 najviše 9, drži 2. Slobodne su 12 − 9 = 3. Da li je stanje bezbedno? P1 treba još 2 ≤ 3: završi i vrati svoje 4 (slobodno 5). P0 treba još 5 ≤ 5: završi, slobodno 10. P2 treba još 7 ≤ 10: završi. Redosled &lt;P1, P0, P2&gt; postoji, stanje je <b>bezbedno</b>. Ako bi P2 sada tražio još jednu traku i dobio je, slobodne bi bile 2: P1 bi završio (slobodno 4), ali P0 treba 5, a P2 treba 6: niko ne može dalje, stanje bi bilo <b>nebezbedno</b>, pa OS ne odobrava zahtev i P2 čeka.</div>
+
+<h3>Koliko resursa je dovoljno: r ≥ p(m − 1) + 1</h3>
+<p>Klasično ispitno pitanje: sistem ima <b>p procesa</b>, svakom je potrebno <b>najviše m resursa</b> datog tipa, a ukupno je raspoloživo <b>r resursa</b>. Koji uslov mora da važi da se zastoj nikad ne pojavi?</p>
+<p>Rezonovanje: proces koji dobije svih m resursa može da završi i ne može da izazove zastoj. Najgori slučaj je kad svaki proces drži <b>m − 1</b> resursa i traži još jedan: tada je zauzeto p(m − 1) resursa i niko nema dovoljno. Ako u tom trenutku postoji <b>još bar jedan</b> slobodan resurs, neki proces ga dobije, ima m, završi i oslobodi svih m, pa sa tim mogu da završe i ostali. Dakle:</p>
+<div class="formula">r ≥ p · (m − 1) + 1 &nbsp;&nbsp;&nbsp; (r = broj raspoloživih resursa, p = broj procesa, m = najveći broj resursa potreban jednom procesu)</div>
+<p>Primer: 3 procesa, svaki treba najviše 2 štampača. Potrebno je r ≥ 3·1 + 1 = 4. Sa 3 štampača može se desiti da svaki proces drži po jedan i čeka drugi: zastoj. Sa 4 je nemoguće.</p>
+<div class="warn"><span class="fix">U obe skripte (aros2klk, pitanje 14, i Perks, pitanje 50) piše „p – broj resursa“. To je greška: p je <b>broj procesa</b>. Na ispitu napiši pravilno.</span></div>
+
+<h3>Treća strategija: otkrivanje i oporavak, ili ignorisanje</h3>
+<p>Ako sistem ništa ne sprečava ni izbegava, zastoj se može dogoditi, pa ga treba <b>otkriti</b> (periodično tražiti ciklus u grafu dodele resursa) i <b>oporaviti se</b>: prekinuti jedan ili sve procese iz ciklusa, ili im oduzimati resurse jedan po jedan dok se ciklus ne raskine (uz vraćanje procesa na ranije sačuvano stanje). Većina opštih OS-ova (Windows, Linux) u praksi zastoje među korisničkim procesima jednostavno <b>ignoriše</b> (tzv. „nojev algoritam“), jer su retki, a sprečavanje skupo; prepušta se programeru i korisniku da proces prekine.</p>
+<p>Zato i skripta, na pitanje šta je potrebno za upravljanje konkurentnim procesima, navodi tri stvari: (1) metod deljenja vremena mora biti implementiran tako da svaki proces dobije pristup sistemu; (2) procesi i sistemski resursi moraju biti zaštićeni, i to međusobno; (3) sistem mora da ima ugrađene mehanizme u jezgru za <b>prevenciju potpunog zastoja</b> između procesa.</p>
+
+<h3>Inverzija prioriteta</h3>
+<p>Poseban problem koji nastaje kada se prioritetno planiranje i deljeni resursi sretnu. <strong>Inverzija prioriteta</strong>: proces višeg prioriteta zahteva resurs koji drži proces nižeg prioriteta, pa je <b>proces višeg prioriteta blokiran procesom nižeg prioriteta</b> sve dok ovaj ne završi i oslobodi resurs. Tako proces nižeg prioriteta faktički ima „viši“ prioritet.</p>
+<p>Gore postaje kad postoji i treći proces, srednjeg prioriteta. Neka niski N drži resurs, visoki V čeka taj resurs, a srednji S ne treba resurs uopšte. Planer bira S ispred N (S ima viši prioritet), pa N ne napreduje i ne oslobađa resurs, pa V čeka i S-a, koga uopšte ne bi smeo da čeka. V može da čeka neograničeno dugo. Čuven primer: 1997. sonda <b>Mars Pathfinder</b> se stalno sama resetovala zbog baš ovog problema, dok inženjeri sa Zemlje nisu uključili rešenje.</p>
+<p><b>Rešenje: protokol nasleđivanja prioriteta.</b> Proces nižeg prioriteta koji drži resurs <b>privremeno nasleđuje viši prioritet</b> procesa koji čeka taj resurs, sve dok ne završi rad sa resursom. Tako ga srednji procesi više ne mogu preteći, brzo završi i oslobodi resurs, a kada ga oslobodi, <b>prioritet mu se vraća na originalnu vrednost</b>. Zatim resurs dobija visoki proces.</p>
+<details class="stop"><summary>Da li inverzija prioriteta znači zastoj?</summary><div>Ne. U inverziji prioriteta nema kružnog čekanja: niski proces nikoga ne čeka, samo ne dobija procesor jer ga pretiču drugi. Sistem radi, ali proces visokog prioriteta čeka predugo (ili neograničeno), što je bliže gladovanju. Nasleđivanje prioriteta to rešava bez prekidanja ijednog procesa.</div></details>
+<div class="bridge">Zastoj je problem dodele resursa uopšte. Najvažniji resurs posle procesora je <b>memorija</b>, i način na koji je OS deli između procesa je tema sledeće dve lekcije.</div>
+<p class="src">Izvori: A. Silberschatz i dr., <i>Operating System Concepts</i>, 10. izd., gl. 8 (Deadlocks) i 6.2 (Priority inversion); E. G. Coffman, M. Elphick, A. Shoshani, „System Deadlocks“, <i>Computing Surveys</i>, 1971; D. Simić, P. Bataveljić, <i>Organizacija računara i operativni sistemi</i>, FON.</p>
+<div class="quiz" data-ch="o6"></div>
+</section>

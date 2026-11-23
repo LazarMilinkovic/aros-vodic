@@ -1,0 +1,196 @@
+<section class="ch" id="o2">
+<div class="ch-head"><span class="ch-num">M8</span><span class="ch-src">Modul 8 · Upravljanje procesima 1 (slajdovi 1–23), Upravljanje procesima 2 (slajdovi 3–7, 21–27, 34–35), Silberschatz gl. 3</span></div>
+<h2>Proces: program koji živi, i sve što OS mora da pamti o njemu</h2>
+<p class="lead">Program na disku je mrtav: niz bajtova koji se ne menja. Kad ga pokrenemo, nastaje nešto što ima trenutnu instrukciju, vrednosti u registrima, svoju memoriju, otvorene datoteke, i što može da bude prekinuto pa nastavljeno hiljadu puta u sekundi. To živo nešto se zove <strong>proces</strong>. Ova lekcija gradi pojam procesa od nule: šta je proces, kako ga OS opisuje (kontrolni blok procesa), kroz koja stanja prolazi, kako izgleda u memoriji, kako nastaje i umire, i kako OS žonglira stotinama procesa pomoću redova čekanja, planera i promene konteksta.</p>
+
+<h3>Program i proces nisu isto (Modul 8, slajd 6)</h3>
+<p>Definicija sa slajda je kratka: <strong>proces je program koji se izvršava</strong>. Program je <b>statički</b> pojam: tekst instrukcija koji stoji na disku. Proces je <b>dinamički</b>: program plus trenutno stanje njegovog izvršavanja. Zahtevom za izvršavanje određenog programa aktivira se odgovarajući proces, a zahtev može da dođe od <b>korisnika</b> (dvoklik, komanda u terminalu), od <b>operativnog sistema</b> (sistemski servisi pri podizanju) ili od <b>nekog drugog već aktivnog procesa</b> (pregledač pokreće proces za novu karticu).</p>
+<p>Isti program može biti više procesa istovremeno. Ako tri korisnika na istom serveru otvore editor <code>vim</code>, postoji jedan program i tri procesa: kod je isti, ali svaki proces ima svoj tekst koji se uređuje, svoju poziciju kursora i svoje registre. U Modulu 9 profesor daje i formalniji zapis: <strong>proces se može definisati parom &lt;program, procesor&gt;</strong>, tj. program zajedno sa (virtuelnim) procesorom koji ga izvršava.</p>
+<div class="simple">Recept za tortu je program. Pravljenje torte je proces: ima trenutni korak, sastojke koji su već umešani i kuhinju koju zauzima. Isti recept mogu istovremeno da prave tri kuvara, i to su tri procesa.</div>
+
+<h3>Kontrolni blok procesa: lična karta procesa (slajdovi 7–9)</h3>
+<figure class="slide"><img src="img/m8a-7.jpg" alt="Kontrolni (upravljački) blok procesa" loading="lazy"><figcaption><b>Slajd 7 · Kontrolni (upravljački) blok procesa</b></figcaption></figure>
+<p>Za svaki aktivan proces OS mora da vodi određene podatke. <strong>Skup takvih podataka zove se kontrolni blok procesa (KBP)</strong>, a sinonimi su <b>vektor stanja</b> i <b>deskriptor procesa</b> (engleski PCB, Process Control Block). Slika desno pokazuje gde je on: glavna memorija je podeljena na deo za OS (gore, „O.S.“) i deo za procese (dole). KBP-ovi se čuvaju u delu memorije <em>rezervisanom za operativni sistem</em> („PCBs are stored here“), jer korisnički proces ne sme da može da promeni sopstveni prioritet ili prava. U memoriji su KBP-ovi međusobno povezani, najčešće u obliku <b>liste</b>; ta lista (ili tabela) je zapravo <b>tabela procesa</b> operativnog sistema.</p>
+<figure class="slide"><img src="img/m8a-8.jpg" alt="Struktura kontrolnog bloka procesa" loading="lazy"><figcaption><b>Slajd 8 · Struktura KBP-a, ili deskriptora procesa</b></figcaption></figure>
+<p>Šta sve piše u KBP-u (spisak sa slajda 8, svaku stavku treba znati i umeti da objasni):</p>
+<div class="tbl"><table><thead><tr><th>Polje</th><th>Šta je i zašto je potrebno</th></tr></thead><tbody>
+<tr><td>ime procesa</td><td>jedinstveni identifikator (u UNIX-u PID, broj)</td></tr>
+<tr><td>identitet vlasnika</td><td>koji korisnik je pokrenuo proces; od toga zavise prava pristupa</td></tr>
+<tr><td>prioritet</td><td>koristi ga planer kad bira ko sledeći dobija procesor</td></tr>
+<tr><td>PSW</td><td>programska statusna reč: brojač naredbi (adresa sledeće instrukcije), bitovi stanja (N, Z, V, C), režim rada, maska prekida</td></tr>
+<tr><td>oblast programa, oblast podataka</td><td>gde su u memoriji kod i podaci procesa (granice, tabele stranica ili segmenata)</td></tr>
+<tr><td>vrednosti registara</td><td>kopija svih registara procesora u trenutku kad je proces prekinut</td></tr>
+<tr><td>logičko stanje</td><td>nov, spreman, izvršava se, čeka, završen</td></tr>
+<tr><td>tip i lokacija dodeljenih resursa</td><td>otvorene datoteke, uređaji koje drži</td></tr>
+<tr><td>lista potrebnih resursa</td><td>na šta čeka</td></tr>
+<tr><td>ključevi za zaštitu</td><td>za proveru da li sme da pristupi memoriji i resursima</td></tr>
+</tbody></table></div>
+<p>Desno na slajdu je ista stvar nacrtana kao blok: stanje procesa, broj procesa, brojač naredbi (program counter), registri, granice memorije, lista otvorenih datoteka. Najvažnija stavka je <b>brojač naredbi i registri</b>: kad je proces prekinut, njihove vrednosti se upišu u KBP, a kad proces opet dobije procesor, vrate se iz KBP-a u procesor i proces nastavlja tačno odakle je stao.</p>
+<figure class="slide"><img src="img/m8b-34.jpg" alt="Kontrolni blok procesa, primer sa svim poljima" loading="lazy"><figcaption><b>Modul 8 (deo 2), slajd 34 · Kontrolni blok procesa, detaljan primer</b></figcaption></figure>
+<p>Detaljniji primer (iz knjige Bic i Shaw) grupiše polja po nameni: <b>Identification</b> (ID procesa, PID roditelja, ID korisnika i grupe); <b>CPU state</b> (korisnički registri, brojač naredbi, kodovi uslova, statusne informacije kao što su dozvole prekida, pokazivač steka); <b>Process scheduling</b> (stanje procesa, prioritet, vreme čekanja, događaj na koji se čeka); <b>Privileges</b>; <b>IPC</b> (zastavice, signali, poruke); <b>Memory</b> i <b>Resources</b> (opisi dodeljene memorije i resursa i da li su sopstveni ili deljeni); <b>Created resources</b> i <b>Children</b> (procesi koje je ovaj proces napravio).</p>
+<figure class="slide"><img src="img/m8a-9.jpg" alt="Prikaz procesa na Linux operativnom sistemu: task_struct" loading="lazy"><figcaption><b>Slajd 9 · Prikaz procesa u Linux-u: struktura task_struct</b></figcaption></figure>
+<p>U Linux-u je KBP C struktura <code>task_struct</code>. Na slajdu su njena ključna polja: <code>pid</code> (identifikator procesa), <code>state</code> (stanje), <code>time_slice</code> (informacija za planiranje), <code>parent</code> (pokazivač na roditelja), <code>children</code> (lista dece), <code>files</code> (lista otvorenih datoteka) i <code>mm</code> (adresni prostor procesa). Ispod je pokazano kako su sve <code>task_struct</code> strukture povezane u dvostruko povezanu listu, a jedan pokazivač, <code>current</code>, pokazuje na proces koji se upravo izvršava.</p>
+<details class="stop"><summary>Zašto KBP ne može da bude u memoriji samog procesa?</summary><div>Zato što bi proces tada mogao da ga menja: da sebi podigne prioritet, promeni vlasnika ili granice svoje memorije i tako zaobiđe zaštitu. KBP je u memoriji rezervisanoj za OS, kojoj se može pristupiti samo u sistemskom režimu rada.</div></details>
+
+<h3>Pet stanja procesa (slajdovi 10–13)</h3>
+<p>Na računaru sa jednim procesorom izvršavanje procesa se odvija sekvencijalno: u svakom trenutku izvršava se samo jedan. Proces menja stanje sistema (memoriju, datoteke), ali i sam menja svoje stanje. Moguća stanja (slajd 11) su:</p>
+<ol>
+<li><b>NOV</b>: proces je kreiran (pravi se KBP, još nije primljen u skup procesa koji se izvršavaju);</li>
+<li><b>IZVRŠAVA SE</b>: instrukcije se izvršavaju na procesoru;</li>
+<li><b>ČEKA</b> (blokiran): proces čeka da se neki događaj dogodi (završetak U/I, signal od drugog procesa);</li>
+<li><b>SPREMAN</b>: proces ima sve što mu treba osim procesora i čeka da mu bude dodeljen;</li>
+<li><b>ZAVRŠEN</b>: proces je završio izvršavanje.</li>
+</ol>
+<figure class="slide"><img src="img/m8a-12.jpg" alt="Dijagram stanja procesa" loading="lazy"><figcaption><b>Slajd 12 · Dijagram stanja procesa</b></figcaption></figure>
+<div class="read"><b>Kako da čitaš ovu sliku.</b> Krugovi su stanja, strelice su prelazi, a reč pored strelice je događaj koji izaziva prelaz. NOV → (<i>aktiviranje</i>) → SPREMAN → (<i>dodeljen CPU</i>) → IZVRŠAVA SE → (<i>završetak</i>) → ZAVRŠEN. Iz IZVRŠAVA SE ide strelica (<i>U/I ili čekanje događaja</i>) u ČEKA, a iz ČEKA strelica (<i>U/I ili završetak događaja</i>) nazad u SPREMAN.</div>
+<p>Prelazi, jedan po jedan (ovo se pita kao „objasniti prelaske između mogućih stanja procesa“):</p>
+<ul>
+<li><b>NOV → SPREMAN</b>: kad su procesu dodeljeni svi potrebni resursi osim procesora (memorija, KBP), OS ga prima i stavlja u red spremnih.</li>
+<li><b>SPREMAN → IZVRŠAVA SE</b>: kratkoročni planer izabere baš ovaj proces i dodeli mu procesor.</li>
+<li><b>IZVRŠAVA SE → SPREMAN</b>: proces je prekinut iako može da nastavi, npr. istekao mu je vremenski kvantum ili je stigao proces višeg prioriteta. Ova strelica nije nacrtana na slajdu 12, ali postoji u svakom sistemu sa deljenjem vremena (vidi slajd 25, strelica <i>Timeout</i>).</li>
+<li><b>IZVRŠAVA SE → ČEKA</b>: proces mora da sačeka neki događaj (npr. završetak U/I) i to sam saopštava OS-u.</li>
+<li><b>ČEKA → SPREMAN</b>: događaj se desio (U/I je završen). Proces <em>ne</em> ide direktno na procesor, već u red spremnih, jer procesor u tom trenutku verovatno radi za nekog drugog.</li>
+<li><b>IZVRŠAVA SE → ZAVRŠEN</b>: izvršena je poslednja instrukcija ili je proces nasilno prekinut.</li>
+</ul>
+<div class="warn">Nema prelaza ČEKA → IZVRŠAVA SE ni SPREMAN → ČEKA. Proces može da počne da čeka samo dok se izvršava (jer samo tada može da zatraži U/I), a kad dočeka, mora proći kroz red spremnih.</div>
+<p>Slajd 13 dodaje tri važne napomene. Prvo, <b>ako nema spremnog procesa, procesor prelazi u prazan hod</b> (onaj krug sa dijagrama kontrole toka iz prethodne lekcije). Drugo, prelazak iz IZVRŠAVA SE u ČEKA radi <b>makroinstrukcija WAIT</b>: proces mora da sačeka događaj i to saopštava OS-u. Ta informacija se upisuje u <b>blok stanja procesa</b> (jedna vrsta u tabeli procesa). Treće, <b>blok stanja procesa se formira u toku kreiranja procesa, a uništava se po završetku procesa</b>.</p>
+
+<h3>WAIT i SIGNAL: kako OS pomera procese između stanja (slajdovi 14–16)</h3>
+<p>Dva postupka OS-a su data u pseudokodu, i oba treba umeti da se napišu i objasne.</p>
+<pre><code>Procedure WAIT (blok stanja procesa)
+Begin
+  If događaj se desio then
+     Vrati upravljanje na proces koji je poslao zahtev;
+  Else
+     Begin
+       Prevedi proces koji je poslao zahtev u blokirano stanje;
+       DISPATCH;
+     End;
+End procedure WAIT;</code></pre>
+<p><b>WAIT</b> (prelaz aktivan → blokiran): proces kaže „čekam događaj X“. Ako se X već desio (npr. podaci su već stigli), nema potrebe da čeka i odmah nastavlja. Ako nije, OS ga upisuje kao blokiranog i poziva <b>DISPATCH</b>: deo OS-a koji bira sledeći spreman proces i predaje mu procesor. Bez DISPATCH-a procesor bi ostao „zaglavljen“ na procesu koji ne može da radi.</p>
+<pre><code>Procedure SIGNAL (blok stanja procesa)
+Begin
+  Identifikacija pojave događaja;
+  For svaki proces koji je čekao na pojavu događaja do
+     begin
+       Prevedi proces u stanje spremnosti;
+     End;
+  Prenesi upravljanje na naredni proces;
+End procedure SIGNAL;</code></pre>
+<p><b>SIGNAL</b> (prelaz blokiran → spreman): OS obaveštava procese da se događaj desio. Na isti događaj može da čeka <em>više</em> procesa (npr. svi čekaju da se oslobodi štampač), pa se u petlji <em>svi</em> prebacuju u spremne. Na kraju se upravljanje prenosi na naredni proces. I ova informacija se upisuje u blok stanja procesa.</p>
+<div class="simple">WAIT = „uspavaj me dok se X ne desi, i daj procesor nekom drugom“. SIGNAL = „X se desio, probudi sve koji su ga čekali“. Probuđeni procesi nisu odmah na procesoru, samo su spremni.</div>
+
+<h3>Kako proces izgleda u memoriji (slajdovi 17 i 18)</h3>
+<figure class="slide"><img src="img/m8a-17.jpg" alt="Proces u memoriji: tekst, podaci, heap, stek" loading="lazy"><figcaption><b>Slajd 17 · Proces u memoriji</b></figcaption></figure>
+<p>Svaki proces u toku izvršavanja zahteva memoriju, pa mu se pridružuje <b>adresni prostor</b>. On ima četiri dela (od niskih adresa ka visokim):</p>
+<ul>
+<li><b>Tekst</b>: instrukcije programa u izvršnom, mašinskom obliku. <em>Fiksne veličine</em>, i obično samo za čitanje.</li>
+<li><b>Podaci</b>: unapred definisane (globalne i statičke) promenljive, koje postoje pre početka izvršavanja. Fiksne veličine.</li>
+<li><b>Heap (hip)</b>: za dinamičku dodelu memorije u toku izvršavanja (<code>malloc</code>, <code>new</code>). <em>Promenljive veličine</em>: raste naviše.</li>
+<li><b>Stek</b>: izvršni okviri (stack frames) funkcija koje su pozvane: parametri, povratne adrese, lokalne promenljive. Promenljive veličine, raste i smanjuje se <em>automatski</em>, naniže, prema hipu.</li>
+</ul>
+<p>Između hipa i steka je prazan prostor (osenčen na slici), da bi oba mogla da rastu jedan prema drugom.</p>
+<figure class="slide"><img src="img/m8a-18.jpg" alt="Prikaz memorije na primeru C programa" loading="lazy"><figcaption><b>Slajd 18 · Prikaz memorije na primeru C programa</b></figcaption></figure>
+<p>Slajd 18 pokazuje gde završava svaka promenljiva iz konkretnog C programa. Pratite strelice:</p>
+<ul>
+<li><code>int x;</code> (globalna, bez početne vrednosti) → <b>uninitialized data</b> (tzv. BSS sekcija; OS je popuni nulama);</li>
+<li><code>int y = 15;</code> (globalna, sa početnom vrednošću) → <b>initialized data</b>;</li>
+<li><code>argc, argv</code> (argumenti komandne linije) → na sam vrh, iznad steka;</li>
+<li><code>int *values; int i;</code> (lokalne promenljive funkcije <code>main</code>) → <b>stack</b>;</li>
+<li>memorija dobijena sa <code>malloc(sizeof(int)*5)</code> → <b>heap</b>. Primetite: sam pokazivač <code>values</code> je na steku, a niz od pet brojeva na koji pokazuje je na hipu;</li>
+<li>mašinski kod funkcije <code>main</code> → <b>text</b>, na dnu (low memory).</li>
+</ul>
+<div class="ex"><b>Stek i hip, razlika koja se pita.</b> <b>Stek</b> služi za parametre pri pozivu procedura, povratne adrese i lokalne promenljive, tj. za podatke koji se dodeljuju i oslobađaju <em>predvidljivim redosledom</em> (LIFO: poslednja pozvana funkcija prva se vraća). Njime se upravlja automatski: okvir se pravi pri pozivu funkcije i briše pri povratku, a to radi kod koji je generisao kompajler. <b>Hip</b> služi za strukture proizvoljnog oblika i trajanja (povezane liste, stabla, objekti), koje se dodeljuju i oslobađaju <em>nepredvidljivim redosledom</em>; njime upravlja programer (<code>malloc/free</code>, <code>new/delete</code>) ili sakupljač smeća (Java).</div>
+
+<h3>Kako nastaje proces: stablo procesa (Modul 8, slajd 19; deo 2, slajdovi 7 i 21)</h3>
+<figure class="slide"><img src="img/m8a-19.jpg" alt="Stablo procesa kod UNIX-a" loading="lazy"><figcaption><b>Slajd 19 · Stablo procesa kod UNIX-a</b></figcaption></figure>
+<p>Procesi nastaju tako što ih stvaraju drugi procesi. <b>Proces roditelj kreira proces dete</b>, dete može da kreira svoju decu, i tako nastaje <b>stablo procesa</b>. Na slici je klasični UNIX: koren (<code>root</code>, proces 0 koji napravi jezgro pri podizanju) ima decu <code>pagedaemon</code> (upravlja stranicama memorije), <code>swapper</code> (izbacuje procese na disk) i <code>init</code> (proces 1, predak svih korisničkih procesa). <code>init</code> za svakog korisnika pokreće proces prijave (user 1, 2, 3), a korisnički procesi prave svoje potomke.</p>
+<figure class="slide"><img src="img/m8c-21.jpg" alt="Stablo procesa u Linux-u" loading="lazy"><figcaption><b>Silberschatz, slajd 3.21 · Stablo procesa u savremenom Linux-u</b></figcaption></figure>
+<p>U savremenom Linux-u ulogu <code>init</code>-a ima <code>systemd</code> (pid = 1). Njegova deca su <code>logind</code> (prijava korisnika), <code>python</code> i <code>sshd</code> (server za udaljeni pristup). <code>logind</code> je napravio <code>bash</code> (shell korisnika), a iz shell-a je korisnik pokrenuo <code>ps</code> i <code>vim</code>. Svaki proces ima jedinstven <b>pid</b>. Komanda <code>pstree</code> u terminalu crta tačno ovakvo stablo.</p>
+<p>Slajd 7 (deo 2) daje tri odluke koje treba doneti kada roditelj pravi dete:</p>
+<ul>
+<li><b>Izvršavanje:</b> roditelj i dete se izvršavaju <em>konkurentno</em>, ili roditelj <em>čeka</em> da dete završi (kao shell koji čeka da se komanda završi).</li>
+<li><b>Deljenje resursa:</b> (1) roditelj i dete dele sve resurse; (2) dete deli podskup roditeljskih resursa; (3) roditelj i dete nemaju zajedničke resurse.</li>
+<li>(Dopuna, Silberschatz) <b>Adresni prostor:</b> dete je kopija roditelja, ili dete odmah učitava novi program. U UNIX-u to su dva sistemska poziva: <code>fork()</code> pravi kopiju tekućeg procesa, a <code>exec()</code> u tu kopiju učitava novi program. Roditelj sa <code>wait()</code> čeka kraj deteta.</li>
+</ul>
+<figure class="slide"><img src="img/m8b-21.jpg" alt="Kreiranje i završetak procesa" loading="lazy"><figcaption><b>Deo 2, slajd 21 · Načini kreiranja i završetka procesa</b></figcaption></figure>
+<div class="tbl"><table><thead><tr><th>Načini kreiranja</th><th>Načini završetka</th></tr></thead><tbody>
+<tr><td>Novi batch posao</td><td>Normalan završetak (proces pozove <code>exit</code>)</td></tr>
+<tr><td>Interaktivni login (korisnik se prijavi)</td><td>Nedostatak memorije</td></tr>
+<tr><td>Kreiran od OS radi obezbeđivanja nekog servisa (npr. štampanje)</td><td>Greška zbog narušavanja zaštite (pristup tuđoj memoriji)</td></tr>
+<tr><td>Kreiran od strane postojećeg procesa (fork)</td><td>Intervencija operatera ili OS (<code>kill</code>, Task Manager)</td></tr>
+</tbody></table></div>
+
+<h3>Redovi čekanja: gde procesi stoje dok ne rade (slajdovi 20–22)</h3>
+<p>Poslovi se u računarskom sistemu raspoređuju pomoću <b>redova čekanja</b>. Slajd 20 nabraja tri vrste:</p>
+<ul>
+<li><b>Red čekanja poslova</b>: skup <em>svih</em> procesa u sistemu (uključujući one koji još nisu ni u memoriji);</li>
+<li><b>Red čekanja spremnih poslova</b>: procesi koji su <em>u glavnoj memoriji</em>, spremni i čekaju na izvršavanje;</li>
+<li><b>Red čekanja za uređaje</b>: procesi koji čekaju na dodelu određenog U/I uređaja (svaki uređaj ima svoj red).</li>
+</ul>
+<p>Procesi tokom života <b>migriraju</b> između ovih redova. Svakom deljivom resursu se dodeljuje red čekanja.</p>
+<figure class="slide"><img src="img/m8a-21.jpg" alt="Redovi čekanja: prikaz" loading="lazy"><figcaption><b>Slajd 21 · Redovi čekanja, prikaz</b></figcaption></figure>
+<p>Put jednog procesa po slici: ulazi u <b>red čekanja poslova</b>, odatle u <b>red čekanja spremnih poslova</b>, pa na <b>CPU</b>. Sa procesora postoje tri izlaza: <b>Kraj</b> (proces je završio); povratak na početak reda spremnih (gornja strelica, npr. istekao kvantum); ili odlazak u <b>red čekanja za U/I</b>, pa na <b>aktivan U/I</b>, i posle završetka U/I nazad u red spremnih. Slajd 22 zato kaže: kada proces dobije procesor, mogući su sledeći slučajevi: (1) postoji zahtev za U/I operaciju i proces se prebacuje u U/I red; (2) nastaje prekid i proces prelazi u stanje spreman; (3) proces može da kreira novi podproces.</p>
+<figure class="slide"><img src="img/m8c-15.jpg" alt="Representation of Process Scheduling: dijagram redova čekanja" loading="lazy"><figcaption><b>Silberschatz, slajd 3.15 · Isto, sa svim slučajevima</b></figcaption></figure>
+<p>Silberschatz-ova verzija dodaje još dva slučaja: proces je kreirao dete i čeka njegov kraj (<i>create child process → child termination wait queue</i>), ili čeka prekid (<i>wait for an interrupt → interrupt wait queue</i>). Svaki pravougaonik je red, svaki krug je resurs ili događaj, a svi putevi se na kraju vraćaju u <b>ready queue</b>.</p>
+
+<h3>Ko odlučuje: dugoročni i kratkoročni planer (deo 2, slajdovi 4 i 5)</h3>
+<figure class="slide"><img src="img/m8b-4.jpg" alt="Planer poslova: dugoročni i kratkoročni" loading="lazy"><figcaption><b>Deo 2, slajd 4 · Planer poslova</b></figcaption></figure>
+<p>Postoje dva planera (scheduler-a):</p>
+<ul>
+<li><b>Dugoročni planer</b> (long-term scheduler, planer poslova) selektuje proces iz skupa procesa koji su <em>poslati na izvršenje</em> i prebacuje ga u <b>red procesa spremnih za izvršenje</b>. On odlučuje <em>koji procesi uopšte ulaze u memoriju</em>. Na sličici levo dole: new → (queued) → ready.</li>
+<li><b>Kratkoročni planer</b> (short-term scheduler, planer procesora) selektuje proces iz <b>reda spremnih</b> i <b>dodeljuje mu centralni procesor</b>. Na sličici: ready → (scheduled) → running, i nazad (time-slice expired).</li>
+</ul>
+<p>Slajd 5 daje razlike koje se pitaju. <b>Kratkoročni planer se poziva veoma često</b> (reda milisekundi: posle svakog prekida, kvantuma, U/I zahteva), pa mora biti veoma brz. <b>Dugoročni planer se ne poziva tako često</b> (sekunde, minuti), pa sme biti sporiji i pametniji. <b>Dugoročni planer upravlja stepenom multiprogramiranja</b>, tj. brojem procesa u memoriji: ako pusti previše, memorija se prepuni; ako pusti premalo, procesor stoji. Dobar dugoročni planer pravi mešavinu procesa koji uglavnom računaju (CPU-bound) i onih koji uglavnom čekaju U/I (I/O-bound).</p>
+<div class="ex"><b>Dopuna: srednjeročni planer.</b> Mnogi sistemi imaju i treći, <b>srednjeročni planer</b> (medium-term scheduler): on privremeno <em>izbacuje</em> procese iz memorije na disk (swap out) i kasnije ih vraća (swap in), da bi smanjio stepen multiprogramiranja kad memorije ponestane. Upravo on stvara „suspendovana“ stanja koja vidimo na kraju ove lekcije.</div>
+
+<h3>Promena konteksta i dispečer (deo 2, slajdovi 3, 5 i 6)</h3>
+<figure class="slide"><img src="img/m8b-3.jpg" alt="Context switching procesa: P0 i P1" loading="lazy"><figcaption><b>Deo 2, slajd 3 · Context switching procesa</b></figcaption></figure>
+<div class="read"><b>Kako da čitaš ovu sliku.</b> Tri kolone: proces P<sub>0</sub>, operativni sistem i proces P<sub>1</sub>. Vreme teče odozgo nadole. Debela plava linija znači „izvršava se“ (executing), tanka znači „ne radi“ (idle).</div>
+<ol>
+<li>P<sub>0</sub> se izvršava. Stiže <b>prekid ili sistemski poziv</b>, i kontrolu dobija OS.</li>
+<li>OS <b>čuva stanje u PCB<sub>0</sub></b> (save state into PCB<sub>0</sub>): sve registre, brojač naredbi, PSW procesa P<sub>0</sub> upisuje u njegov KBP.</li>
+<li>OS <b>učitava stanje iz PCB<sub>1</sub></b> (reload state from PCB<sub>1</sub>): vraća u procesor registre i brojač naredbi koje je P<sub>1</sub> imao kad je poslednji put prekinut.</li>
+<li>P<sub>1</sub> se izvršava, a P<sub>0</sub> miruje. Kad opet stigne prekid ili sistemski poziv, isto se ponavlja u suprotnom smeru: save state into PCB<sub>1</sub>, reload state from PCB<sub>0</sub>, i P<sub>0</sub> nastavlja.</li>
+</ol>
+<p>Ceo ovaj postupak se zove <strong>promena konteksta</strong> (context switch), a <b>kontekst</b> procesa je upravo ono što je u KBP-u. Definicija sa slajda 5: <b>čuvanje konteksta</b> je kad se procesor dodeli drugom procesu, sistem mora da sačuva stanje prekinutog procesa.</p>
+<p>Slajd 6 daje dve činjenice o ceni: <b>za vreme čuvanja konteksta sistem ne vrši nikakvu korisnu obradu</b> (izgubljeno vreme iz ugla krajnjeg korisnika; na slici se vidi da su tada <em>oba</em> procesa „idle“), i <b>vreme čuvanja konteksta direktno zavisi od hardverske podrške</b> (neki procesori imaju više skupova registara, pa se kontekst menja samo promenom pokazivača na skup; tada je promena konteksta skoro besplatna). Zbog cene promene konteksta vremenski kvantum ne sme biti previše mali, o čemu više u sledećoj lekciji.</p>
+<div class="ex"><b>Dispečer</b> (dopuna, Silberschatz 5.1). Kratkoročni planer samo <em>odlučuje</em> koji proces je sledeći. <b>Dispečer</b> je deo OS-a koji tu odluku <em>sprovodi</em>, tj. dodeljuje procesor izabranom procesu. Njegove funkcije su: (1) <b>promena konteksta</b>; (2) <b>prelazak u korisnički način rada</b>; (3) <b>skok na odgovarajuću lokaciju u korisničkom programu</b> da bi se program nastavio (učitava se sačuvani brojač naredbi). Vreme koje dispečeru treba da zaustavi jedan proces i pokrene drugi zove se <b>dispečersko kašnjenje</b> (dispatch latency). U pseudokodu WAIT/SIGNAL to je korak DISPATCH.</div>
+
+<h3>Modeli sa redovima čekanja (deo 2, slajdovi 22–24)</h3>
+<figure class="slide"><img src="img/m8b-22.jpg" alt="Model sa jednim redom čekanja" loading="lazy"><figcaption><b>Slajd 22 · Model rada OS sa jednim redom čekanja</b></figcaption></figure>
+<p>Najprostiji model ima samo dva stanja: proces se izvršava ili ne. Svi procesi koji ne rade stoje u jednom redu (Queue). <b>Enter</b> → red → <b>Dispatch</b> → procesor → <b>Exit</b>, a prekinut proces se vraća na kraj reda (<b>Pause</b>). Problem: u tom redu su pomešani procesi koji su spremni i oni koji čekaju na U/I, pa dispečer mora da prolazi kroz red tražeći nekog ko zaista može da radi.</p>
+<figure class="slide"><img src="img/m8b-23.jpg" alt="Model sa 2 reda čekanja" loading="lazy"><figcaption><b>Slajd 23 · Model sa dva reda čekanja: spremni i blokirani</b></figcaption></figure>
+<p>Rešenje: dva reda. <b>Ready Queue</b> sadrži samo spremne procese: Admit → Ready Queue → Dispatch → Processor → Release. Sa procesora proces se vraća u Ready Queue ako mu je istekao kvantum (<b>Timeout</b>) ili ide u <b>Blocked Queue</b> ako čeka događaj (<b>Event Wait</b>). Kad se događaj desi (<b>Event Occurs</b>), iz Blocked Queue prelazi u Ready Queue.</p>
+<figure class="slide"><img src="img/m8b-24.jpg" alt="Model sa više redova čekanja za stanje blokiran" loading="lazy"><figcaption><b>Slajd 24 · Model sa više redova čekanja za stanje blokiran</b></figcaption></figure>
+<p>Kada se dogodi događaj, OS bi u jednom redu blokiranih morao da prođe kroz sve procese i nađe one koji čekaju baš taj događaj. Zato se pravi <b>poseban red za svaki događaj</b> (Event 1 Queue, Event 2 Queue … Event n Queue). Kad se desi događaj <i>i</i>, ceo red <i>i</i> se prebaci u Ready Queue. Ovo je tačno ono što radi petlja u proceduri SIGNAL.</p>
+
+<h3>Suspendovani procesi: kada proces nije ni u memoriji (slajdovi 25–27)</h3>
+<p>Do sada smo pretpostavljali da su svi procesi u glavnoj memoriji. Ali memorija je ograničena, a procesor je toliko brži od U/I da se može desiti da su <em>svi</em> procesi u memoriji blokirani i procesor opet stoji. Rešenje je <b>swapping</b>: OS deo procesa izbaci iz memorije na disk i tako napravi mesto za nove. Proces koji je izbačen na disk zove se <b>suspendovan</b>.</p>
+<figure class="slide"><img src="img/m8b-25.jpg" alt="Model sa jednim stanjem suspendovanih procesa" loading="lazy"><figcaption><b>Slajd 25 · Model sa jednim stanjem suspendovanih procesa</b></figcaption></figure>
+<p>Prvi model dodaje jedno stanje: <b>Suspend</b>. Blokiran proces se može suspendovati (Blocked → <i>Suspend</i> → Suspend), a kasnije aktivirati (Suspend → <i>Activate</i> → Ready). Ostatak je poznat: New → <i>Admit</i> → Ready → <i>Dispatch</i> → Running → <i>Release</i> → Exit, Running → <i>Timeout</i> → Ready, Running → <i>Event Wait</i> → Blocked → <i>Event Occurs</i> → Ready. Mana: kad OS hoće da vrati neki proces sa diska, ne zna da li je on u međuvremenu dočekao svoj događaj, pa može da vrati proces koji će odmah opet biti blokiran.</p>
+<figure class="slide"><img src="img/m8b-26.jpg" alt="Model sa dva stanja suspendovanih procesa" loading="lazy"><figcaption><b>Slajd 26 · Model sa dva stanja suspendovanih procesa</b></figcaption></figure>
+<p>Zato drugi model ima <b>dva</b> suspendovana stanja, i ovaj dijagram se traži na ispitu (treba umeti da se nacrta):</p>
+<ul>
+<li><b>Blokiran/Suspendovan</b> (Blocked/Suspend): proces je u spoljnoj memoriji (na disku) i <em>čeka na događaj</em>.</li>
+<li><b>Spreman/Suspendovan</b> (Ready/Suspend): proces je u spoljnoj memoriji, <em>ne čeka</em> ni na kakav događaj, i postaće spreman za izvršavanje čim ga OS vrati u memoriju.</li>
+</ul>
+<p>Novi prelazi (isprekidane strelice): Blocked → <i>Suspend</i> → Blocked/Suspend i nazad <i>Activate</i>; Ready → <i>Suspend</i> → Ready/Suspend i nazad <i>Activate</i>; <b>Blocked/Suspend → <i>Event Occurs</i> → Ready/Suspend</b> (događaj se desio dok je proces bio na disku, pa je sad spreman, ali i dalje na disku); New → <i>Admit</i> direktno u Ready/Suspend (ako nema mesta u memoriji); i Running → <i>Suspend</i> → Ready/Suspend (OS izbaci proces koji se upravo izvršavao, npr. da oslobodi memoriju za proces višeg prioriteta).</p>
+<p>Ključna rečenica: <b>proces koji je suspendovan prestaje da se takmiči za resurse</b>, a memorija koju je zauzimao se oslobađa za druge. Kad OS bira koga da vrati u memoriju, bira iz Ready/Suspend, jer će ti procesi odmah moći da rade.</p>
+<figure class="slide"><img src="img/m8b-27.jpg" alt="Razlozi za suspenziju procesa" loading="lazy"><figcaption><b>Slajd 27 · Razlozi za suspenziju procesa</b></figcaption></figure>
+<div class="tbl"><table><thead><tr><th>Razlog</th><th>Komentar</th></tr></thead><tbody>
+<tr><td>Swapping</td><td>OS mora da oslobodi dovoljno glavne memorije da bi uneo proces koji je spreman da se izvrši.</td></tr>
+<tr><td>Neki drugi razlog OS</td><td>OS sumnja da dati proces izaziva problem.</td></tr>
+<tr><td>Zahtev interaktivnog korisnika</td><td>Npr. debagovanje ili zbog korišćenja resursa.</td></tr>
+<tr><td>Timing</td><td>Proces se izvršava periodično (npr. računovodstvo ili nadgledanje sistema) i suspenduje se dok čeka sledeći put.</td></tr>
+<tr><td>Zahtev roditeljskog procesa</td><td>Roditelj želi da obustavi potomka da bi ga ispitao ili izmenio, ili da koordinira aktivnosti više potomaka.</td></tr>
+</tbody></table></div>
+<details class="stop"><summary>Po čemu se razlikuju stanja „blokiran“ i „blokiran/suspendovan“?</summary><div>Oba čekaju na događaj. Blokiran proces je <b>u glavnoj memoriji</b>, pa čim se događaj desi, prelazi u spreman i može odmah da dobije procesor. Blokiran/suspendovan proces je <b>na disku</b>: kad se događaj desi, postaje spreman/suspendovan, ali mora prvo da bude vraćen u memoriju (aktiviran) pre nego što može da se izvršava.</div></details>
+
+<h3>Proces i nit: šta pripada kome (deo 2, slajd 35)</h3>
+<figure class="slide"><img src="img/m8b-35.jpg" alt="Atributi procesa i niti" loading="lazy"><figcaption><b>Slajd 35 · Atributi procesa i niti</b></figcaption></figure>
+<p>Ova tabela otvara temu koju detaljno radimo kasnije. Proces se može razložiti na dva dela. <b>Stvari koje pripadaju procesu</b> (Per process items): adresni prostor, globalne promenljive, otvorene datoteke, procesi deca, alarmi na čekanju, signali i njihovi obrađivači, evidencija o korišćenju resursa. <b>Stvari koje pripadaju svakoj niti</b> (Per thread items): brojač naredbi, registri, stek i stanje. Ideja: u jednom procesu (jednom adresnom prostoru) može istovremeno da teče više „tokova izvršavanja“, niti, i svaka ima samo ono što joj je potrebno da bi bila poseban tok.</p>
+<div class="bridge">Sada znamo šta je proces i kako OS pomera procese između redova. Ali u redu spremnih obično čeka mnogo procesa, a procesor je jedan. Kojim redom ih pustiti? Od tog izbora zavisi koliko će korisnik čekati na odziv, i to je tema <b>algoritama planiranja procesora</b>.</div>
+<p class="src">Dodatni izvori: A. Silberschatz i dr., <i>Operating System Concepts</i>, 10. izd., gl. 3.1–3.3 i 5.1; W. Stallings, <i>Operating Systems: Internals and Design Principles</i>, gl. 3 (modeli sa suspendovanim procesima).</p>
+<div class="quiz" data-ch="o2"></div>
+</section>

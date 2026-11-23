@@ -1,0 +1,200 @@
+<section class="ch" id="o4">
+<div class="ch-head"><span class="ch-num">M9</span><span class="ch-src">Modul 9 · M9 – Upravljanje procesima (slajdovi 5–8, 14–21, 34–42, 63–65) i Modul 8, deo 2 (slajdovi 28–32)</span></div>
+<h2>Kada procesi dele podatke: kritična sekcija, semafori i filozofi za stolom</h2>
+<p class="lead">Dok svaki proces radi samo sa svojom memorijom, planer može da ih meša kako hoće i rezultat je uvek isti. Čim dva procesa dele makar jednu promenljivu, to prestaje da važi: rezultat počinje da zavisi od toga <em>kada</em> je planer prekinuo koji proces. Najgore je što takva greška nastaje retko, ne može se ponoviti po želji i ne vidi se u kodu. Ova lekcija prati profesorov primer pošiljaoca i primaoca poruka, iz njega izvlači četiri problema i tri zahteva koje OS mora da reši, a zatim gradi rešenje: <strong>semafor</strong> sa operacijama P i V. Na kraju su međuprocesna komunikacija i problem pet filozofa.</p>
+
+<h3>Uporedni procesi: istovremeno i „kao da je istovremeno“ (slajdovi 5–8)</h3>
+<p>Podsetimo: <b>proces se može definisati parom &lt;program, procesor&gt;</b>. <b>Paralelno</b> (istovremeno) izvršavanje više procesa moguće je <b>samo ako računarski sistem ima više centralnih procesora</b>; za takav sistem kaže se da je <b>višeprocesorski</b>. Na jednom procesoru procesi se samo smenjuju, i to se zove <b>kvaziparalelno</b> (konkurentno) izvršavanje. Za ovu lekciju razlika ne igra ulogu: i u jednom i u drugom slučaju procesi se izvršavaju <b>uporedno</b>, a redosled njihovih instrukcija nije unapred poznat.</p>
+<figure class="slide"><img src="img/m9-6.jpg" alt="Uporedni procesi: graf sekvencijalnog i paralelnog izvršavanja" loading="lazy"><figcaption><b>Slajd 6 · Uporedni procesi: (a) sekvencijalno, (b) uporedno</b></figcaption></figure>
+<p>Grafovi prvenstva: čvor <b>P</b> je početak, <b>K</b> kraj, a grane su procesi. Pod <b>(a)</b> P1, P2, P3, P4 idu jedan za drugim: P2 ne može da počne dok P1 ne završi. Pod <b>(b)</b> sva četiri procesa kreću iz P i završavaju u K nezavisno: mogu da se izvršavaju uporedno. Verzija istog slajda u Modulu 8 (slajd 30) ima i <b>(c)</b>: mešovit slučaj, gde neki procesi moraju da sačekaju druge, a neki teku uporedno.</p>
+<figure class="slide"><img src="img/m9-7.jpg" alt="Kvaziparalelno izvršavanje programa" loading="lazy"><figcaption><b>Slajd 7 · Kvaziparalelno izvršavanje programa</b></figcaption></figure>
+<p>Dve horizontalne linije su programi P1 i P2, a vreme teče udesno od 0 do T. Deblji delovi linija su trenuci kada program radi. Oni se <em>nikad ne preklapaju</em>: kad radi P1, P2 miruje, i obrnuto. Kako piše ispod: <b>u bilo kom trenutku izvršava se samo jedan program</b>. Ako se pita da se nacrta kvaziparalelno izvršavanje za P1, P2 i P3 istog prioriteta u time-sharing režimu: tri linije, na svakoj kratki odsečci iste dužine (kvantumi), raspoređeni stepenasto P1, P2, P3, P1, P2, P3…, nikad dva u istom trenutku.</p>
+<figure class="slide"><img src="img/m9-8.jpg" alt="Paralelno izvršavanje programa" loading="lazy"><figcaption><b>Slajd 8 · Paralelno izvršavanje programa</b></figcaption></figure>
+<p>Kod paralelnog izvršavanja P1, P2 i P3 su pune linije jedna iznad druge: u istom trenutku (vertikalna linija kod T) sva tri rade, jer svaki ima svoj procesor.</p>
+<figure class="slide"><img src="img/m9-11.jpg" alt="Konkurentno izvršavanje na single core sistemu" loading="lazy"><figcaption><b>Slajd 11 · Konkurentno izvršavanje na jednom jezgru</b></figcaption></figure>
+<figure class="slide"><img src="img/m9-12.jpg" alt="Paralelno izvršavanje na multicore sistemu" loading="lazy"><figcaption><b>Slajd 12 · Paralelno izvršavanje na višejezgarnom sistemu</b></figcaption></figure>
+<p>Isto u savremenom obliku: na jednom jezgru niti T1, T2, T3, T4 se smenjuju u vremenu (konkurentno), a na dva jezgra core 1 izvršava T1 i T3, a core 2 istovremeno T2 i T4 (paralelno).</p>
+
+<h3>Problem: pošiljalac, primalac i jedna promenljiva (slajdovi 15–17)</h3>
+<figure class="slide"><img src="img/m9-15.jpg" alt="Problem upravljanja uporednim procesima: procesi S i R i bafer" loading="lazy"><figcaption><b>Slajd 15 · Problem upravljanja uporednim procesima</b></figcaption></figure>
+<p>Proces <b>S</b> (sender, pošiljalac) u petlji priprema poruku, šalje je u zajednički <b>bafer kapaciteta C poruka</b> i povećava brojač poruka: <code>n := n + 1</code>. Proces <b>R</b> (receiver, primalac) u petlji prihvata poruku iz bafera, smanjuje brojač: <code>n := n − 1</code>, i obrađuje poruku. Promenljiva <b>n</b> (na slajdovima i N) je zajednička: obojica je čitaju i menjaju.</p>
+<p>Da bi S i R ispravno radili <b>kada njihove relativne brzine nisu poznate</b>, potrebna su četiri uslova (slajd 16, pitanje koje dolazi skoro uvek):</p>
+<ol>
+<li>pošiljalac S <b>ne sme da šalje poruku kada je bafer pun</b>, jer bi se ona izgubila;</li>
+<li>primalac R <b>ne sme da uzima poruku kada je bafer prazan</b>, jer bi to mogao protumačiti kao signal da treba da prestane sa radom;</li>
+<li>procesi <b>ne smeju istovremeno pristupiti baferu</b>;</li>
+<li>vrednost promenljive N mora, u trenutku pristupa baferu bilo kog procesa, <b>biti jednaka stvarnom broju poruka u baferu</b>.</li>
+</ol>
+<figure class="slide"><img src="img/m9-17.jpg" alt="Problem upravljanja uporednim procesima, nastavak 2: LOAD, ADD, STORE" loading="lazy"><figcaption><b>Slajd 17 · Kako se pokvari N</b></figcaption></figure>
+<p>Zašto je uslov 4 uopšte problem, kad je <code>n := n + 1</code> samo jedna naredba? Zato što to <b>nije jedna mašinska instrukcija</b>. Na nivou procesora (setite se Modula 3) to su tri:</p>
+<pre><code>Proces S:  N := N + 1        Proces R:  N := N − 1
+     LOAD N                       LOAD N
+     ADD  JEDAN                   SUB  JEDAN
+     STORE N                      STORE N</code></pre>
+<p>Prekid može da dođe između bilo koje dve. Scenario sa slajda, korak po korak:</p>
+<ol>
+<li>N = 4, u baferu su stvarno 4 poruke.</li>
+<li>S upiše novu poruku u bafer (stvarno ih je sad <b>5</b>) i izvrši <code>LOAD N</code>: u svoj akumulator učita <b>4</b>.</li>
+<li><b>Prekid.</b> Planer daje procesor procesu R. (Kontekst procesa S, sa akumulatorom = 4, sačuvan je u njegovom KBP-u.)</li>
+<li>R uzme jednu poruku iz bafera (stvarno ih je sad <b>4</b>) i izvrši ceo <code>N := N − 1</code>: LOAD 4, SUB → 3, STORE: <b>N = 3</b>.</li>
+<li><b>Prekid.</b> Procesor se vraća procesu S, koji nastavlja sa svojim sačuvanim akumulatorom = 4: ADD → 5, STORE: <b>N = 5</b>.</li>
+</ol>
+<p>Rezultat: <b>N = 5, a u baferu su 4 poruke.</b> R-ovo smanjenje je izgubljeno, jer ga je S pregazio starom vrednošću. Uslov 4 je prekršen, i za nekoliko krugova R će pokušati da pročita poruku iz praznog bafera. Ovakva greška se zove <b>stanje trke</b> (race condition): rezultat zavisi od toga ko je „pobedio“ u trci.</p>
+<div class="lab" id="raceLab"><div class="lab-title">Laboratorija: stanje trke uživo</div>
+<p>Ti si planer. Klikom biraš koji proces izvršava svoju sledeću mašinsku instrukciju. Na početku je N = 4 i u baferu su 4 poruke. Pokušaj da dobiješ N ≠ broj poruka, pa onda pokušaj da ga izbegneš.</p>
+<div class="row"><button class="btn" id="raceS" type="button">Korak procesa S</button><button class="btn" id="raceR" type="button">Korak procesa R</button><button class="btn ghost" id="raceReset" type="button">Ispočetka</button></div>
+<div class="two"><div><h5>S: N := N + 1</h5><div class="mem" id="raceSP"></div></div><div><h5>R: N := N − 1</h5><div class="mem" id="raceRP"></div></div></div>
+<div class="simlog" id="raceLog"></div></div>
+
+<h3>Kad procesi stanu zauvek: međusobno blokiranje (slajd 18)</h3>
+<figure class="slide"><img src="img/m9-18.jpg" alt="Međusobno blokirani procesi (potpun zastoj)" loading="lazy"><figcaption><b>Slajd 18 · Međusobno blokirani procesi (potpun zastoj)</b></figcaption></figure>
+<p>Drugi tip greške. P1 uzima resurs R1, pa R2; P2 uzima R2, pa R1. Ako dođe <b>prekid</b> posle P1-ovog „uzmi R1“, a P2 tada uzme R2, onda P1 čeka R2 (koji drži P2), a P2 čeka R1 (koji drži P1). Nijedan ne može dalje, i nijedan neće pustiti ono što drži. Ovo je <b>potpuni zastoj</b> (deadlock), kojem je posvećena posebna lekcija.</p>
+
+<h3>Četiri problema i tri zahteva (slajdovi 19–21)</h3>
+<p>Iz ova dva primera profesor izvlači četiri problema upravljanja procesima. Definicije se pitaju doslovno:</p>
+<ul>
+<li><b>Problem 1. Međusobno isključivanje</b> procesa u odnosu na kritične sekcije znači da se <em>u bilo kom vremenskom trenutku samo jedan proces može naći u svojoj kritičnoj sekciji</em>.</li>
+<li><b>Problem 2. Sinhronizacija</b> procesa znači da <em>određeni proces ne može ići dalje od unapred definisane tačke bez eksplicitnog signala koji on sam ne može da generiše</em> (npr. R ne sme da čita dok mu S ne javi da je poruka tu).</li>
+<li><b>Problem 3. Blokiranje:</b> <em>dva procesa su blokirana ako nijedan od njih ne može da nastavi sa radom dok drugi ne nastavi sa radom</em>. Sistem je blokiran ako su svi procesi blokirani.</li>
+<li><b>Problem 4. Komunikacija:</b> neophodno je realizovati mehanizam za komunikaciju između procesa, tako da im omogući da sarađuju i uspešno razmenjuju poruke.</li>
+</ul>
+<p><b>Kritična sekcija</b> je segment koda čije instrukcije mogu da utiču na druge procese ili niti (npr. ažuriranje vrednosti zajedničke promenljive). Kada jedan proces izvršava kritičnu sekciju, nijedan drugi ne sme da izvršava tu istu kritičnu sekciju. U primeru S/R, kritične sekcije su <code>N := N + 1</code> i <code>N := N − 1</code> i pristup baferu.</p>
+<p>Zahtevi koje OS mora da ispuni (slajd 21):</p>
+<ol>
+<li><b>Zahtev 1.</b> Uporedni procesi sa kritičnim sekcijama moraju se <b>međusobno isključivati</b>, tako da se istovremeno ne nalaze u svojim kritičnim sekcijama.</li>
+<li><b>Zahtev 2.</b> Proces koji se zaustavio <b>van</b> svoje kritične sekcije <b>ne sme onemogućiti</b> dalje odvijanje drugih, nezavisnih procesa.</li>
+<li><b>Zahtev 3.</b> Procesi <b>ne smeju beskonačno dugo čekati</b> na resurse ili signale.</li>
+</ol>
+<figure class="slide"><img src="img/m8b-28.jpg" alt="Opšta struktura kooperativnog programa" loading="lazy"><figcaption><b>Modul 8, deo 2, slajd 28 · Opšta struktura kooperativnog programa</b></figcaption></figure>
+<p>Svaki proces koji ima kritičnu sekciju ima istu strukturu, odozgo nadole: <b>početak sekcije</b>, <b>protokol ulaza u kritičnu sekciju</b> (traži dozvolu, čeka ako je neko unutra), <b>kritična sekcija</b>, <b>protokol izlaza iz kritične sekcije</b> (javlja da je izašao) i <b>ostatak sekcije</b>. Sav trud ove lekcije je u tome kako napisati ta dva protokola.</p>
+
+<h3>Zašto ne „samo napišemo“ protokol u softveru (slajd 34)</h3>
+<p>Prvi pokušaji su bili čisto softverski: proces u petlji proverava zajedničku promenljivu „da li je slobodno“ (Dekker, Peterson). Slajd 34 nabraja <b>teškoće u softverskoj realizaciji</b>, što je česta ispitna stavka:</p>
+<ol>
+<li><b>Stalno testiranje promenljivih</b> ili stanja čekanja, što troši procesorsko vreme;</li>
+<li>svi detalji implementacije direktno zavise od programera, pa je <b>mogućnost greške uvek prisutna</b>;</li>
+<li><b>ne postoji način da se nametne protokol</b> koji zavisi od kooperacije: programer može da izostavi neki deo;</li>
+<li>ovi protokoli su <b>suviše komplikovani</b>.</li>
+</ol>
+<p>Prva stavka ima ime: <strong>zaposleno čekanje</strong> (busy wait). To je situacija kada proces koji pokušava da uđe u kritičnu sekciju (npr. da izvrši P operaciju kada je vrednost semafora 0) <b>troši vreme centralnog procesora, a ne može da napreduje</b>, i istovremeno <b>onemogućava ostale procese da se izvršavaju</b> (uključujući baš onaj koji drži kritičnu sekciju i koji bi je oslobodio). Primer: <code>while zauzeto do ništa;</code>.</p>
+
+<h3>Rešenje: Dijkstrin semafor (slajdovi 35–39)</h3>
+<p>Prvi veliki napredak dogodio se <b>1965.</b> kada je holandski informatičar <b>Edsger Dijkstra</b> uveo <b>semafor</b>: novi tip promenljive čiji je skup dozvoljenih vrednosti skup <b>nenegativnih celih brojeva</b>, nad kojom su dozvoljene samo dve operacije, <b>P</b> i <b>V</b> (i početna inicijalizacija). Imena su holandska: P od <i>proberen</i> (pokušati) ili <i>passeren</i> (proći), V od <i>verhogen</i> (povećati) ili <i>vrijgeven</i> (osloboditi). U engleskoj literaturi to su <code>wait</code> i <code>signal</code> (ili <code>down</code>/<code>up</code>).</p>
+<figure class="slide"><img src="img/m9-36.jpg" alt="Semafori i P i V operacije" loading="lazy"><figcaption><b>Slajd 36 · Semafori i P i V operacije</b></figcaption></figure>
+<div class="formula">P(s): &nbsp; s := s − 1 &nbsp; ako je s &gt; 0, &nbsp; inače čekaj &nbsp;&nbsp;&nbsp;&nbsp; V(s): &nbsp; s := s + 1</div>
+<p>Ključna osobina koju jedna obična promenljiva nema: <b>P i V su nedeljive</b> (atomske). Niko ne može da ih prekine na pola, pa se problem iz slajda 17 ne može ponoviti nad samim semaforom. Kako se to postiže, pokazuje pseudokod.</p>
+<figure class="slide"><img src="img/m9-37.jpg" alt="P operacija (pseudokod)" loading="lazy"><figcaption><b>Slajd 37 · P operacija (pseudokod)</b></figcaption></figure>
+<pre><code>procedure P (s : semaphore);
+begin
+  zabrani prekide;
+  if s &gt; 0
+    then s := s − 1
+    else begin
+      izbaci proces iz reda čekanja na Pc;   (* uspavaj *)
+      ubaci proces u red čekanja na semafor  (* proces  *)
+    end;
+  dozvoli prekide;
+end;</code></pre>
+<figure class="slide"><img src="img/m9-38.jpg" alt="V operacija (pseudokod)" loading="lazy"><figcaption><b>Slajd 38 · V operacija (pseudokod)</b></figcaption></figure>
+<pre><code>procedure V (s : semaphore);
+begin
+  zabrani prekide;
+  if red čekanja na semafor prazan
+    then s := s + 1
+    else begin
+      izbaci proces iz reda čekanja na semafor;  (* probudi *)
+      ubaci proces u red čekanja na Pc           (* proces  *)
+    end;
+  dozvoli prekide;
+end;</code></pre>
+<p>Tri stvari treba zapaziti:</p>
+<ul>
+<li><b>„zabrani prekide … dozvoli prekide“</b> čini operaciju nedeljivom na jednom procesoru: dok traje P ili V, planer ne može da oduzme procesor. Na višeprocesorskom sistemu to nije dovoljno, pa se koristi posebna nedeljiva instrukcija (test-and-set, compare-and-swap).</li>
+<li><b>„Pc“</b> je red čekanja na procesor, tj. red spremnih procesa. P koje ne uspe <em>ne vrti petlju</em>: proces se izbacuje iz reda spremnih i stavlja u red tog semafora. To je stanje ČEKA iz prethodne lekcije, i <b>nema zaposlenog čekanja</b>, jer uspavan proces ne troši procesor.</li>
+<li>V ne povećava s ako neko čeka. Umesto toga, „dozvola“ se direktno predaje probuđenom procesu (on prelazi u red spremnih). Zato vrednost s nikad ne postaje negativna.</li>
+</ul>
+<p>Slajd 39 zato kaže da <b>implementacija semafora uključuje interakciju sa planerom</b>: za blokiranje niti, za deblokiranje niti i za upravljanje redovima čekanja niti u stanju čekanja. I dodaje dve ograde: <b>semafori nisu konačno rešenje za sve probleme</b> konkurentnog rada (pogrešan redosled P operacija dovodi do zastoja, a zaboravljen V do večnog čekanja), i postoje poboljšanja i drugi mehanizmi (monitori, poruke).</p>
+<div class="warn"><b>Druga, ekvivalentna definicija</b> (iz skripte za ispit): semafor sme da postane negativan. <code>wait</code> uvek smanji vrednost za 1 i blokira proces ako je posle toga vrednost negativna; <code>post</code> (signal) uvek poveća za 1 i, ako je vrednost posle toga ≤ 0, odblokira jedan proces. Tada <b>negativna vrednost = broj procesa koji čekaju</b>, a pozitivna = broj procesa koji još mogu da uđu bez čekanja. Ponašanje je isto kao gore; razlikuje se samo „knjigovodstvo“. Na ispitu koristi Dijkstrinu definiciju sa slajda (s ≥ 0). Pazi i na štamparsku grešku iz skripte: Dijkstra je operaciji čekanja dao ime <b>P</b>, ne „R“.</div>
+
+<h3>Tri upotrebe semafora (slajd 35)</h3>
+<figure class="slide"><img src="img/m9-35.jpg" alt="Semafori mogu da se koriste za" loading="lazy"><figcaption><b>Slajd 35 · Semafori mogu da se koriste za…</b></figcaption></figure>
+<p>Ista dva alata rešavaju tri različita problema, a razlikuje ih samo <b>početna vrednost</b>:</p>
+<ol>
+<li><b>Međusobno isključivanje: inicijalizacija na 1.</b> Prvi koji izvrši P prolazi (s postaje 0), svi ostali čekaju dok on ne izvrši V.</li>
+<li><b>Sinhronizacija: inicijalizacija na 0.</b> Proces koji mora da čeka izvrši P i odmah zaspi; proces koji javlja da je događaj nastupio izvrši V i budi ga.</li>
+<li><b>Dodela resursa: inicijalizacija na broj raspoloživih resursa</b> datog tipa (npr. 3 štampača). Svako P uzima jedan, svako V vraća jedan; kad su svi zauzeti, sledeći čeka.</li>
+</ol>
+<p><b>Međusobno isključivanje za n ≥ 2 procesa.</b> Klasično rešenje iz knjige koristi semafor nazvan <b>medisk</b> (od „međusobno isključenje“):</p>
+<pre><code>var medisk : semaphore;
+begin
+  medisk := 1;
+  parbegin
+    P1: ... ;  P2: ... ;  ... ;  Pn: ...
+  parend;
+end;
+
+svaki proces Pi je oblika:
+Pi: begin
+      repeat
+        P(medisk);
+        kritična_sekcija_i;
+        V(medisk);
+        ostale_naredbe_i;
+      until stop;
+    end;</code></pre>
+<p><code>parbegin … parend</code> znači da se procesi između izvršavaju uporedno. Kako radi: medisk je 1. Prvi proces koji stigne do P(medisk) smanji ga na 0 i uđe u kritičnu sekciju. Svaki sledeći koji izvrši P(medisk) dok je vrednost 0 biva uspavan u redu semafora. Kad prvi izađe i izvrši V(medisk), ako neko čeka, budi se tačno jedan i on ulazi; ako niko ne čeka, medisk se vraća na 1. Tako je u kritičnoj sekciji uvek najviše jedan proces (zahtev 1), proces koji je van kritične sekcije ne drži semafor pa ne smeta drugima (zahtev 2), a ako je red semafora FIFO, svaki proces jednom dođe na red (zahtev 3). Ovo radi za proizvoljan broj procesa n ≥ 2, bez ikakve izmene koda.</p>
+<div class="ex"><b>Rešenje problema S i R semaforima.</b> Uz tri semafora ispunjena su sva četiri uslova sa slajda 16:
+<pre><code>var medisk := 1;  prazno := C;  puno := 0;
+
+S: repeat                       R: repeat
+     pripremi_poruku;               P(puno);      (* čekaj poruku *)
+     P(prazno);   (* ima mesta? *)   P(medisk);
+     P(medisk);                      uzmi_iz_bafera;
+     stavi_u_bafer;                  V(medisk);
+     V(medisk);                      V(prazno);    (* oslobodi mesto *)
+     V(puno);     (* javi R-u *)     obradi_poruku;
+   until stop;                     until stop;</code></pre>
+<b>prazno</b> (dodela resursa, početno C) broji slobodna mesta: S ne može da piše u pun bafer (uslov 1). <b>puno</b> (sinhronizacija, početno 0) broji poruke: R ne može da čita iz praznog (uslov 2). <b>medisk</b> (isključivanje, početno 1) sprečava istovremeni pristup baferu (uslov 3). Brojač N više nije potreban kao obična promenljiva: njegovu ulogu ima semafor <code>puno</code>, čija je vrednost uvek tačna (uslov 4).</div>
+
+<h3>Drugi mehanizmi i međuprocesna komunikacija (slajdovi 40–42)</h3>
+<p>Slajd 40 nabraja još tri mehanizma:</p>
+<ul>
+<li><b>Prenošenje poruka</b> (message passing): procesi ne dele memoriju, nego šalju i primaju poruke (<code>send</code>/<code>receive</code>) preko OS-a. Može biti <b>sinhrono</b> ili <b>asinhrono</b>, i omogućava prioritete poruka.</li>
+<li><b>Deljena memorija</b> (shared memory): za komunikaciju između različitih procesa.</li>
+<li><b>Monitori</b>: jezička konstrukcija koja se sastoji od podataka koji predstavljaju deljeni objekat i procedura nad njima; prevodilac sam garantuje da je u monitoru najviše jedan proces. Monitori se mogu koristiti za rešavanje <b>svih klasičnih problema</b> konkurentnog rada. (Javin <code>synchronized</code> je upravo monitor.)</li>
+</ul>
+<div class="ex"><b>Sinhroni i asinhroni mehanizam.</b> <b>Sinhroni</b> (blokirajući): proces koji pošalje zahtev ili poruku drugom procesu <em>blokira se</em> dok druga strana ne završi operaciju (ne primi poruku ili ne vrati odgovor). <b>Asinhroni</b> (neblokirajući): proces pošalje i odmah nastavlja, ne čeka. Kada su i send i receive blokirajući, procesi se „sastaju“ u trenutku razmene (rendezvous).</div>
+<figure class="slide"><img src="img/m9-41.jpg" alt="Međuprocesna komunikacija" loading="lazy"><figcaption><b>Slajd 41 · Međuprocesna komunikacija</b></figcaption></figure>
+<p>Procesi u sistemu mogu biti <b>nezavisni</b> ili <b>kooperativni</b>. Kooperativni proces može da utiče na druge procese ili da bude pod njihovim uticajem, uključujući deljenje podataka. Razlozi za kooperativne procese: <b>deljenje informacija</b>, <b>ubrzanje obrade</b> (posao se podeli na delove koji rade paralelno), <b>modularnost</b> i <b>pogodnost</b>. Kooperativnim procesima je potrebna <b>međuprocesna komunikacija</b> (IPC, interprocess communication), i postoje dva modela: <b>deljena memorija</b> i <b>prosleđivanje poruka</b>.</p>
+<figure class="slide"><img src="img/m9-42.jpg" alt="Shared Memory i Message Passing" loading="lazy"><figcaption><b>Slajd 42 · Deljena memorija i prosleđivanje poruka</b></figcaption></figure>
+<p>Levo je <b>deljena memorija</b>: između procesa A i B u memoriji je zajednički region (Shared Memory). A upisuje (strelica 1), B čita (strelica 2). Jezgro (Kernel) učestvuje samo kad se region pravi. U sredini i desno je <b>prosleđivanje poruka</b>: A šalje poruku M jezgru (1), jezgro je čuva u <b>redu poruka</b> (message queue: m<sub>0</sub>, m<sub>1</sub> … m<sub>n</sub>), i B je preuzima od jezgra (2). Svaka poruka prolazi kroz jezgro, dakle kroz sistemski poziv.</p>
+<div class="tbl"><table><thead><tr><th></th><th>Deljena memorija</th><th>Prosleđivanje poruka</th></tr></thead><tbody>
+<tr><td>Brzina</td><td>najbrža: posle uspostavljanja, pristup je obično čitanje/pisanje memorije, bez jezgra</td><td>sporija: svaka poruka je sistemski poziv i kopiranje</td></tr>
+<tr><td>Sinhronizacija</td><td>mora je obezbediti programer (semafori)</td><td>ugrađena u mehanizam</td></tr>
+<tr><td>Gde radi</td><td>samo procesi na istom računaru</td><td>i na različitim računarima (mreža)</td></tr>
+<tr><td>Kada se bira</td><td>velike količine podataka, visoka brzina, isti računar</td><td>mali podaci, različiti računari ili platforme, kad je važno izbeći nekonzistentnost podataka</td></tr>
+</tbody></table></div>
+
+<h3>Pet filozofa za okruglim stolom (slajdovi 63–65)</h3>
+<figure class="slide"><img src="img/m9-63.jpg" alt="Problem filozofa" loading="lazy"><figcaption><b>Slajd 63 · Problem filozofa</b></figcaption></figure>
+<p>Klasičan problem (Dijkstra, 1965) koji u malom sadrži i isključivanje i zastoj. Pet filozofa provodi život razmišljajući i jedući. Između svaka dva filozofa nalazi se po <b>jedan štapić</b>, dakle pet štapića ukupno. Dok razmišlja, filozof ne koristi štapiće. Filozof ne može da dobije štapić koji neko drugi već koristi. Kada ogladni, mora da uzme <b>dva</b> štapića (levi i desni) da bi jeo, a u jednom trenutku može da uzme samo jedan.</p>
+<p><b>Rešenje sa slajda 64:</b> svaki štapić se predstavi <b>semaforom</b> (inicijalno 1). Filozof uzima štapić tako što izvrši <b>P</b> nad njegovim semaforom, a vraća ga sa <b>V</b>:</p>
+<pre><code>filozof i:  repeat
+              razmišljaj;
+              P(štapić[i]);            (* levi  *)
+              P(štapić[(i+1) mod 5]);  (* desni *)
+              jedi;
+              V(štapić[i]);  V(štapić[(i+1) mod 5]);
+            until false;</code></pre>
+<p>Ovo garantuje da dva susedna filozofa ne jedu istovremeno, ali ima ozbiljnu manu: ako svih pet istovremeno ogladne i svaki uzme svoj levi štapić, svi će zauvek čekati desni. To je <b>potpuni zastoj</b>.</p>
+<p><b>Razrešenje zastoja (slajd 65)</b>, tri načina:</p>
+<ol>
+<li><b>Najviše četiri filozofa sede istovremeno za stolom</b> (npr. dodatni semafor inicijalno 4). Sa četiri filozofa i pet štapića bar jedan uvek dobije oba.</li>
+<li><b>Filozof sme da uzme štapiće samo ako su oba slobodna</b> (uzimanje oba je jedna nedeljiva radnja, u kritičnoj sekciji).</li>
+<li><b>Asimetrično rešenje:</b> neparan filozof prvo uzima levi, pa desni; paran prvo desni, pa levi. Tako se kružno čekanje ne može zatvoriti.</li>
+</ol>
+<p>Svaki od ova tri načina razbija po jedan od uslova za nastanak zastoja, što ćemo precizno videti u lekciji o potpunom zastoju.</p>
+<div class="bridge">Sve do sada govorili smo o procesima. Ali savremeni programi rade i nekoliko stvari istovremeno <em>unutar</em> jednog procesa: pregledač učitava sliku dok ti kucaš. Za to postoje <b>niti</b>, a sa njima i pogled na to kako ovo izgleda u Linux-u, Windows-u i Javi.</div>
+<p class="src">Dodatni izvori: E. W. Dijkstra, <i>Cooperating Sequential Processes</i> (1965); A. Silberschatz i dr., <i>Operating System Concepts</i>, 10. izd., gl. 6–7 i 3.4–3.6; rešenje problema S/R semaforima je klasičan „bounded buffer“ iz istog izvora.</p>
+<div class="quiz" data-ch="o4"></div>
+</section>

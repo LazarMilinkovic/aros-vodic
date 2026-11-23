@@ -1,0 +1,73 @@
+<section class="ch" id="o9">
+<div class="ch-head"><span class="ch-num">D2</span><span class="ch-src">Dopuna za 2. kolokvijum · izvori: Simić i Bataveljić, Silberschatz gl. 11, 13–15</span></div>
+<h2>Disk i datoteke: raspoređivanje zahteva i kako sistem datoteka nalazi podatke</h2>
+<p class="lead">Poslednja velika funkcija OS-a iz spiska sa slajda 25 Modula 7 je <b>upravljanje podacima</b>. Korisnik vidi datoteke i foldere; disk vidi samo numerisane blokove. Između njih stoje dve stvari: <b>raspoređivanje zahteva za disk</b> (kojim redom čitati, kad čeka deset zahteva) i <b>sistem datoteka</b> (koji blokovi pripadaju kojoj datoteci). Obe teme na slajdovima nema, a u pitanjima ih ima mnogo, pa ih ovde gradimo od početka: od glave diska koja se pomera po stazama do inode-a u Linux-u.</p>
+
+<h3>Zašto je redosled važan: kako radi hard disk</h3>
+<p>Hard disk ima ploče koje se okreću (5400–7200 obrtaja u minuti) i glave na ručici. Svaka ploča je podeljena na koncentrične <b>staze</b>, staze na <b>sektore</b> (512 B ili 4 KB). Staze na istom poluprečniku na svim pločama čine <b>cilindar</b>. Vreme čitanja jednog bloka ima tri dela:</p>
+<ul>
+<li><b>vreme pozicioniranja</b> (seek time): ručica pomera glavu na pravi cilindar, nekoliko milisekundi, <b>najveći deo</b>;</li>
+<li><b>rotaciono kašnjenje</b>: čeka se da traženi sektor dođe ispod glave, u proseku pola obrtaja (≈ 4 ms pri 7200 o/min);</li>
+<li><b>vreme prenosa</b>: samo čitanje, mali deo.</li>
+</ul>
+<p>Pošto je pozicioniranje najskuplje, kad u redu čeka više zahteva, OS bira redosled koji <b>minimizuje ukupan put glave</b>. To radi <b>algoritam za raspoređivanje diska</b>. (Kod SSD-a nema glave, pa se koristi prosto FCFS ili spajanje susednih zahteva.)</p>
+
+<h3>Šest algoritama na jednom primeru</h3>
+<p>Disk ima cilindre 0–199. Glava je na cilindru <b>53</b>. Red zahteva (redom pristizanja): <b>98, 183, 37, 122, 14, 124, 65, 67</b>.</p>
+<ul>
+<li><b>FCFS</b>: najjednostavniji; zahtevi se izvršavaju <b>redom kojim su nastali</b>. 53 → 98 → 183 → 37 → 122 → 14 → 124 → 65 → 67. Ukupno <b>640</b> cilindara. Pošten, ali glava divlje skače.</li>
+<li><b>SSTF</b> (Shortest Seek Time First): uvek se bira zahtev <b>najbliži trenutnoj poziciji glave</b>, da bi se minimiziralo vreme pozicioniranja. 53 → 65 → 67 → 37 → 14 → 98 → 122 → 124 → 183. Ukupno <b>236</b>. Mana: <b>gladovanje</b>; ako stalno pristižu zahtevi blizu glave, udaljeni zahtev (npr. 183) može da čeka neograničeno. (SSTF je SJF za diskove.)</li>
+<li><b>SCAN</b> („lift“): glava se kreće <b>u jednom smeru do kraja diska</b>, usput opslužujući sve zahteve, pa se okrene i ide nazad. Tako <b>razrešava gladovanje kod SSTF-a</b>: svaki zahtev bude opslužen najkasnije posle dva prolaza. Ako glava ide ka 0: 53 → 37 → 14 → (0) → 65 → 67 → 98 → 122 → 124 → 183. Ukupno 53 + 183 = <b>236</b>.</li>
+<li><b>C-SCAN</b> (kružni SCAN): glava opslužuje zahteve <b>uvek u istom smeru</b>; kad stigne do kraja, vraća se na početak <em>bez opsluživanja</em> i kreće ponovo. Daje <b>uniformnija vremena odziva</b>: kod SCAN-a zahtevi na krajevima diska čekaju duže od onih u sredini, a kod C-SCAN-a svi isto. Ka većim brojevima: 53 → 65 → 67 → 98 → 122 → 124 → 183 → (199) ⇒ (0) → 14 → 37. Ukupno 146 + 199 + 37 = <b>382</b> (ako se računa i povratni skok).</li>
+<li><b>LOOK</b>: kao SCAN, ali glava <b>ne ide do kraja diska</b>; zaustavlja se i okreće kad u tom smeru <b>nema više zahteva</b>. Ka većim: 53 → 65 → 67 → 98 → 122 → 124 → 183 → 37 → 14. Ukupno 130 + 169 = <b>299</b>.</li>
+<li><b>C-LOOK</b>: kao C-SCAN, uz LOOK-ovo pravilo: glava ide u jednom smeru dokle god ima zahteva, a zatim se vraća <b>na najudaljeniji zahtev</b> sa druge strane (ne do kraja diska) i nastavlja u istom smeru. 53 → … → 183 ⇒ 14 → 37. Ukupno 130 + 169 + 23 = <b>322</b>.</li>
+</ul>
+<div class="lab" id="diskLab"><div class="lab-title">Laboratorija: raspoređivanje diska</div>
+<p>Promeni početnu poziciju glave, red zahteva ili smer i uporedi pređeni put. Grafik pokazuje kretanje glave kroz vreme (nadole) i po cilindrima (udesno).</p>
+<div class="row"><select id="dkAlg" aria-label="Algoritam"><option>FCFS</option><option>SSTF</option><option>SCAN</option><option>C-SCAN</option><option>LOOK</option><option>C-LOOK</option></select>
+<select id="dkDir" aria-label="Smer"><option value="up">ka većim cilindrima</option><option value="down" selected>ka manjim cilindrima</option></select>
+<label class="schedq">glava <input id="dkHead" type="number" min="0" max="199" value="53" inputmode="numeric"></label></div>
+<input id="dkReq" class="wide" value="98 183 37 122 14 124 65 67" aria-label="Red zahteva" spellcheck="false">
+<div class="row"><button class="btn" id="dkRun" type="button">Prikaži</button></div>
+<svg id="dkSvg" viewBox="0 0 560 240" role="img" aria-label="Kretanje glave diska"></svg>
+<div id="dkOut"></div></div>
+
+<h3>Datoteka, tipovi i metode pristupa</h3>
+<p><b>Datoteka</b> je imenovan skup povezanih podataka na spoljnoj memoriji, osnovna jedinica koju OS daje korisniku. OS za svaku datoteku čuva <b>atribute</b>: ime, tip, lokaciju na disku, veličinu, prava pristupa, vlasnika, vremena kreiranja i izmene.</p>
+<p><b>Tipovi datoteka kod UNIX-a</b>: <b>regularne datoteke</b> (tekst ili binarni podaci, programi), <b>direktorijumi</b> (datoteke koje sadrže spisak imena i pokazivača na druge datoteke), <b>specijalne datoteke</b> (predstavljaju uređaje u <code>/dev</code>: blok uređaji kao disk i karakter uređaji kao terminal) i <b>imenovane FIFO datoteke</b> (imenovane cevi, za komunikaciju procesa). Savremeni sistemi dodaju i simboličke veze i sokete. U UNIX-u „sve je datoteka“: i uređaj se čita sa <code>read()</code>.</p>
+<p><b>Metode pristupa datotekama</b>:</p>
+<ul>
+<li><b>sekvencijalni pristup</b>: podaci se čitaju redom, zapis po zapis, kao sa trake. Najčešći (editori, programski prevodioci).</li>
+<li><b>direktan (relativni) pristup</b>: može se odmah pročitati zapis broj n, bez čitanja prethodnih (baze podataka).</li>
+<li><b>indeksirani pristup</b>: nadogradnja direktnog; poseban indeks (po ključu) kaže gde je zapis, pa se prvo pretraži indeks, zatim direktno pročita zapis.</li>
+</ul>
+<p><b>Deskriptor datoteke</b>: kada aplikacija otvori datoteku (<code>open</code>), kernel vraća <b>celobrojnu nenegativnu vrednost</b> koja na jedinstven način identifikuje tu otvorenu datoteku u tom procesu za sve naredne operacije (<code>read</code>, <code>write</code>, <code>close</code>). Svaki UNIX proces na startu već ima tri: 0 (standardni ulaz), 1 (standardni izlaz) i 2 (standardni izlaz za greške). Videli smo ga u koraku 10 primera otvaranja datoteke u Modulu 7.</p>
+<p><b>flock</b> (file lock) je sistemski poziv UNIX-a kojim proces <b>zaključava datoteku</b>, tako da drugi procesi ne mogu da je koriste (ili samo da je čitaju) dok je zaključana. Brava može biti deljena (<code>LOCK_SH</code>, više čitalaca) ili ekskluzivna (<code>LOCK_EX</code>, jedan pisac), i otključava se sa <code>LOCK_UN</code>. To je međusobno isključivanje primenjeno na datoteke. (Ova brava je „savetodavna“: poštuju je samo procesi koji i sami koriste flock.)</p>
+
+<h3>Kako se datoteci dodeljuje prostor na disku</h3>
+<p>Tri osnovne metode dodele prostora:</p>
+<ol>
+<li><b>Dodela susednih blokova</b> (kontinualna): datoteka zauzima niz uzastopnih blokova; u direktorijumu se pamti početni blok i dužina. Najbrže čitanje (glava se jedva pomera) i lak direktan pristup (blok i = početak + i). Mane: <b>eksterna fragmentacija</b> (isti problem kao dinamičke particije memorije, i iste strategije first/best fit) i teško je proširiti datoteku.</li>
+<li><b>Dodela povezanih blokova fiksne veličine</b> (povezana lista): blokovi su bilo gde na disku, a svaki sadrži pokazivač na sledeći. Nema eksterne fragmentacije, datoteka lako raste. Mane: direktan pristup je spor (do bloka i mora se proći kroz i blokova), pokazivači troše prostor, a jedan oštećen pokazivač gubi ostatak datoteke. Varijanta je <b>FAT</b> (File Allocation Table): svi pokazivači su izdvojeni u jednu tabelu na početku diska.</li>
+<li><b>Šeme sa indeksima</b> (indeksna dodela): svaka datoteka ima <b>tabelu indeksa</b> (indeksni blok), čiji svaki ulaz pokazuje na blok diska sa stvarnim podacima. Direktan pristup je brz, nema eksterne fragmentacije. Mana: i za malu datoteku troši se ceo indeksni blok.</li>
+</ol>
+<p>A gde se smešta sama <b>tabela indeksa</b>, kad je velika? Kao za obične datoteke: (1) u <b>susedne blokove</b>; (2) kao <b>povezana lista</b> indeksnih blokova (poslednji ulaz pokazuje na sledeći indeksni blok); (3) kao <b>indeks u više nivoa</b> (indeks prvog nivoa pokazuje na indeksne blokove drugog nivoa, koji pokazuju na podatke). Linux-ov inode kombinuje ovo: nekoliko direktnih pokazivača plus jednostruko, dvostruko i trostruko indirektni.</p>
+
+<h3>FAT, ext2 i ext3</h3>
+<p><b>FAT16</b>: 16-bitni brojevi klastera, najveća particija (i datoteka) <b>2 GB</b> (sa klasterima od 32 KB; 65.536 × 32 KB). <b>FAT32</b>: 32-bitni ulazi (od kojih se koristi 28 bita), najveća datoteka <b>4 GB</b> (tačnije 4 GB − 1 bajt, jer je veličina zapisana u 32 bita), najveća particija <b>2 TB</b> (ograničenje MBR-a i 32-bitnog broja sektora od 512 B). Zato se film od 5 GB ne može kopirati na USB formatiran kao FAT32.</p>
+<p><b>ext2</b> (second extended file system) je Linux sistem datoteka zasnovan na strukturi <b>inode</b> (indeksni čvor). Inode postoji za svaku datoteku i sadrži njene najvažnije podatke: tip, prava pristupa, vlasnika, veličinu, vremena i pokazivače na blokove (12 direktnih, 1 jednostruko, 1 dvostruko i 1 trostruko indirektni). U inode-u <em>nema imena</em>: ime je u direktorijumu, koji samo povezuje ime sa brojem inode-a. Struktura inode-a zauzima <b>128 bajtova</b> (u novijim verzijama 256). <span class="fix">U jednoj verziji skripte piše „64 ili 128 bita“; treba <b>bajtova</b>.</span> Struktura direktorijuma je hijerarhijska, počev od korena „/“.</p>
+<p><b>ext3</b> je proširenje ext2, korišćeno u Debian-u, Red Hat-u i drugim distribucijama. <b>Osnovna razlika: dodat je dnevnik transakcija</b> (journal). Pre nego što izmeni strukture na disku, sistem upiše u dnevnik šta namerava da uradi. Ako struja nestane usred upisa, pri sledećem podizanju samo se ponovi ili poništi ono što je u dnevniku, umesto da se ceo disk proverava (<code>fsck</code>) satima. ext3 je kompatibilan sa ext2 (ext3 bez dnevnika je ext2). Naslednik je ext4 (veće datoteke, ekstenti).</p>
+
+<h3>Particije</h3>
+<p>Disk se deli na <b>particije</b>, delove koji se ponašaju kao zasebni diskovi, svaki sa svojim sistemom datoteka. Kod klasične MBR šeme:</p>
+<ul>
+<li><b>Primarne particije</b> su one sa kojih je moguće <b>podizanje operativnog sistema</b>. Disk mora da ima bar jednu primarnu particiju, a može najviše četiri. Sa više primarnih particija može se na istom disku instalirati više operativnih sistema.</li>
+<li><b>Logičke particije</b> se prave unutar jedne posebne, <b>proširene</b> particije (koja zauzima jedno od četiri primarna mesta), čime se zaobilazi ograničenje od četiri. Namena im je skladištenje podataka; u ovom (klasičnom) modelu sa njih se ne podiže OS.</li>
+</ul>
+<p>(Napomena: savremeni GPT diskovi nemaju podelu na primarne i logičke i dozvoljavaju 128 particija; a Linux-ov pokretač GRUB može da podigne sistem i sa logičke particije. Za ispit važi definicija iznad.)</p>
+
+<h3>Kraj drugog dela</h3>
+<p>Ovim je pređen ceo put koji je počeo slajdom 3 Modula 7: od korisnika koji kaže „otvori datoteku“, preko sistemskog poziva, procesa koji je zatražio U/I i ostao u stanju čekanja, planera koji je dao procesor drugom, semafora koji štite zajedničke podatke, MMU i tabele stranica koji nalaze bajtove u memoriji, do algoritma koji bira kojim redom glava diska čita blokove i inode-a koji zna koji su to blokovi. Sledeći korak je provera: <a href="#ispit">generator ispita</a> sada pravi i pitanja iz drugog dela predmeta.</p>
+<p class="src">Izvori: A. Silberschatz i dr., <i>Operating System Concepts</i>, 10. izd., gl. 11 (Mass-Storage, standardni primer reda 98, 183, 37, 122, 14, 124, 65, 67), 13–15 (File systems); D. P. Bovet, M. Cesati, <i>Understanding the Linux Kernel</i> (ext2/ext3); Microsoft dokumentacija o ograničenjima FAT; <code>man 2 flock</code>.</p>
+<div class="quiz" data-ch="o9"></div>
+</section>

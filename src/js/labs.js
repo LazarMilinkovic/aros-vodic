@@ -527,3 +527,78 @@ function score(){sc.innerHTML=done<A.length?`Odgovoreno ${done} od ${A.length}, 
  const r=$('admAgain');if(r)r.addEventListener('click',build);}
 build();}
 
+
+/* ---------- planer procesora (o3) ---------- */
+if($('schedLab')){
+const parse=()=>$('schedIn').value.trim().split(/\n+/).map(l=>l.trim().split(/[\s,;]+/)).filter(a=>a.length>=3&&a[0]).map(([n,a,b,pr],i)=>({n:n,a:+a.replace(',','.')||0,b:+b.replace(',','.'),pr:pr===undefined?0:+pr,i:i})).filter(p=>p.b>0);
+function sim(ps,alg,q){const segs=[];let t=0;const rem=ps.map(p=>p.b),done=ps.map(()=>null),first=ps.map(()=>null);
+ const push=(id,s,e)=>{if(e<=s)return;const L=segs[segs.length-1];if(L&&L.id===id&&L.e===s)L.e=e;else segs.push({id,s,e});if(first[id]===null)first[id]=s;};
+ const arrived=x=>ps.filter(p=>p.a<=x+1e-9&&rem[p.i]>1e-9);
+ if(alg==='rr'){const qu=[];const order=ps.slice().sort((x,y)=>x.a-y.a||x.i-y.i);let k=0;const admit=x=>{while(k<order.length&&order[k].a<=x+1e-9)qu.push(order[k++].i);};admit(t);
+  while(k<order.length||qu.length){if(!qu.length){t=order[k].a;admit(t);continue;}const id=qu.shift();const r=Math.min(q,rem[id]);push(id,t,t+r);t+=r;rem[id]-=r;admit(t);if(rem[id]>1e-9)qu.push(id);else done[id]=t;}}
+ else if(alg==='srtf'){let guard=0;while(ps.some(p=>rem[p.i]>1e-9)&&guard++<10000){const av=arrived(t);if(!av.length){t=Math.min(...ps.filter(p=>rem[p.i]>1e-9).map(p=>p.a));continue;}
+  av.sort((x,y)=>rem[x.i]-rem[y.i]||x.a-y.a||x.i-y.i);const p=av[0];const nextA=ps.filter(z=>z.a>t+1e-9).map(z=>z.a);const until=Math.min(t+rem[p.i],...(nextA.length?nextA:[Infinity]));push(p.i,t,until);rem[p.i]-=until-t;t=until;if(rem[p.i]<=1e-9)done[p.i]=t;}}
+ else{while(ps.some(p=>rem[p.i]>1e-9)){const av=arrived(t);if(!av.length){t=Math.min(...ps.filter(p=>rem[p.i]>1e-9).map(p=>p.a));continue;}
+  av.sort(alg==='fcfs'?(x,y)=>x.a-y.a||x.i-y.i:alg==='sjf'?(x,y)=>x.b-y.b||x.a-y.a||x.i-y.i:(x,y)=>x.pr-y.pr||x.a-y.a||x.i-y.i);const p=av[0];push(p.i,t,t+p.b);t+=p.b;rem[p.i]=0;done[p.i]=t;}}
+ return {segs,done,first};}
+function run(){const ps=parse();const out=$('schedOut'),g=$('schedGantt');if(!ps.length){out.textContent='Upiši bar jedan proces: ime dolazak trajanje [prioritet].';g.innerHTML='';return;}
+ const alg=$('schedAlg').value,q=Math.max(1,+$('schedQ').value||1);const {segs,done,first}=sim(ps,alg,q);const T=segs.length?segs[segs.length-1].e:1;
+ g.innerHTML='<div class="gbar">'+segs.map(s=>`<span style="flex:${s.e-s.s}" class="gc${s.id%6}"><b>${esc(ps[s.id].n)}</b></span>`).join('')+'</div><div class="gax">'+[0].concat(segs.map(s=>s.e)).filter((v,i,a)=>a.indexOf(v)===i).map(v=>`<i style="left:${(v/T*100).toFixed(2)}%">${fmt(v,v%1?1:0)}</i>`).join('')+'</div>';
+ let sw=0,st=0,sr=0;const rows=ps.map(p=>{const ta=done[p.i]-p.a,w=ta-p.b,r=first[p.i]-p.a;sw+=w;st+=ta;sr+=r;return `<tr><td>${esc(p.n)}</td><td>${fmt(p.a,p.a%1?1:0)}</td><td>${fmt(p.b,p.b%1?1:0)}</td><td>${fmt(done[p.i],done[p.i]%1?1:0)}</td><td>${fmt(w,w%1?1:0)}</td><td>${fmt(ta,ta%1?1:0)}</td><td>${fmt(r,r%1?1:0)}</td></tr>`;}).join('');
+ const n=ps.length;out.innerHTML=`<div class="tbl"><table><thead><tr><th>Proces</th><th>Dolazak</th><th>Trajanje</th><th>Završetak</th><th>Čekanje</th><th>U sistemu</th><th>Odziv</th></tr></thead><tbody>${rows}</tbody></table></div><p class="score">Prosečno vreme čekanja: <b>${fmt(sw/n)}</b> · prosečno vreme u sistemu: <b>${fmt(st/n)}</b> · prosečan odziv: <b>${fmt(sr/n)}</b></p>`;
+ $('schedQ').parentNode.style.display=alg==='rr'?'':'none';}
+on('schedRun','click',run);on('schedAlg','change',run);on('schedQ','input',run);
+on('schedEx','click',()=>{$('schedIn').value='P1 0 53\nP2 0 17\nP3 0 68\nP4 0 24';$('schedAlg').value='rr';$('schedQ').value=20;run();});
+run();}
+
+/* ---------- stanje trke (o4) ---------- */
+if($('raceLab')){
+const SP=['LOAD N','ADD JEDAN','STORE N'],RP=['LOAD N','SUB JEDAN','STORE N'];let st;
+function reset(){st={N:4,buf:4,s:0,r:0,aS:null,aR:null,log:['Početak: N = 4, u baferu 4 poruke. Pre svog LOAD-a S upisuje novu poruku u bafer, a R uzima jednu iz bafera.']};draw();}
+function draw(){const row=(P,k,acc)=>P.map((x,i)=>`<div class="${i===k?'cur':i<k?'done':''}"><span class="a">${i+1}:</span><span>${x}</span></div>`).join('')+`<div><span class="a">AK:</span><span>${acc===null?'–':acc}</span></div>`;
+ $('raceSP').innerHTML=row(SP,st.s,st.aS);$('raceRP').innerHTML=row(RP,st.r,st.aR);
+ const real=4+(st.s>0||st.sDone?1:0)-(st.r>0||st.rDone?1:0);
+ $('raceLog').innerHTML=st.log.map(l=>'<div>'+l+'</div>').join('')+`<div><b>N = ${st.N}</b> · stvarno poruka u baferu: <b>${real}</b>${st.s>=3&&st.r>=3?(st.N===real?' · <span style="color:var(--ok,green)">ispravno</span>':' · <span style="color:var(--bad,#c33)">N je pogrešan: stanje trke!</span>'):''}</div>`;
+ $('raceS').disabled=st.s>=3;$('raceR').disabled=st.r>=3;}
+function step(who){if(who==='S'){const i=st.s;if(i===0)st.aS=st.N;else if(i===1)st.aS+=1;else{st.N=st.aS;st.sDone=1;}st.log.push(`S: ${SP[i]}`+(i===0?` → AK(S) = ${st.aS}`:i===1?` → AK(S) = ${st.aS}`:` → N = ${st.N}`));st.s++;}
+ else{const i=st.r;if(i===0)st.aR=st.N;else if(i===1)st.aR-=1;else{st.N=st.aR;st.rDone=1;}st.log.push(`R: ${RP[i]}`+(i<2?` → AK(R) = ${st.aR}`:` → N = ${st.N}`));st.r++;}draw();}
+on('raceS','click',()=>step('S'));on('raceR','click',()=>step('R'));on('raceReset','click',reset);reset();}
+
+/* ---------- zamena stranica (o8) ---------- */
+if($('pageLab')){
+function pg(){const ref=$('pgRef').value.trim().split(/[\s,;]+/).filter(Boolean);const m=Math.max(1,Math.min(8,+$('pgM').value||3));const alg=$('pgAlg').value;
+ let fr=[],faults=0;const cols=[];const last={},loaded={};
+ ref.forEach((x,t)=>{let hit=fr.includes(x),victim=null;
+  if(!hit){faults++;if(fr.length<m)fr.push(x);else{let vi=0;
+    if(alg==='fifo'){vi=fr.reduce((b,y,i)=>loaded[y]<loaded[fr[b]]?i:b,0);}
+    else if(alg==='lru'){vi=fr.reduce((b,y,i)=>last[y]<last[fr[b]]?i:b,0);}
+    else{const nxt=y=>{const k=ref.indexOf(y,t+1);return k<0?Infinity:k;};vi=fr.reduce((b,y,i)=>nxt(y)>nxt(fr[b])?i:b,0);}
+    victim=fr[vi];fr[vi]=x;}loaded[x]=t;}
+  last[x]=t;cols.push({x,hit,fr:fr.slice(),victim});});
+ const rowsN=m;let h='<div class="tbl"><table class="pgt"><thead><tr><th></th>'+cols.map(c=>`<th>${esc(c.x)}</th>`).join('')+'</tr></thead><tbody>';
+ for(let r=0;r<rowsN;r++)h+='<tr><th>okvir '+(r+1)+'</th>'+cols.map(c=>`<td class="${c.hit?'':'pf'}">${c.fr[r]!==undefined?esc(c.fr[r]):''}</td>`).join('')+'</tr>';
+ h+='<tr><th></th>'+cols.map(c=>`<td class="mk">${c.hit?'':'✱'}</td>`).join('')+'</tr></tbody></table></div>';
+ $('pgOut').innerHTML=h+`<p class="score">Straničnih prekida: <b>${faults}</b> od ${ref.length} pristupa (n = ${new Set(ref).size} različitih stranica, m = ${m} okvira).</p>`;}
+on('pgRun','click',pg);on('pgAlg','change',pg);on('pgM','input',pg);pg();}
+
+/* ---------- raspoređivanje diska (o9) ---------- */
+if($('diskLab')){
+const MAXC=199;
+function dk(){const head=Math.max(0,Math.min(MAXC,+$('dkHead').value||0));const req=$('dkReq').value.trim().split(/[\s,;]+/).map(Number).filter(v=>!isNaN(v)&&v>=0&&v<=MAXC);
+ const alg=$('dkAlg').value,up=$('dkDir').value==='up';let path=[head],jumps=[];
+ const lo=req.filter(r=>r<head).sort((a,b)=>b-a),hi=req.filter(r=>r>=head).sort((a,b)=>a-b);
+ if(alg==='FCFS')path=path.concat(req);
+ else if(alg==='SSTF'){let rest=req.slice(),cur=head;while(rest.length){let bi=0;rest.forEach((r,i)=>{if(Math.abs(r-cur)<Math.abs(rest[bi]-cur))bi=i;});cur=rest.splice(bi,1)[0];path.push(cur);}}
+ else if(alg==='SCAN')path=up?path.concat(hi,lo.length?[MAXC]:[],lo):path.concat(lo,hi.length?[0]:[],hi);
+ else if(alg==='LOOK')path=up?path.concat(hi,lo):path.concat(lo,hi);
+ else if(alg==='C-SCAN'){if(up){path=path.concat(hi);if(lo.length){path.push(MAXC);jumps.push(path.length);path.push(0);path=path.concat(lo.slice().reverse());}}else{path=path.concat(lo);if(hi.length){path.push(0);jumps.push(path.length);path.push(MAXC);path=path.concat(hi.slice().reverse());}}}
+ else if(alg==='C-LOOK'){if(up){path=path.concat(hi);if(lo.length){jumps.push(path.length);path=path.concat(lo.slice().reverse());}}else{path=path.concat(lo);if(hi.length){jumps.push(path.length);path=path.concat(hi.slice().reverse());}}}
+ let tot=0;for(let i=1;i<path.length;i++)tot+=Math.abs(path[i]-path[i-1]);
+ const W=560,H=240,L=20,R=20,T=18,B=12,xs=c=>L+c/MAXC*(W-L-R),ys=i=>T+i*(H-T-B)/Math.max(1,path.length-1);
+ let s=`<line x1="${L}" x2="${W-R}" y1="${T-6}" y2="${T-6}" class="s-grid"/>`;[0,50,100,150,199].forEach(v=>s+=`<text x="${xs(v)}" y="${T-9}" text-anchor="middle" class="s-tm">${v}</text>`);
+ for(let i=1;i<path.length;i++)s+=`<line x1="${xs(path[i-1])}" y1="${ys(i-1)}" x2="${xs(path[i])}" y2="${ys(i)}" stroke="currentColor" stroke-width="1.6" ${jumps.includes(i)?'stroke-dasharray="4 4" opacity=".5"':''}/>`;
+ path.forEach((c,i)=>{const isReq=i>0&&req.includes(c);s+=`<circle cx="${xs(c)}" cy="${ys(i)}" r="${i===0?5:3.5}" fill="${isReq||i===0?'var(--accent)':'var(--muted)'}"/><text x="${xs(c)+7}" y="${ys(i)+4}" class="s-tm">${c}</text>`;});
+ $('dkSvg').innerHTML=s;
+ $('dkOut').innerHTML=`<p class="score">Redosled: ${path.join(' → ')}<br>Ukupan put glave: <b>${tot}</b> cilindara${jumps.length?' (uključujući povratni skok, isprekidana linija)':''}.</p>`;
+ $('dkDir').style.display=(alg==='FCFS'||alg==='SSTF')?'none':'';}
+['dkAlg','dkDir'].forEach(i=>on(i,'change',dk));['dkHead','dkReq'].forEach(i=>on(i,'input',dk));on('dkRun','click',dk);dk();}

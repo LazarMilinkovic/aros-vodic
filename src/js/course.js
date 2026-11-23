@@ -12,7 +12,12 @@ const COURSE=[
    {m:'★',name:'Ponavljanje',ch:[['c17','★','Formule, domaći i veliki test']]}
   ]},
  {p:2,name:'Operativni sistemi',kol:'2. kolokvijum',desc:'Procesi, raspoređivanje procesora, upravljanje memorijom, zastoj (deadlock) i fajl sistemi.',
-  mods:[]}
+  mods:[
+   {m:'M7',name:'Uvod u operativne sisteme',ch:[['o1','7.1','Šta je operativni sistem']]},
+   {m:'M8',name:'Upravljanje procesima',ch:[['o2','8.1','Proces, KBP, stanja i redovi čekanja'],['o3','8.2','Algoritmi planiranja procesora']]},
+   {m:'M9',name:'Uporedni procesi i niti',ch:[['o4','9.1','Kritična sekcija, semafori i filozofi'],['o5','9.2','Niti, Linux, Windows i Java']]},
+   {m:'D2',name:'Dopune za 2. kolokvijum',ch:[['o6','D2.1','Potpuni zastoj (deadlock)'],['o7','D2.2','Upravljanje memorijom'],['o8','D2.3','Virtuelna memorija'],['o9','D2.4','Disk i sistem datoteka']]}
+  ]}
 ];
 const CHS=[];COURSE.forEach(P=>P.mods.forEach(M=>M.ch.forEach(([id,n,t])=>CHS.push({id,n,t,m:M.m,mn:M.name,p:P.p}))));
 const CHI={};CHS.forEach((c,i)=>{c.i=i;CHI[c.id]=c;});

@@ -1,0 +1,120 @@
+<section class="ch" id="o5">
+<div class="ch-head"><span class="ch-num">M9</span><span class="ch-src">Modul 9 · M9 – Upravljanje procesima (slajdovi 9–13, 22–33, 43–62)</span></div>
+<h2>Niti, i kako procesi izgledaju u Linux-u, Windows-u i Javi</h2>
+<p class="lead">Proces je skup: za svaki treba napraviti KBP, adresni prostor, tabele, a promena konteksta između dva procesa znači i promenu cele memorijske slike. A često nam treba nešto lakše: da jedan program radi više stvari istovremeno nad <em>istim</em> podacima. Pregledač prikazuje stranicu dok preuzima sliku, server obrađuje stotinu zahteva odjednom, igra crta sliku dok računa fiziku. Za to postoje <strong>niti</strong> (threads): više tokova izvršavanja unutar jednog procesa. U ovoj lekciji vidimo šta nit ima, a šta deli sa procesom, kako OS preslikava niti, i kako sve to izgleda u stvarnim sistemima: Chrome-u, Linux-u, Windows-u 10 i Javi.</p>
+
+<h3>Zašto više tokova: server i pregledač (slajdovi 9 i 10)</h3>
+<figure class="slide"><img src="img/m9-10.jpg" alt="Multithreaded arhitektura servera" loading="lazy"><figcaption><b>Slajd 10 · Višenitna arhitektura servera</b></figcaption></figure>
+<p>Klijent šalje zahtev (1). Server ne obrađuje zahtev sam, jer bi za to vreme svi ostali klijenti čekali. Umesto toga <b>pravi novu nit da opsluži zahtev</b> (2), a sam <b>nastavlja da osluškuje</b> nove zahteve (3). Svaka nit ima pristup istim podacima servera (keš, baza), a pravljenje niti je mnogo jeftinije od pravljenja procesa.</p>
+<figure class="slide"><img src="img/m9-9.jpg" alt="Višeprocesna arhitektura: Chrome Browser" loading="lazy"><figcaption><b>Slajd 9 · Višeprocesna arhitektura, Chrome Browser</b></figcaption></figure>
+<p>Suprotan izbor pravi Chrome. Mnogi pregledači rade kao <b>jedan proces</b>: ako jedan sajt izazove problem, ceo pregledač može da prestane da radi (zamrzne se ili sruši). Chrome je zato <b>višeprocesna</b> aplikacija sa tri tipa procesa:</p>
+<ul>
+<li><b>Browser proces</b> upravlja korisničkim interfejsom, diskom i mrežnim U/I;</li>
+<li><b>Renderer proces</b> prikazuje web stranice (HTML, JavaScript); <b>novi renderer se pravi za svaki sajt</b> koji se otvori. Izvršava se u <b>sandbox-u</b> (pesku), sa ograničenim pristupom disku i mreži, čime se minimizuje efekat bezbednosnih rizika;</li>
+<li><b>Plug-in proces</b> za svaki tip dodatka.</li>
+</ul>
+<p>Pouka: niti su brže i lakše, jer dele memoriju; procesi su sigurniji, jer su izolovani. Chrome bira izolaciju (pad kartice ne ruši ostale), server bira brzinu.</p>
+
+<h3>Proces, posao i nit: tri strukture (slajdovi 22–25)</h3>
+<figure class="slide"><img src="img/m9-22.jpg" alt="Predstavljanje procesa, poslova i niti" loading="lazy"><figcaption><b>Slajd 22 · Predstavljanje procesa/poslova i niti</b></figcaption></figure>
+<p>OS koristi strukture podataka za predstavljanje različitih objekata sa kojima radi. Proces P1 se predstavlja kao <b>povezana lista</b>: jedna struktura koja predstavlja <b>posao</b> (task, zadatak), i na nju vezane strukture koje predstavljaju njegove <b>niti</b> N1 i N2. KBP može biti implementiran <b>statički</b> (tabela fiksne veličine) ili <b>dinamički</b> (struktura se alocira kad se proces pravi).</p>
+<div class="two">
+<figure class="slide"><img src="img/m9-23.jpg" alt="Struktura podataka koja predstavlja posao (task)" loading="lazy"><figcaption><b>Slajd 23 · Struktura posla (task)</b></figcaption></figure>
+<figure class="slide"><img src="img/m9-24.jpg" alt="Struktura podataka koja predstavlja nit" loading="lazy"><figcaption><b>Slajd 24 · Struktura niti</b></figcaption></figure>
+</div>
+<p><b>Posao (task)</b> drži ono što je zajedničko: vlasnik, jedinstveni identifikator procesa, opis adresnog prostora, početne adrese programa, podataka i steka, <b>lista niti i broj niti</b>, informacije o otvorenim datotekama i podrazumevani („default“) direktorijum.</p>
+<p><b>Nit</b> drži samo ono što je njeno: posao kome pripada, listu niti u poslu, <b>nepostojano okruženje</b>, stanje, veze (links, za redove čekanja), i tri prioriteta: osnovni, maksimalni i tekući.</p>
+<figure class="slide"><img src="img/m9-25.jpg" alt="Struktura podataka koja predstavlja nepostojano okruženje niti" loading="lazy"><figcaption><b>Slajd 25 · Nepostojano okruženje niti</b></figcaption></figure>
+<p><b>Nepostojano okruženje</b> (volatile environment) je ono što se menja sa svakom instrukcijom i što se mora sačuvati kad nit izgubi procesor: <b>pokazivač na stek</b>, <b>registri za upravljanje memorijom</b>, <b>registri opšte namene</b>, <b>brojač naredbi</b> (PC) i <b>statusni registar programa</b>. To je kontekst niti.</p>
+<div class="ex"><b>Šta niti dele, a šta ima svaka posebno.</b> Sve niti jednog procesa <b>dele</b>: kod (tekst), globalne promenljive (oblast podataka), <b>heap</b>, otvorene datoteke i adresni prostor. <b>Svaka nit ima svoje</b>: brojač naredbi, registre, <b>stek</b> i stanje. Na ispitu se ovo javlja i kao zaokruživanje: deljeno između niti su <b>heap i globalne promenljive</b>, a zasebno za svaku nit je <b>stek</b> (i registri). Zato je tačna tvrdnja „svaka nit ima svoj stek“: stek čuva lokalne promenljive i povratne adrese, a dve niti koje istovremeno pozivaju funkcije ne bi mogle da dele isti stek.</div>
+
+<h3>Stanja niti (slajdovi 26 i 27)</h3>
+<figure class="slide"><img src="img/m9-26.jpg" alt="Dijagram stanja niti" loading="lazy"><figcaption><b>Slajd 26 · Dijagram stanja niti</b></figcaption></figure>
+<p>Nit ima ista suštinska stanja kao proces: <b>Kreiran</b> → <b>Spreman</b> (u <i>redu čekanja za izvršavanje</i>) → (<i>Dodela</i>) → <b>Izvršava se</b> (na CPU) → <b>Završetak</b>. Iz Izvršava se: <i>Prekid</i> vraća nit u Spreman, a <i>Blokiranje</i> je šalje u <b>Čeka</b> (u <i>red čekanja u stanju čekanja</i>), odakle se vraća u Spreman. Slajd 27: na jednoprocesorskom sistemu u jednom trenutku samo jedna nit koristi procesor; u bilo kom trenutku nit se ili izvršava ili čeka; kada se procesor dodeljuje drugoj niti, treba sačuvati tekuće stanje mašine (nepostojano okruženje).</p>
+
+<h3>Korisničke i kernel niti: tri modela (slajdovi 13, 28–30)</h3>
+<p>Niti mogu da postoje na dva nivoa. <b>Korisničke niti</b> pravi i raspoređuje biblioteka u korisničkom prostoru (Thread Library); jezgro za njih ne zna. <b>Kernel niti</b> pravi i raspoređuje sam OS. Slajd 13 navodi sisteme čije jezgro podržava niti: Windows XP/2000/7/10, Solaris, Linux, Tru64 UNIX, Mac OS X. Pitanje je kako se korisničke niti preslikavaju na kernel niti.</p>
+<figure class="slide"><img src="img/m9-28.jpg" alt="Model N:1, više korisničkih niti ka jednoj kernel nit" loading="lazy"><figcaption><b>Slajd 28 · Model N:1</b></figcaption></figure>
+<p><b>N:1</b>: više korisničkih niti se preslikava u <b>jednu</b> kernel nit. Na slici: u procesima P1 i P2 tri niti (vijugave linije) idu kroz biblioteku niti, ali do jezgra ide samo jedna linija po procesu. Prednost: promena niti je samo poziv biblioteke, veoma brzo. Mana: ako jedna nit napravi blokirajući sistemski poziv, <b>blokira se ceo proces</b>, i niti jednog procesa ne mogu da rade paralelno na više procesora, jer jezgro vidi samo jednu.</p>
+<figure class="slide"><img src="img/m9-29.jpg" alt="Model 1:1" loading="lazy"><figcaption><b>Slajd 29 · Model 1:1</b></figcaption></figure>
+<p><b>1:1</b>: <b>svaka korisnička nit se preslikava u svoju kernel nit</b>. Pravi paralelizam na više jezgara, a blokiranje jedne niti ne blokira ostale. Mana: svaka nova nit znači i kernel nit, pa je pravljenje skuplje i broj niti je ograničen. Primeri sa slajda: Windows 95/98/NT/2000/10, OS/2. Danas i Linux.</p>
+<figure class="slide"><img src="img/m9-30.jpg" alt="Model N:N" loading="lazy"><figcaption><b>Slajd 30 · Model N:N (više ka više)</b></figcaption></figure>
+<p><b>N:N</b> (M:N): omogućava da se <b>više korisničkih niti preslika u više kernel niti</b>, pri čemu OS kreira <b>dovoljan broj</b> kernel niti (ne nužno koliko i korisničkih). Spaja prednosti oba modela, ali je najsloženiji. Primeri: Solaris 2, Windows NT/2000 sa paketom ThreadFiber.</p>
+
+<h3>Planiranje i konkurentnost niti (slajdovi 31–33)</h3>
+<p>Niti se raspoređuju istim algoritmima kao procesi (<b>FCFS, SJF, RR</b>). Uz to se koriste <b>šeme prioriteta</b>: različiti redovi čekanja spremnih niti za svaki prioritet, a <b>prioritet niti može dinamički da se menja</b> u zavisnosti od istorije korišćenja procesora (sećate se tri prioriteta u strukturi niti: osnovni, maksimalni, tekući).</p>
+<p><b>Konkurentne niti</b> su niti koje se izvršavaju u isto vreme. OS mora da obezbedi interakciju između njih: jedna nit može da zahteva servis druge niti i tada mora da sačeka da se pozvani servis završi; potreban je mehanizam sinhronizacije niti sa drugom niti ili sa hardverom, npr. <b>signal</b> koji znači da je pozvani deo posla završen. Konkurentne niti se takmiče i za <b>ekskluzivno korišćenje resursa</b> i mogu istovremeno da traže isti resurs ili servis. Tu se vraćamo na <b>kritične sekcije</b>: kada jedna nit izvršava kritičnu sekciju, nijedna druga ne sme da izvršava tu istu sekciju. Sve iz prethodne lekcije važi za niti isto kao za procese, samo još više, jer niti dele <em>sve</em> globalne podatke.</p>
+
+<h3>Procesi u Linux-u: ps i top (slajdovi 43–47)</h3>
+<figure class="slide"><img src="img/m9-43.jpg" alt="Komanda ps -e u Linux terminalu" loading="lazy"><figcaption><b>Slajd 43 · Kako prikazati procese: ps -e</b></figcaption></figure>
+<p><code>ps -e</code> izlistava sve procese u sistemu (sa <code>| more -15</code> po 15 redova). Kolone: <b>PID</b>, <b>TTY</b> (terminal; „?“ znači da proces nema terminal, tj. to je sistemski servis), <b>TIME</b> (potrošeno procesorsko vreme) i <b>CMD</b> (komanda). Prvi je <code>systemd</code> sa PID 1, koren stabla procesa, a zatim niti jezgra (<code>kthreadd</code>, <code>rcu_gp</code>, <code>kworker</code>, <code>ksoftirqd</code>…).</p>
+<figure class="slide"><img src="img/m9-44.jpg" alt="Pretraga procesa: pgrep i ps -e | grep" loading="lazy"><figcaption><b>Slajd 44 · Kako pretražiti procese: pgrep i grep</b></figcaption></figure>
+<p>Pretraga: <code>pgrep ssh</code> vraća PID procesa čije ime sadrži „ssh“, a <code>ps -e | grep 1143</code> filtrira izlaz komande ps. Uspravna crta <code>|</code> je <b>cev</b> (pipe): izlaz jednog procesa postaje ulaz drugog, što je i sam primer međuprocesne komunikacije.</p>
+<figure class="slide"><img src="img/m9-45.jpg" alt="Korišćenje opcije aux za prikaz procesa" loading="lazy"><figcaption><b>Slajd 45 · ps -aux</b></figcaption></figure>
+<p><code>ps -aux</code> prikazuje svaki proces sa vlasnikom (USER), procentom procesora i memorije, i komandom koja ga je pokrenula.</p>
+<figure class="slide"><img src="img/m9-46.jpg" alt="Korišćenje top utility-a" loading="lazy"><figcaption><b>Slajd 46 · Komanda top</b></figcaption></figure>
+<p><code>top</code> prikazuje procese uživo, osvežava se svake sekunde. Zaglavlje: vreme rada sistema, broj korisnika i prosečno opterećenje (load average); <b>Tasks</b>: 182 ukupno, 2 running, 148 sleeping, 0 stopped, 0 zombie; <b>%Cpu(s)</b>: us (korisnički režim), sy (sistemski režim), ni, id (prazan hod, ovde 74,7%), wa (čekanje na U/I)…; memorija i swap. Ispod je tabela procesa.</p>
+<figure class="slide"><img src="img/m9-47.jpg" alt="Značenja skraćenica koje se odnose na procese" loading="lazy"><figcaption><b>Slajd 47 · Značenja skraćenica u top-u</b></figcaption></figure>
+<p>Ovo pitanje dolazi na kolokvijumu („objasniti značenja parametara“):</p>
+<div class="tbl"><table><thead><tr><th>Kolona</th><th>Značenje</th></tr></thead><tbody>
+<tr><td>PID</td><td>identifikacioni broj procesa</td></tr>
+<tr><td>USER</td><td>korisnik koji je vlasnik procesa</td></tr>
+<tr><td>PR / PRI</td><td>prioritet procesa kod planera jezgra (trenutni)</td></tr>
+<tr><td>NI</td><td><b>nice</b> vrednost: nagoveštaj jezgru koliko je proces „ljubazan“ prema drugima. Opseg −20 do 19, podrazumevano 0. <b>Manja (negativna) vrednost znači viši prioritet.</b> Korisnik je može podesiti (<code>nice</code>, <code>renice</code>); smanjenje ispod 0 sme samo root.</td></tr>
+<tr><td>VIRT</td><td>ukupna virtuelna memorija procesa (sve što je mapirano: kod, podaci, deljene biblioteke, i ono što je na disku)</td></tr>
+<tr><td>RES</td><td>rezidentna memorija: koliko procesa je stvarno u fizičkoj memoriji (RAM)</td></tr>
+<tr><td>SHR</td><td>deljena memorija: deo RES koji se deli sa drugim procesima (npr. biblioteke)</td></tr>
+<tr><td>S</td><td>status: R = running, S = sleeping (prekidivo spavanje), D = neprekidivo spavanje, T = zaustavljen, Z = zombie, I = idle (nit jezgra)</td></tr>
+<tr><td>%CPU</td><td>procenat procesorskog vremena koji proces trenutno troši</td></tr>
+<tr><td>%MEM</td><td>procenat fizičke memorije (RAM) koji proces koristi</td></tr>
+<tr><td>TIME+</td><td>ukupno potrošeno procesorsko vreme</td></tr>
+<tr><td>COMMAND</td><td>komanda kojom je proces pokrenut</td></tr>
+</tbody></table></div>
+<p>Slajd objašnjava i dve vrste spavanja: u <b>INTERRUPTABLE_SLEEP</b> proces se budi i usred spavanja da obradi signal koji mu je poslat; u <b>UNINTERRUPTABLE_SLEEP</b> ne budi se ni kad mu se pošalje signal (tipično dok čeka disk).</p>
+<p><b>Niti u Linux-u</b> (slajd 62): Linux za niti koristi termin <b>„tasks“</b> i ne pravi strogu razliku između procesa i niti. Nit se pravi sistemskim pozivom <b><code>clone()</code></b>, koji omogućava da nova nit <b>deli adresni prostor</b> sa niti (procesom) koja ju je napravila. Zastavicama se bira šta se deli: memorija, otvorene datoteke, obrađivači signala. Ako se ne deli ništa, <code>clone()</code> se ponaša kao <code>fork()</code> i pravi nov proces.</p>
+
+<h3>Windows 10 iznutra (slajdovi 48–54)</h3>
+<p>Windows 10 ima <b>arhitekturu mikrojezgra</b> (preciznije hibridnu: mali kernel, ali većina servisa ipak radi u kernel režimu). Napisan je u <b>C i C++</b>; delovi specifični za procesor napisani su u asembleru te arhitekture. <b>Kod zavisan od platforme izolovan je u DLL biblioteci koja se zove sloj hardverske apstrakcije, HAL</b> (Hardware Abstraction Layer). Zbog HAL-a se Windows prenosi na novi hardver menjanjem samo tog sloja.</p>
+<figure class="slide"><img src="img/m9-49.jpg" alt="Opšta arhitektura Windows sistema" loading="lazy"><figcaption><b>Slajd 49 · Opšta arhitektura Windows sistema</b></figcaption></figure>
+<p>Gore je <b>User Mode</b>: podsistemski proces CSRSS.exe, sistemski procesi, servisni procesi i korisnički procesi. Svi oni do jezgra idu kroz <b>Subsystem DLLs</b> i <b>NTDLL.DLL</b> (biblioteka koja sadrži ulaze u sistemske pozive). Ispod crvene linije je <b>Kernel Mode</b>: <b>Executive</b> (izvršni sloj sa menadžerima), <b>Device Drivers</b>, <b>Kernel</b> (planiranje niti, prekidi, sinhronizacija), Win32k.sys (grafika i prozori), pa <b>HAL</b>, a ispod svega <b>Hyper-V hipervizor</b>.</p>
+<figure class="slide"><img src="img/m9-50.jpg" alt="Prikaz arhitekture Windows 10 operativnog sistema" loading="lazy"><figcaption><b>Slajd 50 · Arhitektura Windows 10, detaljno</b></figcaption></figure>
+<p>Detaljnija slika istog: u korisničkom režimu podsistemi okruženja (csrss, session manager), sistemski procesi (SCM, wininit, winlogon), servisi (spooler, svchost) i aplikacije. U kernel režimu <b>executive</b> sadrži object manager, security reference monitor, <b>process manager</b>, power manager, configuration manager, ALPC (lokalna komunikacija procesa), plug and play manager i <b>memory manager</b>; levo je I/O manager sa sistemom datoteka, keš menadžerom i drajverima. Ispod: kernel, HAL, Hyper-V, hardver.</p>
+<p><b>Ključni ciljevi Windows 10</b> (slajd 51): prenosivost (portability), bezbednost, usklađenost sa POSIX standardom, podrška višeprocesorskim sistemima, proširivost, međunarodna podrška, kompatibilnost sa MS-DOS i MS-Windows aplikacijama.</p>
+<figure class="slide"><img src="img/m9-52.jpg" alt="Principi dizajna Windows 10: bezbednost" loading="lazy"><figcaption><b>Slajd 52 · Principi dizajna: bezbednost</b></figcaption></figure>
+<p>Bezbednosni mehanizmi: liste kontrole pristupa (ACL); nivoi integriteta; šifrovanje datoteka i komunikacije; zaštite od eksploata: <b>ASLR</b> (nasumičan raspored adresnog prostora), <b>DEP</b> (zabrana izvršavanja podataka), CFG i ACG; digitalni potpisi; Device Guard (kontrola čiji kod sme da radi).</p>
+<figure class="slide"><img src="img/m9-53.jpg" alt="Windows 10 Process Manager" loading="lazy"><figcaption><b>Slajd 53 · Windows 10 Process Manager</b></figcaption></figure>
+<p><b>Process manager</b> pruža usluge kreiranja, brisanja i korišćenja niti i procesa. Odnosi roditelj-dete i hijerarhije procesa prepušteni su podsistemu okruženja kome proces pripada (Windows, za razliku od UNIX-a, ne insistira na stablu procesa). Procesi se grupišu u <b>job objekte</b>, a podrška za Docker kontejnere ide preko job objekata zvanih <b>silos</b>.</p>
+<figure class="slide"><img src="img/m9-54.jpg" alt="Tipovi objekata podržani pod Windows-om" loading="lazy"><figcaption><b>Slajd 54 · Tipovi objekata (alat WinObj)</b></figcaption></figure>
+<p>U Windows-u je skoro sve <b>objekat</b> kojim upravlja object manager. Alat WinObj prikazuje tipove: Event, File, Job, Key (ključ registra), Mutant (mutex), Process, Section (deljena memorija), <b>Semaphore</b>, Thread, Timer… Proces dobija „ručku“ (handle) na objekat i preko nje ga koristi.</p>
+
+<h3>Niti i semafori u Javi (slajdovi 55–61)</h3>
+<p>U Javi se nit pravi na dva načina: <b>nasleđivanjem klase <code>Thread</code></b> ili <b>implementiranjem interfejsa <code>Runnable</code></b>. Nitima upravlja <b>JVM</b> (Java Virtual Machine), koja ih danas preslikava 1:1 na niti operativnog sistema.</p>
+<figure class="slide"><img src="img/m9-56.jpg" alt="Dijagram stanja niti u Javi, 4 stanja" loading="lazy"><figcaption><b>Slajd 56 · Stanja niti u Javi (4 stanja)</b></figcaption></figure>
+<p>Starija slika sa četiri stanja: <b>Nov</b> (posle <code>new</code>) → <code>start()</code> → <b>Izvršava se</b> → <code>stop()</code> → <b>Završen</b>. Iz Izvršava se, <code>sleep()</code>, U/I ili <code>suspend()</code> vode u <b>Blokiran</b>, a <code>resume()</code> nazad. (Metode <code>stop</code>, <code>suspend</code> i <code>resume</code> su u Javi danas zastarele, jer mogu da ostave podatke u nekonzistentnom stanju ili izazovu zastoj.)</p>
+<figure class="slide"><img src="img/m9-57.jpg" alt="Dijagram stanja niti u Javi, 5 stanja" loading="lazy"><figcaption><b>Slajd 57 · Stanja niti u Javi (5 stanja)</b></figcaption></figure>
+<p>Novija slika razdvaja „spremna“ od „radi“: <b>New</b> → <b>Runnable</b> ⇄ <b>Running</b> (<code>yield()</code> dobrovoljno vraća nit u Runnable) → <b>Terminated</b> (dead state). Iz Running, <code>wait()</code>, <code>sleep()</code> ili <code>suspend()</code> vode u <b>waiting/sleeping/blocking</b>, a iz njega u Runnable vode <code>notify()</code>/<code>notifyAll()</code>, istek vremena spavanja ili <code>resume()</code>. To je isti dijagram kao za procese, samo sa imenima Java metoda.</p>
+<p><b>Sinhronizacija niti u Javi</b> (slajd 58) koristi <code>synchronized</code>, <code>wait()</code> i <code>notify()</code>. Java (do verzije 5) <b>nije imala semafore</b>, ali se semafor može napraviti pomoću njenog mehanizma sinhronizacije:</p>
+<figure class="slide"><img src="img/m9-59.jpg" alt="Semafor u Javi" loading="lazy"><figcaption><b>Slajd 59 · Semafor u Javi</b></figcaption></figure>
+<pre><code>public class Semaphore {
+    private int value;
+    public Semaphore()      { value = 0; }
+    public Semaphore(int v) { value = v; }
+
+    public synchronized void P() {
+        while (value &lt;= 0) {
+            try { wait(); }                       // uspavaj nit
+            catch (InterruptedException e) { }
+        }
+        value--;
+    }
+
+    public synchronized void V() {
+        ++value;
+        notify();                                 // probudi jednu nit
+    }
+}</code></pre>
+<p>Uporedite sa pseudokodom iz prethodne lekcije: <code>synchronized</code> ima ulogu „zabrani prekide … dozvoli prekide“ (u metodi je najviše jedna nit), <code>wait()</code> ima ulogu „ubaci proces u red čekanja na semafor“ (nit spava i ne troši procesor, dakle <em>nema</em> zaposlenog čekanja), a <code>notify()</code> ulogu „probudi“. Petlja <code>while</code> umesto <code>if</code> je tu jer probuđena nit mora ponovo da proveri uslov: dok se budila, neka druga nit je možda već uzela vrednost. Danas Java ima gotovu klasu <code>java.util.concurrent.Semaphore</code> sa metodama <code>acquire()</code> (P) i <code>release()</code> (V).</p>
+<div class="bridge">Problem filozofa je pokazao da semafori, pogrešno upotrebljeni, vode u zastoj. Pošto je zastoj jedno od najčešćih ispitnih pitanja, sledeća lekcija ga obrađuje do kraja: uslove nastanka, bezbedna stanja, formulu za broj resursa i inverziju prioriteta.</div>
+<p class="src">Dodatni izvori: A. Silberschatz i dr., <i>Operating System Concepts</i>, 10. izd., gl. 4 (Threads), 21 (Windows 10) i 20 (Linux); <code>man top</code>, <code>man ps</code>, <code>man clone</code>; howtoforge.com (referenca 4 sa slajda 66).</p>
+<div class="quiz" data-ch="o5"></div>
+</section>

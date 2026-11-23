@@ -136,6 +136,151 @@ c16:[
  ["Kod x86, EA se računa kao:",["Base + Index × Scale + Displacement","Base × Index","PC + 1","Segment × 16"],0,"Scale može biti 1, 2, 4 ili 8 (veličina elementa niza u bajtovima)."],
  ["Koliko znakova ima osnovni ASCII?",["64","128","256","65 536"],1,"7 bita → 2⁷ = 128 znakova."],
  ["Koji ASCII kod ima slovo 'A'?",["48","65","97","32"],1,"'A' = 65 (41h), 'a' = 97, '0' = 48, razmak = 32."]
+],
+c18:[
+ ["Koje dve jedinice ima procesor 8086 i rade istovremeno?",["ALU i FPU","BIU i EU","CU i MMU","L1 i L2"],1,"BIU (jedinica za spregu sa magistralom) donosi instrukcije i podatke, EU (izvršna jedinica) ih izvršava."],
+ ["Kako 8086 računa fizičku adresu?",["segment + pomeraj","segment × 16 + pomeraj","segment × 256 + pomeraj","pomeraj × 16 + segment"],1,"Sadržaj segmentnog registra se pomeri 4 bita ulevo (× 16) i doda mu se pomeraj: 20-bitna adresa, 1 MB memorije."],
+ ["Koliko bita ima adresna magistrala 8086 i koliko memorije adresira?",["16 bita, 64 KB","20 bita, 1 MB","24 bita, 16 MB","32 bita, 4 GB"],1,"2²⁰ = 1 MB."],
+ ["Koji registar kod Intela ima ulogu brojača naredbi (BN)?",["SP","IP","BP","SI"],1,"IP (instruction pointer), u 32 bita EIP, u 64 bita RIP."],
+ ["Segment 1234H, pomeraj 0005H. Fizička adresa je:",["12345H","12339H","1239H","17345H"],0,"1234H × 16 = 12340H; + 5 = 12345H."]
+],
+c19:[
+ ["Šta radi izvršenje naredbe GOTO 150?",["BN ← BN + 150","BN ← 150","AK ← 150","M[150] ← BN"],1,"Bezuslovni skok samo upisuje adresni deo naredbe u brojač naredbi."],
+ ["Kada se BN poveća za 1 u ciklusu instrukcije?",["Posle izvršenja","Odmah posle donošenja instrukcije, pre izvršenja","Samo kod skoka","Na kraju programa"],1,"Faza donošenja: RN ← M[BN], BN ← BN + 1. Kad instrukcija počne da se izvršava, BN već pokazuje na sledeću."],
+ ["Koji bit stanja se postavlja kad je rezultat nula?",["N","Z","V","C"],1,"Z (zero). N je znak, V prekoračenje, C prenos."],
+ ["Kako se realizuje uslovni skok?",["Uvek se skače","Skače se samo ako bitovi stanja (N, Z, V, C) zadovoljavaju uslov","Skače se na adresu iz steka","Pomoću prekida"],1,"Npr. posle CMP, BEQ skače samo ako je Z = 1."],
+ ["Instrukcija CMP A, B:",["Upisuje A − B u A","Oduzima i postavlja bitove stanja, bez čuvanja rezultata","Menja mesta A i B","Skače ako su jednaki"],1,"CMP je oduzimanje koje samo postavlja N, Z, V, C."]
+],
+c20:[
+ ["Šta CALL mora da sačuva da bi se program mogao vratiti?",["Sadržaj akumulatora","Povratnu adresu (sadržaj BN)","Ceo program","Tabelu stranica"],1,"Povratna adresa je adresa naredbe posle CALL; RETURN je vraća u BN."],
+ ["Koji način čuvanja povratne adrese podržava rekurziju?",["Fiksna reč","Prva reč pozvanog modula","Stek","Nijedan"],2,"Kod fiksne reči i prve reči modula drugi poziv pregazi prvu povratnu adresu. Stek čuva sve, LIFO redom."],
+ ["Po čemu se korutine razlikuju od potprograma?",["Nemaju povratnu adresu","Moduli su ravnopravni: RESUME nastavlja drugi modul od mesta gde je stao","Ne mogu da se pozivaju","Rade samo na Itanium-u"],1,"Kod potprograma pozvani uvek počinje od početka; korutina nastavlja tamo gde je predala kontrolu."],
+ ["Stek radi po principu:",["FIFO","LIFO","Slučajnom","Po prioritetu"],1,"Poslednji stavljen, prvi skinut (push/pop)."]
+],
+c21:[
+ ["Šta radi push AX kod x86?",["SP se poveća, AX se upiše","SP se smanji za 2, AX se upiše na vrh steka","AX ← vrh steka","Briše stek"],1,"Stek kod x86 raste nadole: SP ← SP − 2, M[SS:SP] ← AX."],
+ ["U Intel sintaksi mov eax, ebx znači:",["ebx ← eax","eax ← ebx","eax i ebx menjaju mesta","Poredi eax i ebx"],1,"Intel: odredište prvo. AT&T piše obrnuto: movl %ebx, %eax."],
+ ["Koja direktiva rezerviše 4 bajta (dvostruku reč)?",["DB","DW","DD","DQ"],2,"DB 1 bajt, DW 2, DD 4, DQ 8."],
+ ["Po čemu se AT&T sintaksa vidljivo razlikuje?",["Registri sa %, konstante sa $, izvor pa odredište","Nema registara","Piše se velikim slovima","Nema komentara"],0,"Npr. movl $5, %eax."]
+],
+c22:[
+ ["Pomeranje (shift) ulevo za jedan bit odgovara:",["Deljenju sa 2","Množenju sa 2","Komplementu","Rotaciji"],1,"Svaki bit ide na mesto duplo veće težine (ako nema prekoračenja)."],
+ ["Čime se izvlače (izdvajaju) određeni bitovi reči?",["OR sa maskom","AND sa maskom","XOR sa maskom","Rotacijom"],1,"AND sa maskom koja ima 1 na željenim pozicijama briše sve ostale."],
+ ["Kako se određeni bitovi postavljaju na 1?",["AND sa maskom","OR sa maskom","NOT","SHR"],1,"x OR 1 = 1, x OR 0 = x."],
+ ["Čime se bitovi invertuju na izabranim pozicijama?",["AND","OR","XOR sa maskom","MOV"],2,"x XOR 1 = NOT x, x XOR 0 = x."],
+ ["Protočna obrada (pipelining) ubrzava rad jer:",["Svaka instrukcija se izvrši brže","Više instrukcija je istovremeno u različitim fazama","Smanjuje broj instrukcija","Uklanja keš"],1,"Kao pokretna traka: povećava propusnost, ne skraćuje jednu instrukciju."],
+ ["Rotacija se razlikuje od pomeranja po tome što:",["Bit koji izađe vraća se na drugi kraj","Uvek ubacuje nule","Radi samo ulevo","Menja znak"],0,"Kod rotacije se ne gubi nijedan bit."]
+],
+c23:[
+ ["Šta je mikrooperacija?",["Instrukcija asemblera","Elementarna operacija nad registrima u jednom taktu (npr. MAR ← BN)","Sistemski poziv","Potprogram"],1,"Instrukcija ISA-e se izvršava kao niz mikrooperacija."],
+ ["Mikroprogramirana upravljačka jedinica:",["Je tvrdo ožičena","Čuva mikroprogram u upravljačkoj memoriji","Nema takt","Ne može da izvršava skokove"],1,"Svaka instrukcija je niz mikroinstrukcija u ROM-u (upravljačkoj memoriji); lakše se menja, ali je sporija od ožičene."],
+ ["Šta je firmver?",["Korisnički program","Softver trajno upisan u hardver (npr. mikroprogram, BIOS)","Drajver za štampač","Operativni sistem"],1,"Most između hardvera i softvera."],
+ ["Mikroarhitektura je:",["Isto što i ISA","Način na koji je ISA realizovana u hardveru","Skup instrukcija","Asemblerski jezik"],1,"Ista ISA (x86) ima mnogo mikroarhitektura (Skylake, Zen…)."],
+ ["Prednost tvrdo ožičene upravljačke jedinice:",["Lakša izmena","Veća brzina","Manje tranzistora uvek","Podrška za mikroprogram"],1,"RISC procesori koriste ožičeno upravljanje zbog brzine."]
+],
+d1:[
+ ["Flynn-ova klasifikacija se zasniva na:",["Broju jezgara","Broju tokova instrukcija i tokova podataka","Veličini keša","Brzini takta"],1,"SISD, SIMD, MISD, MIMD."],
+ ["Vektorski procesor i GPU su primer klase:",["SISD","SIMD","MISD","MIMD"],1,"Jedna instrukcija se primenjuje na mnogo podataka."],
+ ["Višejezgarni procesor je primer klase:",["SISD","SIMD","MISD","MIMD"],3,"Svako jezgro ima svoj tok instrukcija i svoje podatke."],
+ ["Klasičan Von Neumann-ov računar je:",["SISD","SIMD","MISD","MIMD"],0,"Jedan tok instrukcija, jedan tok podataka."]
+],
+d2:[
+ ["Glavni problem sistema sa jednom magistralom je:",["Previše tranzistora","Usko grlo: u jednom trenutku samo jedan prenos","Nema adresa","Ne može da radi sa memorijom"],1,"Zato postoje hijerarhije magistrala (procesor-memorija, PCI, spore U/I)."],
+ ["Sinhrona magistrala:",["Nema takt","Sve događaje meri zajedničkim taktom","Koristi rukovanje (handshake)","Radi samo sa diskovima"],1,"Asinhrona koristi signale rukovanja umesto takta."],
+ ["DRAM se razlikuje od SRAM-a po tome što:",["Je brži","Mora da se periodično osvežava","Ne gubi podatke bez napajanja","Ima 6 tranzistora po bitu"],1,"DRAM pamti bit u kondenzatoru koji se prazni; SRAM je flip-flop (brži, skuplji, za keš)."],
+ ["Promašaj u kešu pri prvom pristupu bloku zove se:",["Promašaj zbog kapaciteta","Obavezni (hladni) promašaj","Konfliktni promašaj","Lažni promašaj"],1,"Tri vrste: obavezni, zbog kapaciteta i konfliktni."]
+],
+d3:[
+ ["Nemaskirajući prekid (NMI):",["Može da se zabrani","Ne može da se zabrani maskom","Dolazi od programa","Ima najniži prioritet"],1,"Koristi se za kritične događaje (pad napona, greška memorije)."],
+ ["Unutrašnji prekid (izuzetak) nastaje zbog:",["Tastature","Događaja u samom procesoru, npr. deljenja nulom","Mrežne kartice","Tajmera"],1,"Spoljašnje prekide izazivaju uređaji."],
+ ["Šta se čuva pri prihvatanju prekida?",["Samo AK","Kontekst procesora: BN, PSW i registri","Ceo program","Ništa"],1,"Da bi se prekinuti program kasnije nastavio kao da se ništa nije desilo."],
+ ["Ugnežđeni prekidi znači:",["Prekid višeg prioriteta može da prekine obradu prekida nižeg prioriteta","Svi prekidi se ignorišu","Prekidi se obrađuju samo FIFO","Program prekida sam sebe"],0,"Zato se kontekst čuva na steku."]
+],
+d4:[
+ ["Šta radi punilac (loader)?",["Prevodi izvorni kod","Učitava izvršni program u memoriju i priprema ga za izvršavanje","Briše program","Povezuje mrežu"],1,"Postavlja adrese (relokacija) i predaje kontrolu programu."],
+ ["Interpretator se razlikuje od kompajlera po tome što:",["Prevodi ceo program unapred","Prevodi i izvršava naredbu po naredbu","Ne postoji","Radi samo u asembleru"],1,"Kompajler pravi izvršni program pa se on izvršava; interpretator izvršava direktno."],
+ ["Zakon apsorpcije glasi:",["A + A·B = A","A + B = B + A","A·(B + C) = A·B + A·C","A + 1 = A"],0,"I A·(A + B) = A."],
+ ["Drugi komplement broja −5 u 8 bita:",["10000101","11111010","11111011","00000101"],2,"5 = 00000101, invertuj: 11111010, + 1 = 11111011."],
+ ["Ekvivalencija hardvera i softvera znači:",["Hardver i softver su isto","Svaka operacija može da se realizuje i u hardveru i u softveru","Softver je uvek brži","Hardver se ne može menjati"],1,"Izbor je stvar cene, brzine i fleksibilnosti."]
+],
+o1:[
+ ["Operativni sistem je:",["Čip na matičnoj ploči","Program koji predstavlja interfejs između korisnika i hardvera","Samo grafički interfejs","Prevodilac"],1,"Definicija sa slajda 10 Modula 7."],
+ ["Šta je rešenje „faze 2“ evolucije OS-a (neiskorišćenost CPU)?",["Prekidi","Multiprogramiranje","Dva režima rada","Virtuelne mašine"],1,"Faza 1: preklapanje U/I i računanja (prekidi). Faza 2: multiprogramiranje (context switching). Faza 3: zaštita (supervisor/user)."],
+ ["Sistemski poziv je u suštini:",["Običan CALL","Softverski prekid koji prebacuje procesor u sistemski režim","Hardverski prekid","Izuzetak zbog greške"],1,"Prebaci režim i skoči na unapred određeno mesto u OS-u."],
+ ["Privilegovane instrukcije sme da izvršava:",["Svaki program","Samo OS, u sistemskom (supervisor) režimu","Samo shell","Samo drajveri u korisničkom režimu"],1,"Pokušaj iz korisničkog režima izaziva izuzetak."],
+ ["Linux je primer kog modela OS-a?",["Monolitnog bez strukture","Modularnog","Slojevitog (THE)","Čiste virtuelne mašine"],1,"Moduli (npr. drajveri) se učitavaju i izbacuju dok sistem radi, svi u jezgru."],
+ ["Iz praznog hoda OS NE izlazi zbog:",["Hardverskog prekida","Izuzetka","Sistemskog poziva","Isteka praznog hoda bez događaja"],3,"OS je vođen događajima: budi ga prekid, izuzetak ili sistemski poziv."],
+ ["Vremensko multipleksiranje resursa je primer:",["Deljenja memorije na delove","Dodele procesora jednom procesu na neko vreme","Particije diska","Keša"],1,"Prostorno: memorija i disk se dele na delove."]
+],
+o2:[
+ ["Gde se nalaze kontrolni blokovi procesa?",["U memoriji procesa","U memoriji rezervisanoj za OS","Na disku uvek","U kešu"],1,"Da ih proces ne bi mogao menjati."],
+ ["Koji prelaz NE postoji u dijagramu stanja procesa?",["SPREMAN → IZVRŠAVA SE","IZVRŠAVA SE → ČEKA","ČEKA → IZVRŠAVA SE","ČEKA → SPREMAN"],2,"Proces koji je dočekao događaj ide u red spremnih."],
+ ["Kada proces prelazi iz IZVRŠAVA SE u SPREMAN?",["Kad zatraži U/I","Kad mu istekne kvantum","Kad završi","Kad se kreira"],1,"Prekinut je, ali bi mogao da nastavi."],
+ ["Dugoročni planer upravlja:",["Redom poruka","Stepenom multiprogramiranja","Kešom","Diskom"],1,"Odlučuje koliko procesa ulazi u memoriju."],
+ ["Lokalne promenljive funkcije nalaze se na:",["Hipu","Steku","U oblasti teksta","U inicijalizovanim podacima"],1,"Memorija dobijena sa malloc je na hipu."],
+ ["Spreman/suspendovan proces je:",["U memoriji i čeka događaj","Na disku i ne čeka događaj","Na procesoru","Završen"],1,"Postaće spreman čim ga OS vrati u memoriju."],
+ ["Šta radi dispečer?",["Bira proces","Sprovodi izbor: promena konteksta, prelaz u korisnički režim, skok u program","Briše procese","Upravlja diskom"],1,"Bira kratkoročni planer, dispečer izvršava."]
+],
+o3:[
+ ["FCFS, P1 = 24, P2 = 3, P3 = 3, redosled P1, P2, P3. Prosečno vreme čekanja:",["3","10","17","27"],2,"(0 + 24 + 27)/3 = 17."],
+ ["Koji algoritam minimizira prosečno vreme čekanja (bez prekidanja)?",["FCFS","SJF","RR","Prioritetni"],1,"Dokazivo optimalan, ali trajanje se ne zna unapred."],
+ ["Efekat konvoja je karakterističan za:",["RR","FCFS","SRTF","Više nivoa"],1,"Kratki procesi čekaju iza dugog."],
+ ["Previše mali kvantum kod RR dovodi do:",["Gladovanja","Previše promena konteksta i pada efikasnosti","Efekta konvoja","Zastoja"],1,"Preveliki kvantum pretvara RR u FCFS."],
+ ["Od FCFS, SRTF i RR, do gladovanja može dovesti:",["FCFS","SRTF","RR","Nijedan"],1,"Kratki procesi koji stalno pristižu odlažu dugi."],
+ ["Vreme odziva je vreme od zahteva do:",["Završetka procesa","Početka davanja odgovora","Ulaska u memoriju","Prvog U/I"],1,"Ne do kraja, nego do prvog odgovora."],
+ ["Problem gladovanja kod prioritetnog planiranja rešava se:",["Smanjenjem kvantuma","Starenjem (aging)","FCFS-om","Swapping-om"],1,"Prioritet raste sa vremenom čekanja."]
+],
+o4:[
+ ["Početna vrednost semafora za međusobno isključivanje:",["0","1","n","−1"],1,"0 za sinhronizaciju, broj resursa za dodelu resursa."],
+ ["Zašto N := N + 1 nije bezbedno bez zaštite?",["To je jedna instrukcija","To su tri instrukcije (LOAD, ADD, STORE) i prekid može doći između","Zbog keša","Zbog diska"],1,"Stanje trke: rezultat zavisi od trenutka prekida."],
+ ["Kako Dijkstrin P izbegava zaposleno čekanje?",["Vrti petlju","Uspava proces u redu čekanja semafora","Isključuje računar","Ne izbegava"],1,"Uspavan proces ne troši procesor."],
+ ["Šta čini P i V nedeljivim na jednom procesoru?",["Keš","Zabrana prekida za vreme operacije","DMA","Stek"],1,"Na više procesora koriste se nedeljive instrukcije (test-and-set)."],
+ ["Koje rešenje problema filozofa razbija kružno čekanje?",["Svaki uzima levi pa desni","Neparni uzimaju levi pa desni, parni desni pa levi","Svi jedu istovremeno","Bez semafora"],1,"Asimetrija ne dozvoljava da se krug zatvori."],
+ ["Najbrži način IPC-a na istom računaru je:",["Razmena poruka","Deljena memorija","Datoteka","Mreža"],1,"Ali sinhronizaciju obezbeđuje programer."],
+ ["Sinhroni (blokirajući) send znači:",["Pošiljalac odmah nastavlja","Pošiljalac čeka dok poruka ne bude primljena","Poruka se gubi","Ne postoji"],1,"Asinhroni: nastavlja odmah."]
+],
+o5:[
+ ["Šta niti jednog procesa DELE?",["Stek","Registre","Heap i globalne promenljive","Brojač naredbi"],2,"Svaka nit ima svoj stek, registre i PC."],
+ ["U modelu N:1, ako jedna nit napravi blokirajući sistemski poziv:",["Blokira se samo ta nit","Blokira se ceo proces","Ništa se ne dešava","Pravi se nova kernel nit"],1,"Jezgro vidi samo jednu nit."],
+ ["Kojim pozivom Linux pravi nit?",["fork()","clone()","exec()","wait()"],1,"clone() sa deljenjem adresnog prostora."],
+ ["NI vrednost u top-u: manja vrednost znači:",["Niži prioritet","Viši prioritet","Više memorije","Proces je zaustavljen"],1,"Opseg −20 (najviši) do 19 (najniži)."],
+ ["RES u top-u je:",["Virtuelna memorija","Rezidentna (fizička) memorija procesa","Deljena memorija","Prioritet"],1,"VIRT je virtuelna, SHR deljena."],
+ ["HAL u Windows-u je:",["Planer","Sloj hardverske apstrakcije koji izoluje kod zavisan od platforme","Sistem datoteka","Grafički podsistem"],1,"Omogućava prenosivost."],
+ ["Zašto Chrome pravi poseban renderer proces za svaki sajt?",["Brzina","Izolacija: problem jednog sajta ne ruši ceo pregledač, i sandbox","Manje memorije","Zbog Jave"],1,"Procesi su izolovani, niti nisu."]
+],
+o6:[
+ ["Koji NIJE uslov za nastanak zastoja?",["Međusobno isključenje","Posedovanje i čekanje","Prekidanje (preemption)","Kružno čekanje"],2,"Uslov je da NEMA prekidanja."],
+ ["3 procesa, svaki traži najviše 3 resursa. Najmanji r bez zastoja:",["6","7","9","4"],1,"r ≥ 3·(3 − 1) + 1 = 7."],
+ ["Nebezbedno stanje:",["Uvek je zastoj","Može, ali ne mora da vodi u zastoj","Nikad ne vodi u zastoj","Je isto što i gladovanje"],1,"Zastoji su podskup nebezbednih stanja."],
+ ["Inverzija prioriteta se rešava:",["Smanjenjem kvantuma","Nasleđivanjem prioriteta","Gašenjem procesa","SJF-om"],1,"Niski proces privremeno dobija prioritet visokog."],
+ ["Bankarov algoritam služi za:",["Sprečavanje","Izbegavanje zastoja","Otkrivanje","Planiranje diska"],1,"Odobrava zahtev samo ako stanje ostaje bezbedno."]
+],
+o7:[
+ ["Program je smešten od adrese 3000. Programska adresa 120 je fizička:",["120","3000","3120","2880"],2,"a′ = p + a."],
+ ["Interna fragmentacija nastaje kod:",["Dinamičkih particija","Straničenja i statičkih particija","Segmentacije","Nigde"],1,"Dodeljen region je veći od potrebnog."],
+ ["Best Fit bira:",["Prvu dovoljno veliku rupu","Najmanju dovoljno veliku rupu","Najveću rupu","Slučajnu rupu"],1,"Tabela uređena po rastućoj veličini."],
+ ["STLR sadrži:",["Adresu tabele segmenata","Broj segmenata programa","Broj okvira","Adresu TLB-a"],1,"STBR sadrži adresu tabele."],
+ ["Pri promašaju u TLB-u, tabela stranica se čita iz:",["Diska","Glavne memorije","Registra","Keša L3 uvek"],1,"Na disk se ide samo kod straničnog prekida."],
+ ["Manja stranica znači:",["Manju tabelu stranica","Veću tabelu stranica i manju internu fragmentaciju","Veću internu fragmentaciju","Nema promene"],1,"Više stranica za isti prostor."],
+ ["Translaciju virtuelnih u fizičke adrese radi:",["Kernel za svaki pristup","MMU (hardver)","Kompajler","Disk"],1,"OS samo popunjava tabele."]
+],
+o8:[
+ ["Stranični prekid nastaje kada:",["Stranica nije u memoriji","Je TLB pun","Je disk spor","Proces završi"],0,"Bit prisutnosti je 0."],
+ ["m ≥ n (okvira više od različitih stranica). Gornja granica broja straničnih prekida:",["p","n","m","0"],1,"Svaka stranica se učita jednom i nikad se ne izbacuje."],
+ ["Koji algoritam zamene daje najmanje prekida, ali se ne može implementirati?",["FIFO","LRU","OPT","Sat"],2,"Zahteva poznavanje budućnosti."],
+ ["Beladijeva anomalija se javlja kod:",["LRU","OPT","FIFO","Svih"],2,"Više okvira može dati više prekida."],
+ ["Trashing karakteriše:",["Visoka iskorišćenost CPU","Niska iskorišćenost CPU i mnogo straničnih prekida","Prazan disk","Gladovanje"],1,"Procesor čeka disk."],
+ ["Trashing se rešava:",["Povećanjem stepena multiprogramiranja","Smanjenjem stepena multiprogramiranja","Manjim stranicama","FIFO-om"],1,"Manje procesa, više okvira po procesu."],
+ ["Globalno straničenje znači da su kandidati za izbacivanje:",["Samo stranice datog procesa","Svi okviri u sistemu","Samo stranice OS-a","Nijedan"],1,"Lokalno: samo okviri datog procesa."]
+],
+o9:[
+ ["Koji algoritam diska može izazvati gladovanje?",["FCFS","SSTF","SCAN","C-SCAN"],1,"Uvek bira najbliži zahtev."],
+ ["Glava 53, red 98 183 37 122 14 124 65 67. SSTF prelazi ukupno:",["640","236","299","382"],1,"53→65→67→37→14→98→122→124→183."],
+ ["C-SCAN u odnosu na SCAN daje:",["Manji ukupan put","Uniformnija vremena odziva","Gladovanje","Isti rezultat kao FCFS"],1,"Opslužuje samo u jednom smeru."],
+ ["Glavna razlika ext3 u odnosu na ext2:",["Inode","Dnevnik transakcija (journal)","FAT tabela","Nema direktorijuma"],1,"Brz oporavak posle pada."],
+ ["Najveća datoteka na FAT32:",["2 GB","4 GB","2 TB","16 TB"],1,"Particija do 2 TB."],
+ ["Deskriptor datoteke je:",["Ime datoteke","Ceo nenegativan broj koji kernel vraća pri otvaranju","Inode na disku","Putanja"],1,"0, 1, 2 su standardni ulaz, izlaz i greške."],
+ ["Koja metoda dodele prostora ima eksternu fragmentaciju?",["Susedni blokovi","Povezani blokovi","Indeksna","Nijedna"],0,"Isti problem kao dinamičke particije u memoriji."]
 ]
 };
 const ORDER=["c1","c2","c3","c4","c5","c6","c7","c8","c9","c10","c11","c12","c13","c14","c15","c16"];

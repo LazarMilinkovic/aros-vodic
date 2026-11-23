@@ -4,7 +4,7 @@ const EX={scope:'1',type:'open',n:10,pick:'smart',time:0};
 let exam=store.get('aros-exam-cur')||null;let timerT=0;
 function pillGroup(id,key,cb){const g=$(id);g.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));const v=b.dataset.v;EX[key]=key==='n'||key==='time'?+v:v;cb&&cb();});}
 pillGroup('exScope','scope',scopeHint);pillGroup('exType','type',scopeHint);pillGroup('exN','n');pillGroup('exPick','pick');pillGroup('exTime','time');
-function mcPool(p){const out=[];if(p!==1)return out;for(const id in Q){Q[id].forEach((it,i)=>out.push({id:'mc:'+id+':'+i,mc:it,ch:id,p:1}));}return out;}
+function mcPool(p){const out=[];for(const id in Q){const pp=id[0]==='o'?2:1;if(pp!==p)continue;Q[id].forEach((it,i)=>out.push({id:'mc:'+id+':'+i,mc:it,ch:id,p:pp}));}return out;}
 function pool(){const parts=EX.scope==='all'?[1,2]:[+EX.scope];let o=[],m=[];parts.forEach(p=>{o=o.concat(BANK.filter(b=>b.p===p&&(!examFrom||b.ch===examFrom)));m=m.concat(mcPool(p).filter(b=>!examFrom||b.ch===examFrom));});
   return {open:o,mc:m};}
 function scopeHint(){const P=pool();const h=$('exScopeHint');

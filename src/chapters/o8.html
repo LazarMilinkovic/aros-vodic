@@ -1,0 +1,72 @@
+<section class="ch" id="o8">
+<div class="ch-head"><span class="ch-num">D2</span><span class="ch-src">Dopuna za 2. kolokvijum · izvori: Simić i Bataveljić, Silberschatz gl. 10</span></div>
+<h2>Virtuelna memorija: stranični prekid, zamena stranica i „trashing“</h2>
+<p class="lead">Kad se program stranica, nijedna stranica ne mora biti na tačno određenom mestu. Sledeći korak je logičan: neka stranica uopšte ne mora biti u memoriji dok ne zatreba. Tako program od 8 GB može da radi na računaru sa 4 GB RAM-a, a deset programa može da radi iako ne staju svi odjednom. Cena je jedan nov događaj, <strong>stranični prekid</strong>, i jedno novo pitanje: koju stranicu izbaciti kad nema mesta. Ova lekcija prati jedan pristup memoriji od trenutka kad stranica nije tu do trenutka kad instrukcija ponovo krene, i završava se onim što se dešava kad sistem preteruje: trashing-om.</p>
+
+<h3>Ideja: stranice po potrebi</h3>
+<p><b>Virtuelna memorija</b> razdvaja logičku memoriju koju vidi program od fizičke memorije koju računar ima. Ceo adresni prostor procesa nalazi se na disku (u prostoru za razmenu, swap), a u RAM-u su samo stranice koje se trenutno koriste. Stranica se učitava tek kada joj program pristupi (<b>straničenje na zahtev</b>, demand paging). Ovo radi zbog <b>lokalnosti</b>: program u svakom kratkom periodu koristi mali deo svog koda i podataka (ista petlja, isti niz).</p>
+<p>Koje stranice su u memoriji, piše u tabeli stranica: <b>bit prisutnosti</b> (valid) = 1 znači da je stranica u nekom okviru, 0 da nije. Zato stranica u virtuelnoj memoriji može biti u jednom od tri stanja:</p>
+<ol>
+<li><b>preslikana u okvir fizičke memorije</b>: željeno stanje; pristup radi normalno, bez prekida;</li>
+<li><b>na disku</b>: inicijalno locirana na disku ili vraćena na disk (izbačena); pristup izaziva stranični prekid i stranica se učitava;</li>
+<li><b>ne koristi se</b> (nije dodeljena procesu, nije deo njegovog adresnog prostora): pristup je greška. <span class="fix">Skripta kaže „dolazi do signal kill-a“; preciznije, MMU javlja nedozvoljen pristup, OS procesu šalje signal SIGSEGV (segmentation fault) i proces se po pravilu prekida.</span></li>
+</ol>
+
+<h3>Stranični prekid i kako se servisira</h3>
+<p>Kada se u toku izvršavanja programa traži pristup adresi koja pripada stranici koja <b>nije u memoriji</b>, MMU vidi bit prisutnosti 0 i generiše izuzetak. Ova vrsta prekida zove se <strong>stranični prekid</strong> (page fault). Zanimljivo: to je izuzetak (sinhron, izazvala ga je instrukcija), ali se u literaturi uvek zove „prekid“.</p>
+<p>Aktivnosti servisiranja straničnog prekida, koje treba znati redom:</p>
+<ol>
+<li><b>Utvrditi da li je adresa kojoj se pristupa u memoriji.</b> Ako jeste, nastaviti sa izvršavanjem instrukcije. Ako nije, ići na korak 2. (Ovde OS proverava i da li je adresa uopšte dozvoljena; ako nije, proces se prekida.)</li>
+<li><b>Prekinuti izvršavanje programa</b> (sačuvati kontekst).</li>
+<li><b>Naći slobodan okvir u memoriji.</b> Ako takav okvir ne postoji, izbaciti jednu od stranica, odnosno osloboditi jedan od okvira (algoritmom zamene; ako je izbačena stranica menjana, prvo je upisati na disk).</li>
+<li><b>Pronaći na disku stranicu kojoj se pristupa i upisati je u slobodan okvir.</b> Za vreme čitanja diska proces je blokiran, a procesor dobija drugi proces.</li>
+<li><b>Ažurirati tabelu stranica</b> (broj okvira, bit prisutnosti = 1).</li>
+<li><b>Inicirati ponovno izvršavanje instrukcije koja je izazvala prekid</b>, sada uspešno.</li>
+</ol>
+<div class="warn"><span class="fix">U jednoj verziji skripte (aros2klk, pitanje 5) korak 3 glasi „naći slobodan <b>disk</b> u memoriji“. Štamparska greška: treba „slobodan <b>okvir</b>“, kako i stoji u nastavku iste rečenice.</span></div>
+<p><b>Zašto je važno da straničnih prekida bude što manje?</b> Zato što stranični prekid znači čitanje sa diska. Pristup memoriji traje desetine nanosekundi, a čitanje stranice sa diska milisekunde (SSD: desetine mikrosekundi), dakle <b>stotine hiljada do milioni puta duže</b>; za proces to je kašnjenje od više miliona ciklusa.</p>
+<div class="ex"><b>Računica.</b> Pristup memoriji 100 ns, servisiranje straničnog prekida 8 ms = 8.000.000 ns. Ako je p verovatnoća prekida, efektivno vreme = (1 − p)·100 + p·8.000.000 ns. Već za p = 1/1000 to je ≈ 8.100 ns, <b>81 put sporije</b>. Da bi usporenje bilo manje od 10%, mora biti p &lt; 0,0000013, tj. manje od jednog prekida na ~800.000 pristupa.</div>
+
+<h3>Koliko prekida najmanje, a koliko najviše</h3>
+<p>Ispitni zadatak bez računa: procesu je dodeljeno <b>m okvira</b> (na početku prazni), dužina traga pristupa stranama je <b>p</b> (ukupno p pristupa), a broj <em>različitih</em> strana kojima se pristupa je <b>n</b>. Bez obzira na algoritam zamene:</p>
+<ul>
+<li><b>Donja granica je n.</b> Svaka različita stranica mora bar jednom da se učita (okviri su na početku prazni), pa ima najmanje n prekida.</li>
+<li><b>Gornja granica</b> zavisi od odnosa m i n. Ako je <b>m ≥ n</b>, sve stranice staju i nikad se ništa ne izbacuje, pa je gornja granica takođe <b>n</b>. Ako je <b>m &lt; n</b>, u najgorem slučaju svaki pristup može da izazove prekid, pa je gornja granica <b>p</b>.</li>
+</ul>
+
+<h3>Koju stranicu izbaciti: algoritmi zamene</h3>
+<p>Korak 3 servisiranja zahteva odluku. Algoritme ćemo porediti na istom tragu pristupa sa 3 okvira: <code>7 0 1 2 0 3 0 4 2 3 0 3 2 1 2 0 1 7 0 1</code>.</p>
+<ul>
+<li><b>FIFO</b>: izbaci stranicu koja je <b>najduže u memoriji</b>. Jednostavno (red), ali glupo: najstarija stranica može biti baš ona koja se stalno koristi. Na tragu: <b>15</b> prekida. FIFO ima i čudnu osobinu, <b>Beladijevu anomaliju</b>: povećanje broja okvira ponekad <em>poveća</em> broj prekida.</li>
+<li><b>OPT (optimalni)</b>: izbaci stranicu koja <b>najduže neće biti korišćena</b> u budućnosti. Daje najmanji mogući broj prekida (ovde <b>9</b>), ali se ne može implementirati, jer OS ne zna budućnost. Služi kao merilo.</li>
+<li><b>LRU</b> (Least Recently Used): izbaci stranicu koja <b>najduže nije korišćena</b> u prošlosti, pretpostavljajući da je prošlost dobar vodič za budućnost (lokalnost). Ovde <b>12</b> prekida. Tačan LRU je skup, pa se u praksi aproksimira <b>bitom korišćenja</b> (algoritam „drugog šanse“ / sat: kružno se prolazi kroz okvire, stranica sa bitom 1 dobija bit 0 i „drugu šansu“, a izbacuje se prva sa bitom 0).</li>
+</ul>
+<div class="lab" id="pageLab"><div class="lab-title">Laboratorija: zamena stranica</div>
+<p>Upiši trag pristupa i broj okvira, izaberi algoritam i prati tabelu korak po korak. Crveno označen korak je stranični prekid.</p>
+<div class="row"><select id="pgAlg" aria-label="Algoritam zamene"><option value="fifo">FIFO</option><option value="lru">LRU</option><option value="opt">OPT (optimalni)</option></select><label class="schedq">okvira <input id="pgM" type="number" min="1" max="8" value="3" inputmode="numeric"></label></div>
+<input id="pgRef" class="wide" value="7 0 1 2 0 3 0 4 2 3 0 3 2 1 2 0 1 7 0 1" aria-label="Trag pristupa stranicama" spellcheck="false">
+<div class="row"><button class="btn" id="pgRun" type="button">Simuliraj</button></div>
+<div id="pgOut" class="pgout"></div></div>
+
+<h3>Lokalno i globalno straničenje</h3>
+<p>Kad procesu treba okvir, iz kojeg skupa se bira žrtva?</p>
+<ul>
+<li><b>Globalno straničenje</b> (globalna zamena): posle straničnog prekida <b>svi raspoloživi okviri</b> su kandidati za izbacivanje, i oni koji pripadaju drugim procesima. Proces može da „otme“ okvir drugom procesu. Bolja ukupna propusnost, ali ponašanje jednog procesa zavisi od drugih.</li>
+<li><b>Lokalno straničenje</b> (lokalna zamena): kandidati su <b>samo stranice u okvirima koji pripadaju datom procesu</b>. Broj okvira procesa je stalan; proces koji loše stranica šteti samo sebi.</li>
+</ul>
+
+<h3>Trashing</h3>
+<p><strong>Trashing</strong> (pravilno <i>thrashing</i>, „mlaćenje“) je stanje sistema kada se <b>mnogo više vremena troši na obradu straničnih prekida nego na izvršavanje procesa</b>. Kako nastaje, korak po korak:</p>
+<ol>
+<li>U memoriji je previše procesa, pa svaki ima premalo okvira za stranice koje stvarno aktivno koristi (svoj <b>radni skup</b>, working set).</li>
+<li>Proces izbaci stranicu koja mu odmah ponovo treba, pa opet dobije stranični prekid; kod globalne zamene otima okvire drugima, pa i oni počnu da prave prekide.</li>
+<li>Svi procesi čekaju disk. <b>Iskorišćenje procesora pada.</b></li>
+<li>Dugoročni planer vidi da procesor stoji i, da bi ga bolje iskoristio, ubaci <em>još</em> procesa. Svaki dobije još manje okvira, prekida je još više, procesor stoji još više.</li>
+</ol>
+<p>Rešenje: <b>smanjiti stepen multiprogramiranja</b> (suspendovati neke procese i osloboditi njihove okvire), i ubuduće davati svakom procesu bar onoliko okvira koliki mu je radni skup, ili pratiti učestanost straničnih prekida: ako je kod procesa previsoka, dati mu okvir više; ako nema slobodnih okvira, suspendovati neki proces.</p>
+<div class="warn"><span class="fix">Tvrdnja „trashing karakterišu spore performanse i visoka iskorišćenost centralnog procesora“ je <b>netačna</b>: performanse su spore, ali je iskorišćenost procesora <b>niska</b>, jer procesor uglavnom čeka disk.</span></div>
+<details class="stop"><summary>Da li lokalna zamena stranica sprečava trashing?</summary><div>Ograničava ga, ali ne sprečava. Proces kome je dato premalo okvira i dalje može da „mlati“ sam sa sobom, ali ne otima okvire drugima, pa se trashing ne širi na ceo sistem. Pravi lek je dati svakom procesu dovoljno okvira (radni skup), odnosno smanjiti broj procesa u memoriji.</div></details>
+<div class="bridge">Stranice koje nisu u memoriji žive na disku, i na disku žive sve datoteke. Kako je disk organizovan, kojim redom se opslužuju zahtevi za čitanje i kako sistem datoteka zna gde je koji blok, tema je poslednje lekcije.</div>
+<p class="src">Izvori: A. Silberschatz i dr., <i>Operating System Concepts</i>, 10. izd., gl. 10 (Virtual Memory), uključujući standardni trag pristupa za poređenje algoritama; D. Simić, P. Bataveljić, <i>Organizacija računara i operativni sistemi</i>, FON.</p>
+<div class="quiz" data-ch="o8"></div>
+</section>

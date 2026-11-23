@@ -267,3 +267,22 @@ figure.diag{max-width:74ch;margin:18px 0;padding:14px;border:1px solid var(--lin
 figure.diag svg{display:block;width:100%;height:auto;max-height:300px}
 figure.diag figcaption{margin-top:8px;font-size:.86rem;color:var(--muted)}
 .tree pre{max-width:74ch;overflow-x:auto}
+/* laboratorije za 2. deo */
+.lab textarea,.lab input.wide{width:100%;box-sizing:border-box;font-family:var(--f-mono);font-size:.9rem;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin:6px 0}
+.lab .schedq{display:inline-flex;align-items:center;gap:6px;font-size:.9rem;color:var(--muted)}
+.lab .schedq input{width:4.5em;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-family:var(--f-mono)}
+.gantt{margin:12px 0 28px}
+.gbar{display:flex;height:38px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.gbar span{display:flex;align-items:center;justify-content:center;min-width:0;border-right:1px solid var(--bg);font-family:var(--f-mono);font-size:.8rem;overflow:hidden;color:#fff}
+.gbar span:last-child{border-right:0}
+.gc0{background:#6d2e63}.gc1{background:#2e6d5a}.gc2{background:#a3592b}.gc3{background:#2f5597}.gc4{background:#7a6a1f}.gc5{background:#8a3b3b}
+.gax{position:relative;height:16px;margin-top:3px}
+.gax i{position:absolute;transform:translateX(-50%);font-style:normal;font-family:var(--f-mono);font-size:.72rem;color:var(--muted)}
+.gax i:first-child{transform:none}.gax i:last-child{transform:translateX(-100%)}
+.mem .cur{background:var(--signal-soft);font-weight:600}
+.mem .done{color:var(--muted)}
+.pgt{font-family:var(--f-mono);font-size:.82rem}
+.pgt td,.pgt th{text-align:center;padding:3px 6px}
+.pgt td.pf{background:var(--bad-soft)}
+.pgt td.mk{color:var(--bad);border-top:1px solid var(--line)}
+#dkSvg{display:block;width:100%;height:auto;max-height:300px;margin:8px 0;color:var(--ink)}

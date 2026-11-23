@@ -1,0 +1,79 @@
+<section class="ch" id="o7">
+<div class="ch-head"><span class="ch-num">D2</span><span class="ch-src">Dopuna za 2. kolokvijum · nadovezuje se na Modul 7, slajd 23 (odvojeni adresni prostori); izvori: Simić i Bataveljić, Silberschatz gl. 9</span></div>
+<h2>Upravljanje memorijom: od jedne particije do stranica i segmenata</h2>
+<p class="lead">Na slajdu 23 Modula 7 memorija je bila nacrtana kao niz programa sa OS-om na dnu, a levo spisak obaveza: dodela memorije, zaštita, preslikavanje logičkih adresa u fizičke, virtuelna memorija. Slajdovi dalje od toga ne idu, ali polovina ispitnih pitanja za drugi kolokvijum je baš odavde. Ova lekcija gradi upravljanje memorijom kao niz rešenja, gde svako rešava problem prethodnog: prvo šta znači „preslikati adresu“, zatim particije i fragmentacija, pa segmentacija i straničenje, i na kraju TLB koji sve to čini dovoljno brzim.</p>
+
+<h3>Tri preslikavanja</h3>
+<p>Kada programer napiše <code>suma = suma + x</code>, od imena <code>suma</code> do bitova u RAM-u prolazi se kroz tri koraka. Upravljanje memorijom obuhvata <b>tri funkcije preslikavanja</b>:</p>
+<ol>
+<li><b>Preslikavanje imena</b>: simbolička imena (identifikatori) koje programer dodeljuje promenljivim i naredbama preslikavaju se u <b>programske adrese</b> (jedinstvene identifikatore, „binarne“ adrese unutar programa). Ovo radi prevodilac (kompajler, asembler) i povezivač.</li>
+<li><b>Preslikavanje adresa</b>: programske (logičke) adrese preslikavaju se u <b>stvarne, fizičke memorijske adrese</b>. Ovo radi OS zajedno sa hardverom, <b>jedinicom za upravljanje memorijom (MMU)</b>.</li>
+<li><b>Preslikavanje sadržaja</b>: memorijske adrese preslikavaju se u <b>vrednosti</b> (podatke) koje se na njima nalaze. Ovo se dešava <b>u toku izvršavanja</b> programa, pri svakom čitanju memorije.</li>
+</ol>
+<figure class="diag"><svg viewBox="0 0 520 90" role="img" aria-label="ime, programska adresa, fizička adresa, sadržaj"><defs><marker id="mm1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs><g font-family="Inter,sans-serif" font-size="13" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="25" width="95" height="38" rx="6"/><rect x="140" y="25" width="105" height="38" rx="6"/><rect x="285" y="25" width="105" height="38" rx="6"/><rect x="430" y="25" width="85" height="38" rx="6"/><path d="M100 44h38M245 44h38M390 44h38" marker-end="url(#mm1)"/></g><g font-family="Inter,sans-serif" font-size="13" fill="currentColor" text-anchor="middle"><text x="52" y="49">ime „suma“</text><text x="192" y="49">progr. adresa 40</text><text x="337" y="49">fiz. adresa 2040</text><text x="472" y="49">vrednost 17</text><text x="119" y="18" font-size="11">imena</text><text x="265" y="18" font-size="11">adresa</text><text x="410" y="18" font-size="11">sadržaja</text></g></svg><figcaption>Tri preslikavanja na jednom primeru. Prevodilac radi prvo, OS i MMU drugo, a memorija treće, pri svakom pristupu.</figcaption></figure>
+<p><b>Preslikavanje adresa</b> u najprostijem slučaju: ako je adresni prostor programa linearan (niz uzastopnih adresa od 0) i program je ceo smešten u memoriju počev od adrese p, onda je</p>
+<div class="formula">a′ = p + a &nbsp;&nbsp;&nbsp; (a′ – memorijska adresa, p – početna adresa programa u memoriji, a – programska adresa)</div>
+<p>U primeru gore program je smešten od adrese 2000, pa programska adresa 40 postaje 2040. U hardveru je p upisan u <b>bazni (relokacioni) registar</b>, a MMU pri svakom pristupu sabira. Pored njega je <b>granični registar</b> (limit) sa veličinom programa: ako je a ≥ limit, MMU generiše izuzetak, i tako je program zaštićen od pristupa tuđoj memoriji.</p>
+<div class="ex"><b>Logička (virtuelna) i fizička adresa.</b> <b>Logička</b> ili <b>virtuelna adresa</b> je adresa kakvu program vidi i kakvu <b>generiše procesor</b> dok izvršava program (brojač naredbi, adresni deo instrukcije). <b>Fizička adresa</b> je stvarna adresa ćelije u operativnoj memoriji; to je ona koja se, posle preslikavanja u MMU, upisuje u <b>MAR</b> i šalje na adresnu magistralu. <span class="fix">Skripta kaže da se fizička adresa „puni MAR“, a virtuelnu „generiše procesor“; tačno, ali treba dodati da između njih stoji MMU koja vrši preslikavanje. Kernel ne preslikava svaku adresu: to radi hardver (MMU), a OS samo popunjava tabele koje MMU koristi.</span> Broj bita virtuelne i fizičke adrese <b>ne mora biti isti</b> (npr. 48-bitne virtuelne i 40-bitne fizičke adrese kod x86-64).</div>
+
+<h3>Kontinualna dodela: jedna i više particija</h3>
+<p>Najstariji pristup: svaki program dobija <b>jedan neprekidan</b> komad memorije.</p>
+<p><b>Statičke (fiksne) particije.</b> Memorija se unapred, pri podizanju sistema, podeli na particije fiksnih veličina (npr. 100 KB, 200 KB, 500 KB). Program se smesti u particiju koja je dovoljno velika. Ako program od 120 KB dobije particiju od 200 KB, 80 KB ostaje neiskorišćeno, i niko drugi ne može da ih koristi. To je <b>interna fragmentacija</b>.</p>
+<p><b>Dinamičke (promenljive) particije.</b> Particija se pravi <b>u trenutku unošenja programa u memoriju</b>, i to <b>tačno veličine programa</b>. Nema interne fragmentacije. Ali kako programi dolaze i odlaze, između zauzetih delova ostaju „rupe“ različitih veličina. Može se desiti da ukupno ima 300 KB slobodno, ali u tri rupe po 100 KB, pa program od 150 KB ne može da stane. To je <b>eksterna fragmentacija</b>, i ona je <b>osnovni problem dinamičkih particija</b>. Rešava se <b>sabijanjem</b> (kompakcijom): programi se pomere da sve rupe postanu jedna. To zahteva dinamičku relokaciju (dodatni hardver, bazni registar), usložnjava OS i troši vreme.</p>
+<div class="tbl"><table><thead><tr><th>Vrsta fragmentacije</th><th>Gde je neiskorišćena memorija</th><th>Kod koje šeme</th></tr></thead><tbody>
+<tr><td><b>Interna</b></td><td>unutar regiona (particije, stranice) koji je dodeljen procesu, a proces ga ne koristi</td><td>statičke particije, straničenje (poslednja stranica)</td></tr>
+<tr><td><b>Eksterna</b></td><td>između dodeljenih regiona: slobodna, ali razbijena na komade premale za novi zahtev</td><td>dinamičke particije, segmentacija</td></tr>
+</tbody></table></div>
+<p>Kod dinamičkih particija mora da postoji <b>algoritam smeštanja</b>: koju od slobodnih rupa dati novom programu? OS vodi <b>tabelu slobodnog prostora</b>, a tri klasična algoritma su:</p>
+<ul>
+<li><b>First Fit (prvo uklapanje)</b>: tabela slobodnog prostora uređena je po <b>rastućim adresama</b>; bira se <b>prva</b> rupa, računajući od početka memorije, koja je dovoljno velika. Brz.</li>
+<li><b>Best Fit (najbolje uklapanje)</b>: tabela je uređena po <b>rastućoj veličini</b>; bira se <b>najmanja dovoljno velika</b> rupa. Ostaju najmanji mogući ostaci, ali oni su često toliko mali da su neupotrebljivi.</li>
+<li><b>Worst Fit (najgore uklapanje)</b>: bira se <b>najveća</b> rupa, da bi ostatak bio dovoljno velik za sledeći program. U praksi najlošiji.</li>
+</ul>
+<div class="ex"><b>Primer.</b> Slobodne rupe (po adresama): 100 KB, 500 KB, 200 KB, 300 KB, 600 KB. Dolazi program od 212 KB. First Fit uzima <b>500</b> (prva dovoljno velika), ostaje 288. Best Fit uzima <b>300</b> (najmanja ≥ 212), ostaje 88. Worst Fit uzima <b>600</b>, ostaje 388. Simulacije pokazuju da su First i Best Fit podjednako dobri po iskorišćenju, a First Fit je brži.</div>
+<p><b>Swapping</b> (razmena): ako nema mesta, ceo proces se privremeno izbaci na disk i kasnije vrati, možda na drugo mesto (zato je potrebna relokacija u toku izvršavanja). To su suspendovana stanja iz lekcije o procesima.</p>
+
+<h3>Segmentacija: memorija onako kako je programer vidi</h3>
+<p>Programer ne misli o programu kao o jednom nizu bajtova, nego kao o celinama: glavni program, funkcije, stek, tabela simbola, niz podataka. <b>Segmentacija</b> deli adresni prostor procesa na <b>segmente</b> promenljive dužine, po logičkim celinama. Logička adresa je par <b>(s, d)</b>: broj segmenta i pomeraj unutar segmenta.</p>
+<p>Za svaki proces postoji <b>tabela segmenata</b>: za svaki segment ona sadrži <b>bazu</b> (početnu fizičku adresu) i <b>granicu</b> (dužinu). Gde je ta tabela i koliko je velika, kažu dva registra:</p>
+<ul>
+<li><b>STBR</b> (Segment Table Base Register): sadrži <b>adresu tabele segmenata</b> u memoriji.</li>
+<li><b>STLR</b> (Segment Table Length Register): sadrži <b>broj segmenata</b> datog programa.</li>
+</ul>
+<p>Preslikavanje (s, d): (1) proveri s &lt; STLR, inače greška; (2) pročitaj red s iz tabele na adresi STBR + s; (3) proveri d &lt; granica, inače greška (izuzetak zaštite); (4) fizička adresa = baza + d. Uz svaki segment čuvaju se i prava pristupa (čitanje, pisanje, izvršavanje), pa je zaštita prirodna, a dva procesa lako <b>dele</b> segment (npr. kod biblioteke) tako što im tabele pokazuju na istu bazu. Pri promeni konteksta menjaju se samo STBR i STLR. Mana: segmenti su različitih dužina, pa se vraća <b>eksterna fragmentacija</b>.</p>
+
+<h3>Straničenje: sve komade iste veličine</h3>
+<p>Ideja koja ukida eksternu fragmentaciju: fizička memorija se podeli na <b>okvire</b> (frames) fiksne veličine (npr. 4 KB), a logički adresni prostor procesa na <b>stranice</b> (pages) <b>iste</b> veličine. Bilo koja stranica može da stane u bilo koji slobodan okvir, pa proces ne mora biti neprekidan u memoriji. <b>Tabela stranica</b> procesa kaže, za svaku stranicu, u kom je okviru.</p>
+<p>Logička adresa se deli na dva dela: <b>broj stranice</b> (gornji biti) i <b>pomeraj</b> (donji biti). Ako je stranica 2<sup>k</sup> bajtova, pomeraj ima k bita.</p>
+<div class="ex"><b>Primer.</b> Stranica 4 KB = 2<sup>12</sup>, logička adresa 16 bita. Adresa 0x3A7C: gornja 4 bita (0x3) su broj stranice, donjih 12 (0xA7C) pomeraj. Ako tabela stranica kaže da je stranica 3 u okviru 9, fizička adresa je 9 · 4096 + 0xA7C = 0x9A7C. Primeti: pomeraj se samo prepiše, a broj stranice se zameni brojem okvira.</div>
+<p>Straničenje nema eksternu fragmentaciju, ali ima <b>internu</b>: poslednja stranica procesa u proseku je napola prazna. <span class="fix">Zato je netačna tvrdnja „straničenje rešava internu fragmentaciju jer su sve stranice iste veličine“: baš zbog fiksne veličine nastaje interna fragmentacija.</span> Manje stranice smanjuju internu fragmentaciju, ali <b>povećavaju tabelu stranica</b> (za isti adresni prostor potrebno je više stranica, a svaka ima svoj red u tabeli).</p>
+<p><b>Šta tabela stranica sadrži osim broja okvira:</b></p>
+<ol>
+<li><b>bit prisutnosti</b> (valid/present): da li je stranica u operativnoj memoriji, tj. da li joj je dodeljen okvir;</li>
+<li><b>bit modifikacije</b> (dirty/modified): da li je stranica menjana otkad je učitana; ako jeste, pre izbacivanja mora da se upiše na disk;</li>
+<li><b>bit korišćenja</b> (referenced/used): da li je stranica skoro korišćena; služi algoritmima zamene stranica;</li>
+<li><b>prava pristupa</b>: samo za čitanje ili čitanje i pisanje (i izvršavanje);</li>
+<li>bitovi za stvarno adresiranje stranice u operativnoj memoriji (broj okvira) i, kod nekih sistema, bit zabrane keširanja.</li>
+</ol>
+<p>Tabela stranica je u memoriji, a njenu adresu drži registar <b>PTBR</b> (page table base register), kao STBR kod segmenata.</p>
+
+<h3>TLB: da prevođenje ne udvostruči svaki pristup</h3>
+<p>Problem: ako je tabela stranica u memoriji, svaki pristup podatku zahteva <em>dva</em> pristupa memoriji, jedan za red tabele i jedan za sam podatak. Program bi radio dvaput sporije. Rešenje je mali, veoma brz hardverski keš za prevođenje adresa: <strong>TLB</strong> (Translation Lookaside Buffer).</p>
+<p>TLB je <b>asocijativna memorija</b>: sadrži parove (broj stranice, broj okvira) i pretražuje <em>sve</em> parove istovremeno, po broju stranice. Ima malo ulaza, tipično između 8 i 2048 (danas do nekoliko hiljada). Pri pristupu: ako je broj stranice u TLB-u (<b>pogodak</b>), broj okvira je odmah poznat. Ako nije (<b>promašaj</b>), čita se tabela stranica <b>iz operativne memorije</b>, i dobijeni par se upisuje u TLB za sledeći put.</p>
+<div class="warn"><span class="fix">Skripte kažu da se pri promašaju u TLB-u „mora pročitati tabela stranica sa diska“ i da TLB „smanjuje broj pristupa disku“. To nije tačno: tabela stranica je u glavnoj memoriji, i TLB smanjuje broj <b>pristupa memoriji</b>. Na disk se ide tek ako ni tabela stranica ne kaže da je stranica u memoriji (bit prisutnosti = 0), a to je stranični prekid, tema sledeće lekcije.</span></div>
+<div class="ex"><b>Efektivno vreme pristupa.</b> Neka je pristup memoriji 100 ns, pretraga TLB-a zanemarljiva, a procenat pogodaka 80%. Pogodak: 100 ns (samo podatak). Promašaj: 200 ns (tabela + podatak). Efektivno: 0,8 · 100 + 0,2 · 200 = <b>120 ns</b>, tj. 20% usporenja umesto 100%. Sa 99% pogodaka: 0,99 · 100 + 0,01 · 200 = 101 ns. Zbog lokalnosti (programi dugo rade unutar istih stranica) stvarni procenat pogodaka je obično preko 99%.</div>
+
+<h3>Segmentno-stranična organizacija</h3>
+<p>Kombinacija oba: adresni prostor se deli na segmente (logičke celine, zaštita, deljenje), a <b>svaki segment se deli na stranice</b> (nema eksterne fragmentacije). Logička adresa je (segment, stranica, pomeraj): tabela segmenata za svaki segment daje adresu <em>njegove</em> tabele stranica. Tako su radili Multics i Intel x86 u 32-bitnom režimu. Odatle i odgovor na pitanje o vrstama organizacije virtuelne memorije: <b>segmentna, stranična i segmentno-stranična</b>.</p>
+
+<h3>Kada program u toku rada traži još memorije</h3>
+<p>Ispitno pitanje: šta je potrebno da bi program u vreme izvršavanja mogao da dobije dodatni memorijski prostor (dinamička alokacija), u tri šeme?</p>
+<ul>
+<li><b>Kontinualna dodela</b>: program mora ostati neprekidan. Ako odmah iza njega nema slobodnog prostora, <b>ceo program se mora premestiti</b> u veću rupu (što zahteva relokaciju u toku izvršavanja).</li>
+<li><b>Segmenti</b>: segment koji raste mora ostati neprekidan; ako iza njega nema mesta, <b>segment (u najgorem slučaju ceo program) se premešta</b>, uz izmenu baze u tabeli segmenata.</li>
+<li><b>Stranice</b>: moguća je <b>inkrementalna dodela</b> novih stranica, bez premeštanja programa: OS nađe bilo koji slobodan okvir i doda red u tabelu stranica.</li>
+</ul>
+<div class="bridge">Straničenje ima jednu osobinu koju još nismo iskoristili: bit prisutnosti. Ako stranica ne mora biti u memoriji, onda program uopšte ne mora ceo da stane u RAM. To je <b>virtuelna memorija</b>.</div>
+<p class="src">Izvori: A. Silberschatz i dr., <i>Operating System Concepts</i>, 10. izd., gl. 9 (Main Memory); D. Simić, P. Bataveljić, <i>Organizacija računara i operativni sistemi</i>, FON (tri preslikavanja, formula a′ = p + a, STBR/STLR).</p>
+<div class="quiz" data-ch="o7"></div>
+</section>
