@@ -23,10 +23,10 @@ function pickN(arr,n,mode){
   return out;}
 function genExam(){
   const P=pool();let qs=[];const n=EX.n;
-  const byPart=(list,k)=>{if(EX.scope!=='all')return pickN(list,k,EX.pick);const a=list.filter(x=>x.p===1),b=list.filter(x=>x.p===2);if(!b.length)return pickN(a,k,EX.pick);const h=Math.ceil(k/2);return pickN(a,h,EX.pick).concat(pickN(b,k-h,EX.pick));};
+  const byPart=(list,k,flip)=>{if(EX.scope!=='all')return pickN(list,k,EX.pick);const a=list.filter(x=>x.p===1),b=list.filter(x=>x.p===2);if(!b.length)return pickN(a,k,EX.pick);const h=flip?Math.floor(k/2):Math.ceil(k/2);return pickN(a,h,EX.pick).concat(pickN(b,k-h,EX.pick));};
   if(EX.type==='open')qs=byPart(P.open,n);
   else if(EX.type==='mc')qs=byPart(P.mc,n);
-  else{const h=Math.ceil(n/2);qs=byPart(P.open,h).concat(byPart(P.mc,n-h));}
+  else{const h=Math.ceil(n/2);qs=byPart(P.open,h).concat(byPart(P.mc,n-h,true));}
   if(!qs.length){toast(EX.pick==='weak'?'Nema slabih pitanja: prvo oceni neka pitanja kao „ne znam“ ili „delimično“.':'Za ovaj izbor još nema pitanja.');return;}
   qs.sort((a,b)=>(CHI[a.ch]?CHI[a.ch].i:99)-(CHI[b.ch]?CHI[b.ch].i:99));
   exam={id:Date.now().toString(36),at:Date.now(),scope:EX.scope,from:examFrom,type:EX.type,time:EX.time,end:EX.time?Date.now()+EX.time*60000*qs.length:0,
@@ -34,7 +34,7 @@ function genExam(){
   store.set('aros-exam-cur',exam);renderSheet();window.scrollTo({top:0,behavior:'smooth'});
 }
 on('exGo','click',genExam);
-function qById(id){if(id.startsWith('mc:')){const [,c,i]=id.split(':');const it=Q[c]&&Q[c][+i];return it?{id,mc:it,ch:c,p:1}:null;}return BANKI[id]||null;}
+function qById(id){if(id.startsWith('mc:')){const [,c,i]=id.split(':');const it=Q[c]&&Q[c][+i];return it?{id,mc:it,ch:c,p:c[0]==='o'?2:1}:null;}return BANKI[id]||null;}
 function scopeName(s){return s==='all'?'Ceo ispit':s+'. kolokvijum';}
 function fmtDate(t){const d=new Date(t);return d.toLocaleDateString('sr-Latn-RS',{day:'numeric',month:'numeric',year:'numeric'});}
 function renderExamView(){
