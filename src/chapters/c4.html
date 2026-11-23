@@ -1,0 +1,57 @@
+<section class="ch" id="c4">
+<div class="ch-head"><span class="ch-num">M1</span><span class="ch-src">Modul 1 · deo 4 od 6 · slajdovi 21–23 i 28 · uz M3_02 slajd 11 i Modul 2 slajdove 4–5</span></div>
+<h2>Tehnologija gura sve napred: Murov zakon i Denardovo skaliranje</h2>
+
+<h3>Kako tehnologija menja računare: model i familija (slajd 21)</h3>
+<p>Slajd 21 povezuje tehnologiju sa onim što smo naučili u delu 2. Redosled uticaja je ovakav: <strong>nova tehnologija</strong> (manji i brži tranzistori, brža memorija) najpre menja <strong>organizaciju</strong> (više keša, brži takt, više jezgara), a to dalje omogućava uvođenje <strong>moćnijih i složenijih arhitektura</strong> (nove instrukcije, širi registri, npr. prelazak sa 32 na 64 bita).</p>
+<p>Odatle dva pojma koja se pitaju:</p>
+<ul>
+<li><strong>Model računara</strong> obuhvata izabranu (projektovanu) arhitekturu. Unutar istog modela organizacija može da se menja.</li>
+<li><strong>Familija modela</strong>: proizvođač nudi više modela koji svi imaju <strong>istu arhitekturu, a različitu organizaciju</strong>, pa zato i različitu cenu i performanse.</li>
+</ul>
+<p>Prva prava familija bila je baš IBM System/360 iz 1964, ona čiji je arhitekta Padegs sa slajda 13. Pre nje je svaki novi IBM-ov računar imao drugačiji skup instrukcija, pa su kupci morali iznova da pišu sav softver. Sa 360 su mogli da kupe jeftin model, a kad im zatreba više snage, pređu na jači bez menjanja ijedne linije programa. Današnji primer familije su sve generacije x86 procesora: program iz 2010. radi i na procesoru iz 2026.</p>
+<details class="stop"><summary>Zašto je familija modela dobra i za kupca i za proizvođača?</summary><div>Kupac ne mora ponovo da piše (ili kupuje) softver kad pređe na jači model. Proizvođač prodaje celu paletu cena istim kupcima, a softver napisan za jedan model povećava vrednost svih ostalih. Sve to omogućava <strong>ista arhitektura</strong>.</div></details>
+
+<h3>Kako smo ovde stigli: istorija u brojevima (slajd 28)</h3>
+<p>Slajd sa istorijom dolazi kasnije u prezentaciji, ali ovde mu je mesto, jer pokazuje <em>koliko</em> je tehnologija napredovala:</p>
+<figure class="slide"><img src="img/m1-28.jpg" alt="Istorija mikroprocesora" loading="lazy"><figcaption><b>Slajd 28 · Istorija mikroprocesora</b></figcaption></figure>
+<p>Sve počinje <strong>tranzistorom</strong> (Bell Labs, 1947), električnim prekidačem bez pokretnih delova koji je zamenio velike i nepouzdane elektronske cevi. Jack Kilby 1958. pravi prvo <strong>integrisano kolo</strong>, više tranzistora na jednoj pločici silicijuma (za to je dobio Nobelovu nagradu). Godine 1971. Intel pravi prvi <strong>mikroprocesor</strong>, 4004, ceo procesor na jednom čipu sa 2300 tranzistora (slajd ima posebne redove za 1971. i 1974, ali 4004 je iz 1971). Zatim: 8086 (1978, 29 hiljada tranzistora, početak x86 arhitekture koju i danas koristimo), 80486 (1989, 1,2 miliona, prvi Intelov sa protočnom obradom, „pipelined“), Pentium Pro (1995, 5,5 miliona) i Montecito (2005, oko milijardu; tačnije 1,72 milijarde, dvojezgarni Itanium u prodaji od 2006).</p>
+<p>Od 2300 do milijardu je skok od oko <strong>500 000 puta</strong> za 34 godine. To nije slučajno, to je Murov zakon.</p>
+
+<h3>Murov zakon (slajd 22)</h3>
+<p>Gordon Moore, jedan od osnivača Intela, primetio je 1965. da se broj tranzistora na čipu redovno udvostručuje; 1975. je procenu korigovao na <strong>udvostručavanje otprilike svake dve godine</strong>. To nije zakon prirode, nego zapažanje o tempu kojim industrija napreduje, i važilo je pedesetak godina. Udvostručavanje svake dve godine znači: za 10 godina 2⁵ = 32 puta više, za 20 godina oko 1000 puta, za 40 godina oko milion puta. Isprobaj:</p>
+<div class="lab" id="murLab"><div class="lab-title">Infografika: Murov zakon i stvarni čipovi</div>
+<p class="lab-sub">Linija je predviđanje „udvostručavanje svake 2 godine“ počev od Intel 4004. Tačke su stvarni čipovi sa slajda 28 (plus Apple M1 iz 2020, radi poređenja). Vertikalna osa je logaritamska. Pomeri klizač.</p>
+<div class="row"><label for="murY">Godina: <b id="murYv">2005</b></label><input type="range" id="murY" min="1971" max="2021" value="2005"></div>
+<div class="sx"><svg id="murSvg" class="rsvg" viewBox="0 0 640 260" role="img" aria-label="Broj tranzistora kroz godine, logaritamska skala"></svg></div>
+<div class="simlog" id="murOut"></div></div>
+<p>Primeti dve stvari. Prvo, na logaritamskoj skali eksponencijalni rast izgleda kao <strong>prava linija</strong>; zato se ovakvi grafici uvek crtaju logaritamski. Drugo, stvarni čipovi nisu tačno na liniji (Montecito je bio ogroman serverski čip, pa je iznad nje), ali <strong>nagib</strong> prate: sedam redova veličine za pedeset godina.</p>
+<figure class="slide"><img src="img/m1-22.jpg" alt="Moore's Law Slowdown in Intel Processors" loading="lazy"><figcaption><b>Slajd 22 · Usporavanje Murovog zakona kod Intelovih procesora</b></figcaption></figure>
+<p>Slajd 22 pokazuje šta se desilo poslednjih godina. Vertikalna osa je opet logaritamska, horizontalna su godine 1970–2020. <strong>Plava</strong> linija je ono što predviđa Murov zakon (verzija iz 1975), a <strong>crvena</strong> je stvarna gustina tranzistora kod Intela. Do oko 2000. linije idu skoro zajedno, a zatim crvena sve više zaostaje, pa je 2020. razlika oko <strong>15 puta</strong> (ljubičasta oznaka 15X). Tekst na slajdu dodaje da i cena po tranzistoru opada sporije nego ranije, jer su fabrike čipova sve skuplje. Citat na dnu je od samog Mura (2003): „Nijedna eksponencijalna funkcija nije večna, ali ‘večno’ može da se odloži.“</p>
+
+<h3>Denardovo skaliranje i zid snage (slajd 23)</h3>
+<p>Murov zakon govori koliko tranzistora stane na čip. Ali zašto su procesori decenijama postajali i <strong>brži</strong>, a da se nisu pregrevali? Odgovor je dao Robert Dennard (IBM, 1974). Kad se tranzistor u novoj generaciji proizvodnje smanji (dimenzije za oko 0,7 puta):</p>
+<ul>
+<li>površina mu se prepolovi, pa na isti čip stane <strong>duplo više tranzistora</strong>,</li>
+<li>napon i struja se smanje za oko 30%, pa svaki tranzistor troši <strong>upola manje energije</strong>,</li>
+<li>tranzistor se brže prebacuje, pa takt može da poraste oko <strong>40%</strong>,</li>
+<li>i ključno: <strong>snaga po kvadratnom milimetru ostaje ista</strong>. Čip ima duplo više tranzistora i brži je, a ne greje se više.</li>
+</ul>
+<p>To je bio „besplatan ručak“: svake dve godine programi su sami od sebe radili brže, bez ikakvog truda programera.</p>
+<figure class="slide"><img src="img/m1-23.jpg" alt="Technology and Power: Dennard Scaling" loading="lazy"><figcaption><b>Slajd 23 · Tehnologija i snaga: Denardovo skaliranje</b></figcaption></figure>
+<p>Na slajdu 23 <strong>crvena</strong> linija (leva osa) je veličina tehnologije u nanometrima i pada sa oko 180 nm (2000) na oko 10 nm (2020). <strong>Plava</strong> linija (desna osa) je relativna snaga po mm². Do oko 2006–2008 plava je skoro ravna, što znači da Denardovo skaliranje važi. Posle toga ona naglo raste, oko 4 puta do 2020: manji tranzistori sada znače topliji čip.</p>
+<p><strong>Zašto je prestalo?</strong> Kad su tranzistori postali jako mali, napon više nije mogao da se smanjuje, jer postoji minimalni napon (prag) ispod koga tranzistor ne radi pouzdano. Uz to, kroz sve tanje izolatore počela je da „curi“ struja i kad tranzistor ne radi (<strong>struja curenja</strong>, leakage). Ako napon ne pada, a tranzistora je duplo više i rade brže, snaga po površini raste. Rezultat je <strong>„power wall“</strong> (zid snage): procesor od 5–6 GHz bi se pregrejao. Intel je 2004. upravo zbog toga otkazao procesore Tejas i Jayhawk.</p>
+<p>Posledice su oblikovale sve današnje računare:</p>
+<ul>
+<li>Takt je oko 2005. praktično stao na 3–5 GHz.</li>
+<li>Višak tranzistora se troši na <strong>više jezgara</strong> umesto na brži takt. Zato danas imamo 8, 16 i više jezgara.</li>
+<li>Više jezgara pomaže samo ako je program paralelan. Koliko tačno pomaže, kaže <strong>Amdalov zakon</strong>, glavna računska tema Modula 2.</li>
+<li>„Dark silicon“: ne mogu svi tranzistori da rade istovremeno jer bi se čip pregrejao, pa se dodaju specijalizovane jedinice (grafika, NPU za veštačku inteligenciju) koje se uključuju po potrebi.</li>
+</ul>
+<figure class="slide"><img src="img/m3b-11.jpg" alt="Tehnologije, parametri koji utiču na razvoj procesora" loading="lazy"><figcaption><b>M3_02, slajd 11 · Parametri koji utiču na razvoj procesora</b> (isti grafik profesor pokazuje i u Modulu 3)</figcaption></figure>
+<p>Ovaj grafik priča celu priču u jednoj slici (opet logaritamska osa, 1971–2015). <strong>Narandžasto</strong>: broj tranzistora stalno raste, to je Murov zakon. <strong>Zeleno</strong>: takt (MHz) raste do oko 2005, a onda je ravan. <strong>Crveno</strong>: tipična snaga raste do oko 100 W i staje, jer to je granica hlađenja. <strong>Plavo</strong>: brzina jednog jezgra raste sve sporije. <strong>Crno</strong>: broj jezgara je 1 sve do oko 2005, a onda počinje da raste. Tranzistora ima sve više, ali takt i snaga su udarili u zid, pa se tranzistori troše na jezgra.</p>
+<p>U Modulu 2 profesor dodaje i drugu stranu priče (slajdovi 4–5, istraživanje Leisersona i saradnika, <em>Science</em> 2020): kad hardver prestane da ubrzava sam od sebe, ubrzanje mora da dođe „sa vrha“, iz boljeg softvera i algoritama. Isto množenje dve matrice 4096 × 4096, na istom računaru, traje 7 sati u Pythonu, a 0,41 sekundu u C-u koji koristi sva jezgra i vektorske instrukcije procesora: preko <strong>60 000 puta brže</strong>. To je najbolji argument zašto programer treba da razume arhitekturu.</p>
+<details class="stop"><summary>Murov zakon još uvek (usporeno) važi, a Denardovo skaliranje ne. Šta je od toga razlog što danas imamo višejezgarne procesore?</summary><div>Oba zajedno. Zbog Mura imamo <strong>višak tranzistora</strong>, a zbog kraja Denarda ne možemo da ih iskoristimo za <strong>brži takt</strong> (čip bi se pregrejao). Jedino što ostaje je da se od njih naprave dodatna jezgra (i keš, i specijalizovane jedinice).</div></details>
+<div class="bridge">Danas čip ima desetine milijardi tranzistora, a operativni sistem desetine miliona linija koda. Nijedan čovek ne može sve to da drži u glavi. Kako onda ljudi uopšte projektuju i programiraju ovakve sisteme? Odgovor je <strong>apstrakcija</strong>, tema slajdova 24–27.</div>
+<div class="quiz" data-ch="c4"></div>
+</section>

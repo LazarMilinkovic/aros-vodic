@@ -1,0 +1,158 @@
+<section class="ch" id="c6">
+<div class="ch-head"><span class="ch-num">M1</span><span class="ch-src">Modul 1 · deo 6 od 6 · slajdovi 29–40 · uz M3_02 slajd 3</span></div>
+<h2>Otvaramo računar: funkcije, struktura i Von Neumann</h2>
+
+<h3>Četiri stvari koje računar radi (slajdovi 29–33)</h3>
+<p>Šta god da računar radi, od igrice do Excel-a, sve se svodi na samo <strong>četiri osnovne funkcije</strong> (slajd 29):</p>
+<ul>
+<li><strong>Obrada podataka</strong>: računanje, poređenje, menjanje podataka.</li>
+<li><strong>Skladištenje podataka</strong>: čuvanje, kratkoročno (registri, RAM) ili dugoročno (disk).</li>
+<li><strong>Prenos podataka</strong>: premeštanje između računara i spoljnog sveta ili između delova računara.</li>
+<li><strong>Upravljanje</strong>: koordinacija prethodne tri, odlučivanje šta se radi i kojim redom.</li>
+</ul>
+<p>Na slajdovima 30–33 profesor ih crta uvek istom slikom: gore <em>prenos</em>, dole levo <em>skladištenje</em>, dole desno <em>obrada</em>, a u sredini <em>mehanizmi upravljanja</em>, povezani strelicama u oba smera sa svakom od njih. Na svakom slajdu jedna kućica je obojena, uz primer. Umesto da gledaš četiri skoro iste slike, isprobaj ih ovde:</p>
+<div class="lab" id="funcLab"><div class="lab-title">Infografika: četiri funkcije računara (slajdovi 30–33)</div>
+<div class="chips" id="funcBtns"></div>
+<div class="sx"><svg id="funcSvg" class="rsvg" viewBox="0 0 600 300" role="img" aria-label="Četiri funkcije računara"></svg></div>
+<div class="simlog" id="funcOut"></div>
+<div class="row" id="funcStepRow" hidden><button type="button" class="btn" id="funcNext">Sledeći korak →</button><span class="score" id="funcStepTxt" style="margin:0"></span></div></div>
+<figure class="slide"><img src="img/m1-30.jpg" alt="Funkcije računara: prenos podataka" loading="lazy"><figcaption><b>Slajd 30 · Prenos podataka</b> (slajdovi 31–33 su ista slika, samo je obojena druga kućica)</figcaption></figure>
+<p>Zašto je <strong>upravljanje</strong> u sredini? Jer se nijedna od ostale tri funkcije ne dešava sama od sebe: neko mora da odluči kad se podatak prenosi, gde se skladišti i koja se operacija nad njim radi. U procesoru to radi <strong>upravljačka jedinica</strong>, a na višem nivou i operativni sistem. Pokreni u infografici „naš primer“ da vidiš kako prosek ocena koristi sve četiri funkcije.</p>
+<details class="stop"><summary>Snimaš sliku sa telefona na USB fleš. Koje funkcije učestvuju?</summary><div>Pre svega <strong>prenos</strong> (podatak putuje od telefona do fleša) i <strong>skladištenje</strong> (upis na fleš), uz <strong>upravljanje</strong> koje to koordiniše. Obrade nema, jer se slika ne menja.</div></details>
+
+<div class="bridge">Znamo <em>šta</em> računar radi. Sledeće pitanje je <em>od čega</em> je sastavljen tako da to može. Profesor odgovara „zumiranjem“, od celog računara do unutrašnjosti upravljačke jedinice.</div>
+
+<h3>Zumiranje u tri koraka (slajd 34)</h3>
+<figure class="slide"><img src="img/m1-34.jpg" alt="Hijerarhijska dekompozicija strukture računara" loading="lazy"><figcaption><b>Slajd 34 · Hijerarhijska dekompozicija strukture računara</b></figcaption></figure>
+<p>Slika je kao zum u tri koraka, a isprekidane linije pokazuju šta se uvećava:</p>
+<ol>
+<li><strong>Gornji krug (COMPUTER)</strong>: računar se sastoji od četiri dela: <strong>CPU</strong> (procesor, obrađuje i upravlja), <strong>glavna memorija</strong> (Main memory, skladišti program i podatke), <strong>U/I</strong> (I/O, prenos ka spoljnom svetu) i <strong>sistemska magistrala</strong> (System bus, prenos između njih). Vidiš kako se četiri funkcije preslikavaju na delove.</li>
+<li><strong>Srednji krug (CPU)</strong>: procesor se sastoji od <strong>registara</strong>, <strong>ALU</strong>, <strong>interne magistrale</strong> (Internal bus) i <strong>upravljačke jedinice</strong> (Control unit).</li>
+<li><strong>Donji krug (CONTROL UNIT)</strong>: upravljačka jedinica ima <strong>logiku za sekvenciranje</strong> (Sequencing logic, određuje redosled koraka), svoje <strong>registre i dekodere</strong> i <strong>upravljačku memoriju</strong> (Control memory, u kojoj se čuva mikroprogram, o čemu više u Modulu 3).</li>
+</ol>
+<p>Poruka slike je ista kao kod apstrakcije: svaka komponenta je sama sastavljena od manjih komponenti, i u svakom trenutku gledamo samo jedan nivo.</p>
+
+<h3>Unutar procesora (slajd 35)</h3>
+<figure class="slide"><img src="img/m1-35.jpg" alt="Struktura centralnog procesora" loading="lazy"><figcaption><b>Slajd 35 · Struktura centralnog procesora (strukturna organizacija)</b></figcaption></figure>
+<p>Slajd 35 je drugi korak zuma u većem: četiri dela procesora i njihove veze. Svakom delu možemo da damo ulogu u našem proseku:</p>
+<ul>
+<li><strong>Upravljačka jedinica (UJ)</strong> je „dirigent“. Donosi instrukcije iz memorije, dekodira ih (shvati šta treba uraditi) i šalje upravljačke signale ostalima: „memorijo, daj podatak sa adrese ocene a“, „ALU, saberi“.</li>
+<li><strong>Aritmetičko-logička jedinica (ALU)</strong> je „kalkulator“. Radi aritmetičke operacije (+, −, ×, /) i logičke (I, ILI, NE, poređenje, pomeranje bitova). Posle operacije postavlja <strong>zastavice</strong>: da li je rezultat nula, negativan, da li je bilo prekoračenja.</li>
+<li><strong>Registri</strong> su najbrža i najmanja memorija, unutar samog procesora. U njima je međuzbir 8, pa 17, pa 27.</li>
+<li><strong>Interne CPU međuveze</strong> su unutrašnje magistrale kojima podaci putuju između registara, ALU i UJ.</li>
+</ul>
+
+<h3>Šta čini arhitekturu procesora (slajd 36)</h3>
+<figure class="slide"><img src="img/m1-36.jpg" alt="Arhitektura procesora je određena sa" loading="lazy"><figcaption><b>Slajd 36 · Arhitektura procesora</b></figcaption></figure>
+<p>Slajd 35 je pokazao <em>organizaciju</em> procesora (delove i veze). Slajd 36 se vraća na <em>arhitekturu</em>, ono što programer vidi, i kaže tačno od čega se ona sastoji. Arhitektura procesora je određena sa šest stvari:</p>
+<ol>
+<li><strong>Skupom registara</strong>: koliko ih ima, koliko su široki i čemu služe.</li>
+<li><strong>Skupom tipova podataka</strong> koje podržava: celi brojevi od 8/16/32/64 bita, brojevi u pokretnom zarezu, znakovi.</li>
+<li><strong>Skupom instrukcija</strong>: koje operacije postoje (ADD, LOAD, JMP…).</li>
+<li><strong>Formatom instrukcija</strong>: kako instrukcija izgleda u bitovima (koliko bita je kod operacije, koliko adresa ima).</li>
+<li><strong>Načinima adresiranja</strong>: kako instrukcija pronalazi operand (Modul 4).</li>
+<li><strong>Mehanizmom prekida</strong>: kako procesor reaguje na spoljne događaje, npr. pritisak tastera (Modul 4).</li>
+</ol>
+<p>Uporedi sa slajdom 14: to je ista lista „onoga što programer mora da zna“, samo detaljnija. Ove stavke su ujedno i plan Modula 3 i 4.</p>
+<details class="stop"><summary>Zašto učestanost takta NIJE na listi sa slajda 36?</summary><div>Zato što takt ne utiče na to <em>da li</em> program radi ispravno, nego samo <em>koliko brzo</em>. Programer ga ne mora znati da bi napisao ispravan program, pa je takt deo <strong>organizacije</strong>, ne arhitekture.</div></details>
+
+<h3>Kako procesor razgovara sa ostatkom računara (slajd 37)</h3>
+<figure class="slide"><img src="img/m1-37.jpg" alt="Centralni procesor i sistemska magistrala" loading="lazy"><figcaption><b>Slajd 37 · Centralni procesor i sistemska magistrala</b></figcaption></figure>
+<p>Procesor, memorija i U/I uređaji povezani su <strong>sistemskom magistralom</strong> (bus): skupom provodnika (linija) kojima putuju signali. Magistrala ima tri dela, i svaki ima svoj posao:</p>
+<div class="tbl"><table>
+<tr><th>Deo</th><th>Šta prenosi</th><th>Smer</th><th>Šta određuje njena širina</th></tr>
+<tr><td><strong>Adresna magistrala</strong></td><td>Adresu memorijske lokacije ili U/I uređaja</td><td>Od procesora ka memoriji i uređajima</td><td>Koliko memorije može da se adresira: n linija → 2ⁿ adresa</td></tr>
+<tr><td><strong>Magistrala podataka</strong></td><td>Sam podatak ili instrukciju</td><td>U oba smera</td><td>Koliko bita se prenese odjednom (8, 16, 32, 64)</td></tr>
+<tr><td><strong>Upravljačka magistrala</strong></td><td>Signale: čitaj (RD), piši (WR), spremno (READY), prekid, takt</td><td>U oba smera</td><td>Koje vrste operacija i dogovora postoje</td></tr>
+</table></div>
+<p>Kad procesor čita ocenu iz memorije, sve tri rade zajedno: na <strong>adresnu</strong> stavi adresu ocene, na <strong>upravljačkoj</strong> aktivira signal „čitaj“, a memorija vrati vrednost po <strong>magistrali podataka</strong>. Tačan redosled tih signala (vremenski dijagram) radi se u Modulu 4.</p>
+<p>Iz tabele izvuci najvažnije pravilo za zadatke: <strong>n adresnih linija daje 2ⁿ različitih adresa</strong>. Adresna magistrala od 32 linije adresira 2³² = 4 294 967 296 bajtova, to jest 4 GB, i zato 32-bitni Windows nije mogao da koristi više od 4 GB RAM-a.</p>
+<details class="aside"><summary>Podsetnik: binarni i heksadecimalni brojevi, stepeni dvojke (otvori ako ti ovo nije sasvim sigurno)</summary><div>
+<p><strong>Pozicioni sistem.</strong> U dekadnom sistemu 347 = 3·100 + 4·10 + 7·1: svaka pozicija vredi 10 puta više od one desno. U <strong>binarnom</strong> (osnova 2) cifre su samo 0 i 1, a pozicije vrede 1, 2, 4, 8, 16, 32, 64, 128… zdesna nalevo.</p>
+<div class="bitrow" aria-label="Vrednosti pozicija u bajtu">
+<div><small>128</small><b>0</b></div><div><small>64</small><b>0</b></div><div><small>32</small><b>1</b></div><div><small>16</small><b>0</b></div><div><small>8</small><b>1</b></div><div><small>4</small><b>1</b></div><div><small>2</small><b>0</b></div><div><small>1</small><b>1</b></div>
+</div>
+<p>Bajt <code>0010 1101</code> = 32 + 8 + 4 + 1 = <strong>45</strong>. Obrnuto (45 u binarni): deli sa 2 i zapisuj ostatke: 45 → 22 ost. 1 → 11 ost. 0 → 5 ost. 1 → 2 ost. 1 → 1 ost. 0 → 0 ost. 1. Ostaci čitani odozdo nagore: <strong>101101</strong>.</p>
+<p><strong>Heksadecimalni</strong> sistem (osnova 16) ima cifre 0–9 i A=10, B=11, C=12, D=13, E=14, F=15. Koristi se zato što je <strong>jedna hex cifra tačno 4 bita</strong>, pa se dugački binarni brojevi pišu 4 puta kraće: <code>0010 1101</code> = <code>2D</code>. Oznake <code>0x2D</code>, <code>2Dh</code> i <code>2DH</code> znače isto.</p>
+<div class="tbl"><table>
+<tr><th>Stepen</th><th class="num">Vrednost</th><th>Naziv</th><th>Gde se pojavljuje</th></tr>
+<tr><td>2⁸</td><td class="num">256</td><td></td><td>vrednosti jednog bajta (0–255)</td></tr>
+<tr><td>2¹⁰</td><td class="num">1 024</td><td>1 K</td><td>1 KB = 1024 bajta</td></tr>
+<tr><td>2¹⁶</td><td class="num">65 536</td><td>64 K</td><td>16-bitna adresa</td></tr>
+<tr><td>2²⁰</td><td class="num">1 048 576</td><td>1 M</td><td>1 MB, adresni prostor procesora 8086</td></tr>
+<tr><td>2³⁰</td><td class="num">1 073 741 824</td><td>1 G</td><td>1 GB</td></tr>
+<tr><td>2³²</td><td class="num">4 294 967 296</td><td>4 G</td><td>32-bitna adresa → 4 GB</td></tr>
+<tr><td>2³⁴</td><td class="num">17 179 869 184</td><td>16 G</td><td>RAM od 16 GB (domaći 1)</td></tr>
+</table></div>
+<p>Dva pravila koja rešavaju pola zadataka: <strong>n bita daje 2ⁿ vrednosti</strong>, i obrnuto, <strong>za N adresa treba log₂ N bita</strong>. Primer: 16 GB = 2⁴ · 2³⁰ = 2³⁴ B, pa adresa ima 34 bita. Pri množenju se stepeni sabiraju (2ᵃ · 2ᵇ = 2ᵃ⁺ᵇ), pri deljenju oduzimaju. U ovom predmetu 1 KB = 1024 B.</p>
+<div class="lab" id="numLab"><div class="lab-title">Laboratorija: pretvarač brojeva</div>
+<div class="row">
+<label>Dekadno <input type="text" id="numDec" value="45" size="12" inputmode="numeric"></label>
+<label>Binarno <input type="text" id="numBin" value="101101" size="20"></label>
+<label>Heksa 0x<input type="text" id="numHex" value="2D" size="8"></label>
+</div>
+<div class="simlog" id="numOut"></div>
+<div class="row"><label for="pwN">Broj bita adrese n = <input type="number" id="pwN" value="34" min="1" max="64" style="width:5em"></label><span class="simlog" id="pwOut" style="margin:0"></span></div>
+</div></div></details>
+<details class="stop"><summary>Procesor ima adresnu magistralu od 20 linija. Koliko najviše memorije može da adresira (ako je svaka adresa jedan bajt)?</summary><div>2²⁰ = 1 048 576 bajtova = <strong>1 MB</strong>. Tačno toliko je imao Intel 8086, i zato je DOS bio ograničen na 1 MB.</div></details>
+
+<div class="bridge">Ostalo je poslednje i najvažnije pitanje Modula 1: <strong>gde se nalazi program</strong>? Naš program za prosek i ocene 8, 9, 10 moraju negde da budu dok procesor radi. Odgovor iz 1945. godine oblikovao je svaki računar posle njega.</div>
+
+<h3>Von Neumann-ova mašina (slajd 38)</h3>
+<p>Prvi elektronski računari (npr. ENIAC, 1945) „programirali“ su se prespajanjem kablova i prekidača: da bi računar radio drugi posao, ljudi su danima menjali žice. Džon fon Nojman (John von Neumann) je 1945. opisao računar čija je ključna ideja <strong>koncept zapamćenog programa</strong> (stored program): program se čuva u memoriji, <strong>isto kao i podaci</strong>, kao niz brojeva. Da bi računar radio nešto drugo, dovoljno je u memoriju učitati drugi program.</p>
+<figure class="slide"><img src="img/m1-38.jpg" alt="Arhitektura Von Neumann-ove mašine" loading="lazy"><figcaption><b>Slajd 38 · Arhitektura Von Neumann-ove mašine</b></figcaption></figure>
+<p>Slika ima pet delova: <strong>memoriju</strong> (gore; u njoj su i program i podaci), <strong>upravljačku jedinicu</strong> (levo dole), <strong>aritmetičko-logičku jedinicu</strong> sa <strong>akumulatorom</strong> (desno dole; akumulator je mali pravougaonik, registar u kome ALU drži međurezultat), <strong>ulaz</strong> i <strong>izlaz</strong>. Upravljačka jedinica čita instrukcije iz memorije i šalje komande ALU; ALU čita i upisuje podatke u memoriju; ulaz i izlaz idu preko ALU i akumulatora. Prepoznaješ li delove sa slajdova 34 i 35? Upravljačka jedinica, ALU sa registrom, memorija i U/I: ista građa, opisana pre 80 godina.</p>
+<p>Principi Von Neumann-ove mašine, koje treba znati:</p>
+<ol>
+<li>Program i podaci su u <strong>istoj memoriji</strong> i ne razlikuju se po obliku (sve su binarni brojevi).</li>
+<li>Memorija je podeljena na <strong>numerisane lokacije (adrese)</strong>, a sadržaju se pristupa preko adrese.</li>
+<li>Instrukcije se izvršavaju <strong>sekvencijalno</strong>, jedna za drugom, osim kad instrukcija skoka promeni redosled.</li>
+<li>Postoji <strong>brojač naredbi</strong> (PC) koji pokazuje koja instrukcija je sledeća.</li>
+</ol>
+<p>Za naš primer to znači: u memoriji, u nizu lokacija, stoje pet instrukcija programa, a odmah pored njih ocene 8, 9, 10 i mesto za rezultat. Procesor ne „zna“ šta je instrukcija, a šta ocena; zna samo da sa adrese na koju pokazuje PC uzme sledeću instrukciju.</p>
+<p>U Modulu 3 profesor prikazuje i kako ovakvi računari ulaze u klasifikaciju (M3_02, slajd 3): računar može biti analogni ili <strong>digitalni</strong>; digitalni može biti fiksne funkcije (kao stari kalkulator) ili sa <strong>zapamćenim programom</strong>; takav može biti mehanički ili <strong>elektronski</strong>; a elektronski može biti specijalne ili <strong>opšte namene</strong>. Ovaj predmet proučava upravo poslednju granu: digitalni, elektronski računar opšte namene sa zapamćenim programom, to jest Von Neumann-ovu ideju.</p>
+
+<figure class="slide"><img src="img/m3b-3.jpg" alt="Klasifikacija računara" loading="lazy"><figcaption><b>M3_02, slajd 3 · Klasifikacija računara</b> (crvena putanja je ono što proučavamo)</figcaption></figure>
+<h3>Princeton i Harvard (slajdovi 39–40)</h3>
+<div class="slides2">
+<figure class="slide"><img src="img/m1-39.jpg" alt="Princeton arhitektura" loading="lazy"><figcaption><b>Slajd 39 · „Princeton“ arhitektura</b></figcaption></figure>
+<figure class="slide"><img src="img/m1-40.jpg" alt="Harvard arhitektura" loading="lazy"><figcaption><b>Slajd 40 · „Harvard“ arhitektura</b></figcaption></figure>
+</div>
+<p>Poslednja dva slajda porede dva načina da se procesor poveže sa memorijom. <strong>Princeton</strong> je drugo ime za Von Neumann-ovu arhitekturu (fon Nojman je radio na Prinstonu): postoji jedna <strong>operativna memorija</strong>, a između nje i procesora idu dve strelice, <em>adresiranje</em> i <em>podaci i instrukcije</em>. Dakle isti put za oboje. <strong>Harvard</strong> (po računaru Harvard Mark I) ima dve odvojene memorije, <strong>memoriju za instrukcije</strong> i <strong>memoriju za podatke</strong>, i svaka ima svoj par linija. Procesor (registri sa brojačem naredbi, ALU, upravljačka jedinica) i U/I uređaji su na obe slike isti; razlika je samo u memoriji i putevima do nje.</p>
+<p>Zašto je to bitno? Zato što procesor gotovo svakom instrukcijom traži dve stvari: <em>samu instrukciju</em> i <em>podatak</em> nad kojim radi (npr. „ADD b“ traži instrukciju ADD i vrednost b). U Princeton mašini oba moraju da prođu kroz isti put, jedno posle drugog. U Harvard mašini mogu istovremeno. Pogledaj koliko to vredi:</p>
+<div class="lab" id="vnhLab"><div class="lab-title">Infografika: zašto je Harvard brži</div>
+<p class="lab-sub">Svaka instrukcija u ovom primeru mora da donese sebe (<b>I</b>) i jedan podatak iz memorije (<b>D</b>). Jedan prenos traje jedan ciklus magistrale. Pomeri klizač.</p>
+<div class="row"><label for="vnhN">Broj instrukcija: <b id="vnhNv">4</b></label><input type="range" id="vnhN" min="1" max="10" value="4"></div>
+<div class="sx"><svg id="vnhSvg" class="rsvg" viewBox="0 0 640 176" role="img" aria-label="Poređenje broja ciklusa"></svg></div>
+<div class="simlog" id="vnhOut"></div></div>
+<p>Ovo čekanje ima ime: <strong>Von Neumann-ovo usko grlo</strong> (bottleneck). Procesor je mnogo brži od memorije, a sve, i instrukcije i podaci, mora da prođe kroz jednu magistralu, pa procesor često stoji i čeka. Seti se hijerarhije memorije iz dela 3: keš postoji upravo da bi ublažio ovo usko grlo.</p>
+<div class="tbl"><table>
+<tr><th></th><th>Von Neumann / Princeton</th><th>Harvard</th></tr>
+<tr><td>Memorija</td><td>Jedna, zajednička za program i podatke</td><td>Dve: za instrukcije i za podatke</td></tr>
+<tr><td>Putevi (magistrale)</td><td>Jedan</td><td>Dva odvojena</td></tr>
+<tr><td>U jednom ciklusu</td><td>Ili instrukcija ili podatak</td><td>I instrukcija i podatak</td></tr>
+<tr><td>Prednost</td><td>Jednostavnija i jeftinija; memorija se fleksibilno deli između programa i podataka</td><td>Brža, paralelan pristup</td></tr>
+<tr><td>Mana</td><td>Usko grlo</td><td>Složenija i skuplja; jedna memorija može biti puna dok je druga prazna</td></tr>
+<tr><td>Gde se koristi</td><td>Opšti računari (na nivou RAM-a)</td><td>Mikrokontroleri (Arduino/AVR, PIC), DSP, L1 keš modernih procesora</td></tr>
+</table></div>
+<p>Današnji procesori uzimaju najbolje od oba: <strong>modifikovana Harvard arhitektura</strong>. Najbliži procesoru, L1 keš je podeljen na <strong>keš za instrukcije (L1i)</strong> i <strong>keš za podatke (L1d)</strong>, pa procesor u istom ciklusu dobija i instrukciju i podatak (Harvard). L2, L3 i RAM su zajednički (Von Neumann), pa zadržavamo fleksibilnost jedne velike memorije.</p>
+<details class="stop"><summary>Arduino ima program u flash memoriji, a promenljive u posebnoj SRAM memoriji. Koja je to arhitektura?</summary><div><strong>Harvard</strong>: instrukcije i podaci su u fizički odvojenim memorijama, sa odvojenim putevima.</div></details>
+<details class="stop"><summary>Zašto je Von Neumann-ova ideja zapamćenog programa bila revolucionarna, kad danas izgleda očigledno?</summary><div>Jer je pre nje promena programa značila fizičko prespajanje računara. Sa zapamćenim programom, program je samo podatak u memoriji: može da se učita, sačuva, kopira, pa čak i da ga drugi program napravi (tako rade kompajleri). Bez toga ne bi bilo ni operativnih sistema ni softvera kakav znamo.</div></details>
+
+<h3>Ceo Modul 1 u jednom pogledu</h3>
+<p>Evo cele priče koju smo ispričali, kao niz od osam rečenica. Ako svaku umeš da objasniš svojim rečima, Modul 1 znaš:</p>
+<ol class="recap">
+<li>Računar ume samo <strong>elementarne operacije</strong>; program je njihov niz, a algoritam mora biti <strong>konačan i determinisan</strong> (sl. 11–12).</li>
+<li><strong>Arhitektura</strong> je ono što programer vidi (instrukcije, adresiranje, U/I, tipovi podataka), <strong>organizacija</strong> je kako je to izvedeno (takt, tehnologija, signali) (sl. 13–15).</li>
+<li>Računar čine procesor, memorija, U/I i magistrale; memorija je <strong>hijerarhija</strong> od brzih i malih do sporih i velikih (sl. 16–17).</li>
+<li>Ista arhitektura sa različitim organizacijama daje <strong>familiju modela</strong> (sl. 21).</li>
+<li><strong>Mur</strong>: tranzistora je duplo više svake ~2 godine. <strong>Denard</strong>: to je bilo bez rasta snage po mm², do ~2005. Posle toga takt staje, a rastu broj jezgara (sl. 22–23, 28).</li>
+<li>Složenost se savladava <strong>apstrakcijom</strong>: slojevi od problema do elektrona, a granica hardvera i softvera je <strong>ISA</strong> (sl. 18, 24–27).</li>
+<li>Računar radi četiri stvari: <strong>obradu, skladištenje, prenos i upravljanje</strong>; CPU čine UJ, ALU, registri i interne veze, povezani sa ostatkom <strong>adresnom, magistralom podataka i upravljačkom</strong> magistralom (sl. 29–37).</li>
+<li><strong>Von Neumann</strong>: program i podaci u istoj memoriji, jedna magistrala, pa usko grlo; <strong>Harvard</strong> razdvaja memorije; današnji procesori su Harvard u L1 kešu, a Von Neumann u RAM-u (sl. 38–40).</li>
+</ol>
+<div class="bridge">Sad znamo kako je računar napravljen. Ali kad kažemo da je jedan računar „brži“ od drugog, šta tačno merimo, i koliko nam zaista pomaže 16 jezgara? To je Modul 2: performanse i Amdalov zakon.</div>
+<div class="quiz" data-ch="c6"></div>
+</section>
+
+<!-- ============ MODUL 2 kao jedna priča ============ -->

@@ -1,0 +1,87 @@
+<section class="ch" id="d3">
+<div class="ch-head"><span class="ch-num">D</span><span class="ch-src">Dopuna 3 · nastavak Modula 4 (slajdovi 9–12) · izvori: Simić i Bataveljić, Stallings pogl. 3.2 i 7, Intel SDM Vol. 1 pogl. 6</span></div>
+<h2>Sistem prekida do kraja: vrste, maskiranje, kontekst, prioritet i zasićenje</h2>
+<p class="lead">U Modulu 4 smo videli jedan prekid u akciji: tastatura javi, procesor završi tekuću instrukciju, sačuva PC i PSW na stek, pročita vektor prekida i skoči u rutinu. Na ispitu se o prekidima pita mnogo više: čemu uopšte služe, koje vrste postoje, kako se dozvoljavaju i zabranjuju, šta tačno uređaj i procesor razmene, šta je kontekst procesora, šta ako stigne više prekida odjednom, i kako se meri da li sistem prekida stiže da sve obradi. Ovo predavanje zaokružuje celu temu.</p>
+
+<h3>Čemu služe prekidi</h3>
+<p>Bez prekida, procesor bi morao stalno da proziva uređaje („jesi li spreman?“, polling iz Modula 4) i trošio bi vreme na čekanje. Prekid obrće odnos: <b>uređaj javlja procesoru</b> kad mu nešto treba. Osnovne namene prekida:</p>
+<ol>
+<li><b>Komunikacija periferijskih uređaja sa procesorom</b>: uređaj javlja da je spreman za prenos ili da je završio (tastatura, disk, mrežna kartica). Procesor u međuvremenu radi koristan posao.</li>
+<li><b>Korišćenje servisa operativnog sistema</b>: program instrukcijom INT (softverski prekid) traži od OS-a da uradi nešto za njega (otvori fajl, ispiše tekst, završi program, kao <code>int $0x80</code> u Modulu 5).</li>
+<li><b>Merenje vremena i vremenska kontrola poslova</b>: tajmer periodično šalje prekid, pa OS može da meri vreme i da oduzme procesor programu kome je isteklo vreme (osnova višeprogramskog rada iz drugog dela predmeta).</li>
+<li><b>Reagovanje na greške</b>: deljenje nulom, nepostojeća instrukcija, greška memorije, nestanak napajanja.</li>
+</ol>
+<details class="stop exq" id="k1-13"><summary>Koja je osnovna namena prekida u računarskim sistemima?</summary><div>Prekidi se koriste za <b>komunikaciju periferijskih uređaja sa centralnim procesorom</b> (uređaj javlja kada je spreman ili kada je završio, pa procesor ne mora da čeka i proziva). Takođe omogućavaju <b>korišćenje servisa operativnog sistema</b> (softverski prekid INT), koriste se za <b>merenje vremena i vremensku kontrolu poslova</b> koje izvršava procesor (prekid tajmera, raspodela procesorskog vremena), kao i za reagovanje na greške i vanredne događaje (deljenje nulom, greška memorije, pad napajanja).</div></details>
+
+<h3>Spoljašnji i unutrašnji prekidi</h3>
+<div class="tbl"><table>
+<tr><th></th><th>Spoljašnji (hardverski) prekidi</th><th>Unutrašnji prekidi</th></tr>
+<tr><td>Ko ih generiše</td><td>kontroleri periferijskih uređaja kada su uređaji spremni za prenos podataka, ili kontrolni uređaji koji prate ispravnost rada memorije, magistrale ili, na primer, napajanja</td><td>sam procesor: kao rezultat greške pri izvršavanju tekuće instrukcije (izuzetak, „exception“: deljenje nulom, prekoračenje, nepostojeći opkod, greška stranice) ili kao rezultat izvršavanja instrukcije prekida <b>INT</b> (softverski prekid)</td></tr>
+<tr><td>Vreme nastanka</td><td>asinhroni: mogu stići bilo kad, nezavisno od programa</td><td>sinhroni: nastaju tačno na određenoj instrukciji, uvek isto pri istim podacima</td></tr>
+<tr><td>Primer</td><td>pritisak tastera, kraj prenosa sa diska, tajmer, greška parnosti memorije</td><td><code>DIV</code> sa nulom, <code>INT 21h</code>, <code>int $0x80</code></td></tr>
+</table></div>
+<details class="stop exq" id="k1-34"><summary>Objasniti razliku između spoljašnjih i unutrašnjih prekida.</summary><div><b>Unutrašnji prekidi</b> su prekidi koje generiše sam procesor, kao rezultat nastanka greške prilikom izvršavanja tekuće instrukcije (deljenje nulom, nepostojeća instrukcija, prekoračenje) ili kao rezultat izvršavanja instrukcije prekida INT (softverski prekid). Vezani su za određenu instrukciju programa. <b>Spoljašnji prekidi</b> su prekidi koje generišu kontroleri periferijskih uređaja kada su uređaji spremni za prenos podataka, ili kontrolni uređaji koji kontrolišu ispravnost rada memorije, magistrale ili napajanja. Stižu nezavisno od programa koji se izvršava.</div></details>
+
+<h3>Maskirajući i nemaskirajući prekidi</h3>
+<p>Hardverski prekidi se dele u <b>dve osnovne grupe</b>, prema tome da li procesor sme da ih ignoriše:</p>
+<ul>
+<li><b>Maskirajući prekidi</b> (maskable): procesor ih može <b>privremeno zabraniti (odbiti, odložiti)</b>. Kad su zabranjeni, zahtev čeka dok se ponovo ne dozvole. Ovde spada većina uređaja: tastatura, disk, mreža.</li>
+<li><b>Nemaskirajući prekidi</b> (NMI, non-maskable interrupt): procesor ih <b>uvek prihvata</b>, ne mogu se zabraniti. Koriste se za kritične događaje: nestanak napajanja, greška u memoriji (parnost), „watchdog“ tajmer.</li>
+</ul>
+<p><b>Dozvola i zabrana maskirajućih prekida</b> se vrši <b>softverski</b>, postavljanjem odgovarajućeg bita u <b>statusnoj reči procesora (PSW)</b>. Kod Intela je to bit <b>IF</b> (Interrupt enable Flag) u registru EFLAGS: instrukcija <code>STI</code> (set interrupt flag) ga postavlja na 1 i dozvoljava prekide, a <code>CLI</code> (clear) ga briše i zabranjuje ih. Pored toga, mnogi sistemi imaju i <b>registar maske</b> u kontroleru prekida, gde svaki bit dozvoljava ili zabranjuje prekid jednog izvora. Otud ime: prekid se „maskira“ kao bit sa maskom iz Modula 6.</p>
+<div class="ex">U Modulu 4 smo videli korak 3 obrade prekida: „PSW ← privileged &amp; disable“. To je upravo zabrana maskirajućih prekida (IF = 0) dok se čuva stanje. NMI bi i tada mogao da stigne, zato rutina za NMI mora biti napisana posebno pažljivo.</div>
+<details class="stop exq" id="k1-6"><summary>Kako se vrše dozvola i zabrana rada maskirajućih prekida? Koje su dve osnovne grupe hardverskih prekida?</summary><div>Hardverski prekidi se dele na <b>maskirajuće</b> (procesor ih može zabraniti, tj. privremeno odbiti) i <b>nemaskirajuće</b> (procesor ih uvek prihvata; koriste se za kritične događaje kao što su pad napajanja i greške memorije). Dozvola i zabrana maskirajućih prekida vrši se <b>softverski, postavljanjem odgovarajućeg bita u statusnoj reči procesora (PSW)</b>; kod Intel procesora to je bit IF u EFLAGS, koji postavljaju instrukcije STI (dozvola) i CLI (zabrana). Dodatno se pojedinačni izvori mogu maskirati u registru maske kontrolera prekida.</div></details>
+
+<h3>Šta razmene uređaj i procesor kod hardverskog prekida</h3>
+<p>Ceo „razgovor“ između uređaja i procesora ima četiri koraka:</p>
+<ol>
+<li><b>Uređaj generiše signal zahteva za prekid</b> (IRQ, Interrupt Request) na upravljačkoj magistrali.</li>
+<li>Procesor <b>završava izvršenje tekuće instrukcije</b> (prekide proverava tek u fazi provere prekida, posle izvršavanja). Ako su prekidi dozvoljeni, šalje <b>signal potvrde</b> (INTA, interrupt acknowledge).</li>
+<li><b>Uređaj preko magistrale podataka šalje broj vektora prekida</b> (broj koji ga identifikuje). Procesor sačuva kontekst (PC, PSW) i taj broj koristi kao ulaz u <b>tabelu vektora prekida</b>, gde nalazi adresu rutine. Zatim izvršava <b>rutinu za obradu prekida (ISR</b>, Interrupt Service Routine) koja odgovara tom broju.</li>
+<li><b>Po završetku rutine uređaju se šalje odgovor</b> (potvrda da je prekid obrađen, npr. signal EOI, end of interrupt, kontroleru prekida), a procesor instrukcijom povratka iz prekida (IRET) vraća kontekst i nastavlja prekinuti program.</li>
+</ol>
+<details class="stop exq" id="k1-7"><summary>Navesti aktivnosti između datog uređaja i procesora za slučaj hardverskog prekida.</summary><div>(1) Uređaj generiše signal zahteva za prekid (IRQ). (2) Procesor završava izvršenje tekuće instrukcije i, ako su prekidi dozvoljeni, potvrđuje prijem zahteva (INTA). (3) Uređaj preko magistrale podataka šalje broj vektora prekida. (4) Procesor čuva kontekst (BN, PSW) na steku i izvršava rutinu za upravljanje prekidom (ISR) koja odgovara broju vektora dobijenom preko magistrale podataka (adresa rutine je u tabeli vektora prekida). (5) Nakon završetka rada rutine uređaju se šalje odgovor na prekid, a procesor vraća kontekst i nastavlja prekinuti program.</div></details>
+
+<h3>Kontekst procesora</h3>
+<p>Da bi se prekinuti program nastavio kao da se ništa nije desilo, mora se sačuvati sve što rutina za obradu prekida može da promeni. To se zove <b>kontekst procesora</b>, a obuhvata:</p>
+<ul>
+<li>sadržaj <b>brojača naredbi</b> (BN, PC, IP), gde je program stao;</li>
+<li>sadržaj <b>statusnog registra (PSW)</b>, zastavice i režim rada;</li>
+<li>sadržaj <b>registara podataka</b>;</li>
+<li>sadržaj <b>adresnih registara</b>;</li>
+<li>sadržaj <b>indeksnih registara</b>;</li>
+<li>sadržaj <b>baznih registara</b>;</li>
+<li>sadržaj <b>registara opšte namene</b>.</li>
+</ul>
+<p><b>Kontekst procesora se najčešće čuva na steku.</b> Procesor hardverski stavi BN i PSW (Modul 4, slajd 9), a ostale registre na stek stavlja sama rutina instrukcijama PUSH na početku i vraća ih sa POP na kraju (samo one koje menja). Stek je idealan jer podržava i ugnežđene prekide: svaki novi prekid stavlja svoj kontekst iznad prethodnog, kao kod rekurzije u Modulu 5.</p>
+<div class="bridge">Isti pojam se vraća u drugom delu predmeta, kod <b>procesa</b>: kad operativni sistem prebacuje procesor sa jednog procesa na drugi („context switch“), čuva kontekst procesora u <b>PCB</b> (Process Control Block) tog procesa.</div>
+<details class="stop exq" id="k1-35"><summary>Šta je kontekst procesora i gde se najčešće čuva?</summary><div>Kontekst procesora je skup sadržaja registara koji opisuju stanje izvršavanja programa i koji se moraju sačuvati pri prekidu da bi se program kasnije nastavio: sadržaj <b>brojača naredbi</b>, sadržaj <b>statusnog registra (PSW)</b>, sadržaj <b>registara podataka</b>, <b>adresnih</b>, <b>indeksnih</b> i <b>baznih registara</b> i <b>registara opšte namene</b>. Kontekst procesora se <b>najčešće čuva na steku</b>.</div></details>
+
+<h3>Kad stigne više prekida: prioritet i ugnežđeni prekidi</h3>
+<p><b>Kada se više prekida generiše istovremeno, servisiraju se po prioritetu.</b> Svakom izvoru prekida dodeljen je nivo prioriteta, prema hitnosti: npr. pad napajanja i greška memorije imaju najviši prioritet, zatim tajmer, disk, mreža, pa tastatura i štampač. Kod klasičnih kontrolera prekida (Intel 8259) niži broj linije (IRQ0, tajmer) znači viši prioritet.</p>
+<p>Prioritet određuje i šta se dešava kad prekid stigne <em>dok se obrađuje drugi</em>:</p>
+<ul>
+<li>ako novi prekid ima <b>viši</b> prioritet, on <b>prekida rutinu</b> nižeg prioriteta (ugnežđeni prekidi, „nested interrupts“); kontekst rutine ide na stek iznad konteksta programa;</li>
+<li>ako ima <b>niži ili isti</b> prioritet, čeka da se tekuća rutina završi.</li>
+</ul>
+<p>Prioritet se može ostvariti <b>softverski</b> (rutina redom proziva uređaje, „polling“, i prvi koji je javio se servisira) ili <b>hardverski</b>: lančanim povezivanjem uređaja („daisy chain“, signal potvrde prolazi od uređaja do uređaja, i prvi u lancu koji traži prekid ga zadrži), ili posebnim <b>kontrolerom prekida</b> koji poredi prioritete.</p>
+<details class="stop exq" id="k1-37"><summary>Kako se servisiraju prekidi kada se više prekida generiše istovremeno?</summary><div>Prekidi se servisiraju <b>po prioritetu</b>: svakom izvoru je dodeljen nivo prioriteta, i prvo se obrađuje prekid najvišeg prioriteta, dok ostali čekaju. Prekid višeg prioriteta može da prekine i rutinu za obradu prekida nižeg prioriteta (ugnežđeni prekidi), a prekidi nižeg prioriteta čekaju kraj tekuće rutine. Prioritet se ostvaruje softverski (prozivanje) ili hardverski (daisy chain, kontroler prekida). Kod klasičnih PC kontrolera prekid sa nižim brojem linije (IRQ0) ima viši prioritet.</div></details>
+
+<h3>Vreme reakcije, dubina i zasićenje sistema prekida</h3>
+<p>Tri pojma opisuju koliko je sistem prekida „dobar“:</p>
+<ul>
+<li><b>Vreme reakcije</b> sistema prekida je vreme koje protekne od trenutka pojave signala prekida do trenutka prelaska na prekidni program (prve instrukcije rutine). Ono uključuje završetak tekuće instrukcije, čekanje dok su prekidi zabranjeni i čuvanje konteksta. Što je kraće, sistem brže reaguje (važno za sisteme u realnom vremenu).</li>
+<li><b>Dubina prekida</b> je maksimalan broj programa koji mogu prekidati jedan drugog, tj. koliko prekida može biti ugnežđeno jedan u drugi. Ako je dubina 1, nijedna rutina ne može biti prekinuta; ako je dubina jednaka broju nivoa prioriteta, svaki viši nivo može prekinuti niži.</li>
+<li><b>Zasićenje sistema prekida</b> nastaje kada je vreme reakcije (i obrade) tako veliko da novi signal prekida <b>od istog izvora</b> stigne pre nego što je prethodni obrađen. Tada se novi signal gubi (procesor još nije ni preuzeo prethodni zahtev). Npr. mrežna kartica šalje paket na svakih 10 µs, a obrada traje 15 µs: paketi se gube.</li>
+</ul>
+<details class="stop exq" id="k1-90"><summary>Šta je vreme reakcije kod sistema prekida?</summary><div>Vreme reakcije je vreme koje protekne <b>od trenutka pojave signala prekida do trenutka prelaska na prekidni program</b> (početak rutine za obradu prekida). Uključuje vreme do završetka tekuće instrukcije, eventualno čekanje dok su prekidi zabranjeni ili dok se obrađuje prekid višeg prioriteta, i vreme čuvanja konteksta.</div></details>
+<details class="stop exq" id="k1-91"><summary>Šta je dubina prekida i kada nastaje zasićenje sistema prekida?</summary><div><b>Dubina prekida</b> je maksimalan broj programa (prekidnih rutina) koji mogu prekidati jedan drugog, tj. maksimalni broj ugnežđenih prekida. <b>Zasićenje sistema prekida</b> nastaje ako je vreme reakcije sistema prekida toliko veliko da u slučaju pojave novog signala prekida <b>od istog izvora</b>, pre nego što je prethodni prihvaćen i obrađen, dolazi do <b>gubitka</b> tog novog signala prekida.</div></details>
+
+<h3>Prekid posle svake instrukcije i programski prekid</h3>
+<p><b>Prekid posle svake instrukcije</b> (režim „korak po korak“, single-step, trace) koristi se za otklanjanje grešaka (debugger): posle svake instrukcije procesor sam izazove prekid i izvrši zadatu rutinu, koja programeru pokaže stanje registara. Ostvaruje se posebnim režimom rada procesora: <b>u PSW postoji poseban bit</b> u koji se programski upisuje 1 ili 0, i time se omogućava ili onemogućava ovaj režim. Kod Intela je to bit <b>TF</b> (Trap Flag) u EFLAGS.</p>
+<p><b>Programski (softverski) prekid</b> se generiše posebnom instrukcijom <b>INT</b>. Ona izaziva prekid i skok na zadatu prekidnu rutinu. U adresnom delu INT instrukcije nalazi se <b>broj ulaza u tabelu adresa prekidnih rutina (vektor tabelu)</b>, pa se iz tabele dobija adresa rutine. Primeri: <code>INT 21h</code> (servisi MS-DOS-a), <code>INT 80h</code> (sistemski pozivi Linux-a, Modul 5).</p>
+<details class="stop exq" id="k1-38"><summary>Kako se može ostvariti prekid posle svake instrukcije?</summary><div>Postoji poseban režim rada procesora koji to omogućava (režim „korak po korak“, trace). U PSW (statusnoj reči procesora) nalazi se poseban bit (kod Intela TF, Trap Flag) u koji se programski upisuje 1 ili 0, čime se omogućava ili onemogućava ovaj režim. Kada je režim uključen, posle svake instrukcije javlja se prekid, tj. procesor posle svake instrukcije izvršava zadatu prekidnu rutinu. Koristi se za otklanjanje grešaka (debugging).</div></details>
+<details class="stop exq" id="k1-39"><summary>Kako se programski može generisati prekid?</summary><div>Pomoću posebne instrukcije <b>INT</b> (interrupt), kojom se programski generiše prekid i vrši skok na zadatu prekidnu rutinu. U adresnom delu INT instrukcije nalazi se broj ulaza u tabelu adresa prekidnih rutina (vektor tabelu), iz koje procesor uzima adresu rutine. Primer: <code>INT 21h</code> kod MS-DOS-a ili <code>int $0x80</code> za sistemske pozive Linux-a.</div></details>
+<div class="bridge">Prekidi su most ka drugom delu predmeta: bez prekida tajmera nema raspoređivanja procesora, bez softverskog prekida nema sistemskih poziva, a bez čuvanja konteksta nema prebacivanja između procesa.</div>
+<p class="src">Izvori: D. Simić, P. Bataveljić, <i>Organizacija računara i operativni sistemi</i>, FON 2011 (poglavlje o sistemu prekida); W. Stallings, <i>Organizacija i arhitektura računara</i>, pogl. 3.2 (Interrupts) i 7 (Input/Output); Intel SDM Vol. 1, pogl. 6.4 (Interrupts and Exceptions).</p>
+<div class="quiz" data-ch="d3"></div></section>

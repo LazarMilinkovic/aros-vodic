@@ -1,0 +1,96 @@
+<section class="ch" id="c19">
+<div class="ch-head"><span class="ch-num">M5</span><span class="ch-src">Modul 5 · deo 2 od 4 · ProgramExecutionManagement.pdf, slajdovi 11–15</span></div>
+<h2>Ko odlučuje šta je sledeće: redom, skok i uslovno grananje</h2>
+<p class="lead">Program je u memoriji samo niz instrukcija na uzastopnim adresama. Procesor ne „vidi“ petlje, if-ove ni funkcije. Vidi samo jedan registar, <strong>BN</strong> (brojač naredbi, kod Intela IP), i uvek izvršava instrukciju sa adrese koju BN pokazuje. Sve što zovemo „tok programa“ svodi se na jedno pitanje: <em>šta se upisuje u BN</em>. U ovoj lekciji vidimo tri odgovora: BN se poveća za jedan (program ide redom), u BN se upiše nova adresa (bezuslovni skok), ili se nova adresa upiše samo ako važi neki uslov (uslovni skok, grananje).</p>
+<p>Ovo se zove <strong>upravljanje izvršavanjem programa na konvencionalnom mašinskom nivou</strong>. Konvencionalni mašinski nivo je nivo instrukcija (ISA), onaj na kome radi asembler. Na ispitu se ova tema pita gotovo uvek, u obliku „Kako se na konvencionalnom mašinskom nivou realizuje…“.</p>
+
+<h3>Kad program ide redom (slajd 11)</h3>
+<figure class="slide"><img src="img/m5a-11.jpg" alt="Prelazak na sledeću naredbu u programu" loading="lazy"><figcaption><b>Slajd 11 · Upravljanje izvršavanjem programa: prelazak na sledeću naredbu</b></figcaption></figure>
+<div class="read"><b>Kako da čitaš ovu sliku.</b> Dve iste memorije, jedna pored druge, prikazuju dva trenutka. Adrese su levo (0, 1, …, 100, 101, 102). Kvadrat desno od svake memorije je registar BN, a strelica pokazuje na koju adresu on pokazuje. Osenčena ćelija je naredba na koju BN trenutno pokazuje.</div>
+<ul>
+<li><b>Levo:</b> BN = <b>101</b>. Ovo je „stanje BN <em>pre</em> uzimanja naredbe sa adrese 101“. Procesor će sledeću donositi naredbu sa adrese 101.</li>
+<li><b>Desno:</b> BN = <b>102</b>. Ovo je „stanje BN <em>posle</em> uzimanja, a pre izvršenja naredbe sa adrese 101“. Procesor je doneo naredbu u RN i odmah povećao BN.</li>
+</ul>
+<p>Ovo je ono što smo u Modulu 3 zvali faza donošenja: <code>RN ← M[BN]</code>, pa <code>BN ← BN + 1</code>. Ključna stvar: BN se povećava <strong>odmah posle donošenja, pre izvršenja</strong>. Kad naredba počne da se izvršava, BN već pokazuje na sledeću. Ako naredba nije skok, sledeća instrukcija je ona odmah ispod, i to je „normalan“, sekvencijalni tok.</p>
+<div class="simple">Bez ikakvih posebnih naredbi, procesor bi išao samo nadole: 100, 101, 102, 103… Svaka promena tog redosleda znači da je neka naredba upisala novu vrednost u BN.</div>
+
+<h3>Bezuslovni skok: GOTO (slajd 12)</h3>
+<figure class="slide"><img src="img/m5a-12.jpg" alt="Izvršenje naredbe bezuslovnog skoka" loading="lazy"><figcaption><b>Slajd 12 · Izvršenje naredbe bezuslovnog skoka</b></figcaption></figure>
+<p>Na adresi 100 je naredba <code>GOTO 150</code>. Pratimo BN:</p>
+<ol>
+<li><b>Levo, „stanje BN posle uzimanja a pre izvršenja naredbe GOTO 150“:</b> procesor je doneo GOTO 150 sa adrese 100 i, kao uvek, povećao BN na <b>101</b>. U ovom trenutku procesor još ne zna da će skočiti.</li>
+<li><b>Desno, „stanje BN posle izvršenja naredbe GOTO 150“:</b> izvršenje GOTO naredbe je samo jedna mikrooperacija, <code>BN ← 150</code> (adresni deo instrukcije). BN sad pokazuje na <b>150</b>, osenčena ćelija je 150, i sledeća naredba se donosi odatle. Naredbe na 101–149 su preskočene.</li>
+</ol>
+<div class="formula">GOTO A: &nbsp;&nbsp; BN ← A &nbsp;&nbsp; (adresni deo naredbe se prepisuje u BN)</div>
+<details class="stop exq" id="m5-k1"><summary>Kako se na konvencionalnom mašinskom nivou realizuje bezuslovni skok?</summary><div>Pomoću naredbe bezuslovnog skoka (GOTO, JMP, BR) čiji adresni deo sadrži adresu naredbe na koju se skače. Pri donošenju naredbe BN se kao i obično poveća i pokazuje na sledeću naredbu (npr. 101). Izvršenje naredbe skoka upisuje adresni deo naredbe u brojač naredbi: <b>BN ← adresa skoka</b> (npr. 150). Zato se sledeća naredba ne donosi sa adrese 101, nego sa 150. Skok se izvršava uvek, bez ikakvog uslova.</div></details>
+
+<h3>Kako procesor pamti „šta se desilo“: registar PSR i bitovi N, Z, V, C (slajd 13)</h3>
+<p>Da bi procesor skočio <em>samo ako</em> je nešto tačno, mora negde da pamti rezultat poslednje operacije. Za to služi poseban registar.</p>
+<figure class="slide"><img src="img/m5a-13.jpg" alt="Registar PSR i bitovi stanja N, Z, V i C" loading="lazy"><figcaption><b>Slajd 13 · Registar PSR (Processor Status Register) i njegovi bitovi stanja N, Z, V i C</b></figcaption></figure>
+<p>Na vrhu slike je 16-bitni registar <b>PSR</b> (bitovi 15 do 0). Bitovi 4 do 15 su „ostali bitovi“, a četiri najniža bita su <b>N, Z, V, C</b>, zajedno nazvani <b>CC, „Condition Code“</b>, ili „bitovi stanja poređenja“. Posle svake aritmetičke ili logičke operacije procesor ih automatski postavlja:</p>
+<div class="tbl"><table>
+<tr><th>Bit</th><th>Ime</th><th>Postavlja se na 1 kada…</th><th>Primer (8 bita)</th></tr>
+<tr><td><b>N</b></td><td>Negative, negativan</td><td>je rezultat poslednje operacije <b>manji od nule</b> (inače 0)</td><td>5 − 7 = −2 → N = 1</td></tr>
+<tr><td><b>Z</b></td><td>Zero, nula</td><td>je rezultat poslednje operacije <b>jednak nuli</b> (inače 0)</td><td>7 − 7 = 0 → Z = 1</td></tr>
+<tr><td><b>V</b></td><td>oVerflow, prekoračenje</td><td>dođe do <b>prekoračenja</b> u aritmetici celih brojeva <b>sa znakom</b></td><td>127 + 1 = −128 (pogrešno) → V = 1</td></tr>
+<tr><td><b>C</b></td><td>Carry, prenos</td><td>dođe do <b>prenosa ili pozajmice</b> u aritmetici celih brojeva <b>bez znaka</b></td><td>255 + 1 = 0 i prenos 1 → C = 1</td></tr>
+</table></div>
+<div class="simple">V i C oba znače „rezultat ne staje“, ali za različite brojeve. <b>C</b> gleda brojeve kao neoznačene (0 do 255 u 8 bita) i kaže „izašli smo iz opsega, ima prenos iz najvišeg bita“. <b>V</b> gleda brojeve kao označene, u drugom komplementu (−128 do 127) i kaže „zbir dva pozitivna je ispao negativan“ (ili obrnuto). Procesor uvek postavi oba; program bira koji mu je važan.</div>
+<p>Kod Intel procesora ovaj registar se zove <b>FLAGS</b> (kasnije EFLAGS, RFLAGS), a bitovi se zovu <b>SF</b> (sign, isto što i N), <b>ZF</b>, <b>OF</b> (overflow, isto što i V) i <b>CF</b>. Pored njih Intel ima i PF (parnost), AF (pomoćni prenos), kao i upravljačke zastavice IF (dozvola prekida), DF (smer za stringove) i TF (izvršavanje korak po korak).</p>
+<details class="stop"><summary>Koja četiri bita stanja (zastavice) imaju svi procesori i šta znači svaki?</summary><div>N (ili S): rezultat je negativan. Z: rezultat je nula. V (ili O): prekoračenje kod brojeva sa znakom. C: prenos/pozajmica kod brojeva bez znaka. Kod Pentiuma su to SF, ZF, OF i CF u registru EFLAGS.</div></details>
+
+<h3>Petlje bez naredbe za petlju: CMP i uslovni skok (slajd 14)</h3>
+<figure class="slide"><img src="img/m5a-14.jpg" alt="Upravljanje iterativnom programskom strukturom, poređenje i uslovno grananje" loading="lazy"><figcaption><b>Slajd 14 · Upravljanje iterativnom programskom strukturom: poređenje i uslovno grananje</b></figcaption></figure>
+<p>Slajd ima dve plave kutije sa dve rečenice koje treba zapamtiti doslovno:</p>
+<ol>
+<li>„Kod većine računara upravljanje <b>iterativnom programskom strukturom</b> (petljom) se na konvencionalnom mašinskom nivou realizuje pomoću <b>instrukcija poređenja i uslovnog grananja</b>.“</li>
+<li>„<b>Ne postoje eksplicitne instrukcije</b> na konvencionalnom mašinskom nivou za upravljanje iterativnom strukturom.“ Drugim rečima, nema mašinske naredbe „FOR“ ili „WHILE“. Petlju sastavlja kompajler od poređenja i skoka.</li>
+</ol>
+<p>Desno su dve naredbe koje to rade:</p>
+<pre>CMP R1, R2   ; compare = uporedi
+             ; formira se razlika S(R1) − S(R2) i ako je ona
+             ;   &lt; 0  →  N=1; Z=0
+             ;   = 0  →  N=0; Z=1
+             ;   &gt; 0  →  N=0; Z=0
+BEQ INS      ; Branch if EQual: skoči ako je Z = 1
+             ; INS je simbolička adresa instrukcije na koju se skače</pre>
+<p><code>CMP</code> oduzima sadržaj R2 od sadržaja R1 (S(R1) znači „sadržaj registra R1“), ali <b>rezultat nigde ne upisuje</b>. Jedini trag oduzimanja su bitovi N i Z. Zatim <code>BEQ</code> gleda samo bit Z: ako je 1 (brojevi su bili jednaki), skače; ako je 0, ne radi ništa i program ide dalje redom.</p>
+<div class="ex"><b>Petlja u C-u i kako je vidi procesor.</b> <code>for(i=10; i!=0; i--) zbir += i;</code> postaje otprilike:
+<pre>      LOAD R1, #10        ; i = 10
+      LOAD R2, #0         ; konstanta 0 za poređenje
+PETLJA:
+      CMP  R1, R2         ; i − 0
+      BEQ  KRAJ           ; ako je i = 0 (Z=1), izađi iz petlje
+      ADD  R3, R1         ; zbir += i
+      SUB  R1, #1         ; i--
+      GOTO PETLJA         ; bezuslovno nazad na proveru
+KRAJ: ...</pre>
+Petlja je sastavljena od tri sastojka: <b>poređenje</b> (CMP), <b>uslovni skok</b> napolje (BEQ) i <b>bezuslovni skok</b> nazad (GOTO). Ista struktura se vidi u asemblerskom programu za zbir prvih n brojeva na kraju modula.</div>
+<p>Pored BEQ, svaki procesor ima čitavu porodicu uslovnih skokova, a svaki gleda neku kombinaciju bitova:</p>
+<div class="tbl"><table>
+<tr><th>Naredba</th><th>Značenje</th><th>Uslov</th><th>Intel (x86)</th></tr>
+<tr><td>BEQ</td><td>skoči ako je jednako</td><td>Z = 1</td><td>JE / JZ</td></tr>
+<tr><td>BNE</td><td>skoči ako nije jednako</td><td>Z = 0</td><td>JNE / JNZ</td></tr>
+<tr><td>BLT / BMI</td><td>skoči ako je manje (negativno)</td><td>N = 1 (tačnije N ≠ V)</td><td>JL, JS</td></tr>
+<tr><td>BGT</td><td>skoči ako je veće</td><td>Z = 0 i N = V</td><td>JG</td></tr>
+<tr><td>BHI</td><td>veće, bez znaka</td><td>C = 0 i Z = 0</td><td>JA (jump if above)</td></tr>
+<tr><td>BCS / BVS</td><td>skoči ako je bio prenos / prekoračenje</td><td>C = 1 / V = 1</td><td>JC / JO</td></tr>
+</table></div>
+
+<h3>Uslovni skok korak po korak (slajd 15)</h3>
+<figure class="slide"><img src="img/m5a-15.jpg" alt="Izvršenje naredbe grananja (skoka)" loading="lazy"><figcaption><b>Slajd 15 · Izvršenje naredbe grananja (skoka)</b></figcaption></figure>
+<div class="read"><b>Kako da čitaš ovu sliku.</b> U memoriji su na adresi 100 naredba <code>CMP R1, R2</code>, a na 101 <code>BEQ INS</code>. Osenčene su dve moguće sledeće naredbe: 102 i 150 (označena labelom <b>INS:</b>). Gore desno je BN u kome je 102 precrtano, a iznad piše 150. Dve linije iz BN vode na dve moguće adrese. Crvena napomena dole: „Simboličkoj adresi INS odgovara fizička adresa 150“, to je adresa koju je asembler izračunao u prvom prolazu.</div>
+<ol>
+<li>Izvršava se <code>CMP R1, R2</code> (adresa 100). Postavljaju se N i Z.</li>
+<li>Donosi se <code>BEQ INS</code> sa adrese 101. Kao i uvek, BN se poveća: <b>BN = 102</b>.</li>
+<li>Izvršava se BEQ: procesor gleda bit Z.
+ <ul><li>Ako je <b>Z = 0</b> (R1 ≠ R2): ništa se ne menja, BN ostaje 102 i program ide redom.</li>
+ <li>Ako je <b>Z = 1</b> (R1 = R2): <b>BN ← 150</b>. Zato je 102 precrtano i iznad piše 150. Sledeća naredba je na adresi INS = 150.</li></ul></li>
+</ol>
+<div class="formula">BEQ A: &nbsp;&nbsp; ako je Z = 1, onda BN ← A; &nbsp;inače BN ostaje (sledeća naredba)</div>
+<details class="stop exq" id="m5-k2"><summary>Kako se na konvencionalnom mašinskom nivou realizuje uslovni skok, tj. uslovno grananje?</summary><div>U dva koraka. Prvo naredba poređenja (npr. <code>CMP R1, R2</code>) formira razliku S(R1) − S(R2), ne upisuje je nigde, ali postavlja bitove stanja u registru PSR: ako je razlika &lt; 0, N=1 i Z=0; ako je = 0, N=0 i Z=1; ako je &gt; 0, N=0 i Z=0. Zatim naredba uslovnog skoka (npr. <code>BEQ INS</code>, Branch if EQual) proverava odgovarajući bit: ako je uslov ispunjen (Z = 1), u BN se upisuje adresa INS i izvršavanje se nastavlja od nje; ako nije, BN zadržava vrednost postavljenu pri donošenju (sledeća naredba po redu).</div></details>
+<details class="stop exq" id="m5-k3"><summary>Kako se vrši upravljanje iterativnom programskom strukturom (petljom) na konvencionalnom mašinskom nivou?</summary><div>Kod većine računara ne postoje eksplicitne naredbe za petlje na konvencionalnom mašinskom nivou. Petlja se realizuje kombinacijom <b>naredbe poređenja</b> (CMP, postavlja bitove N, Z, V, C u PSR), <b>naredbe uslovnog skoka</b> (BEQ, BNE…, izlazak iz petlje ili povratak na početak kad je uslov ispunjen) i po potrebi <b>bezuslovnog skoka</b> (GOTO) nazad na početak petlje. Brojač petlje se menja običnim aritmetičkim naredbama (ADD, SUB). Neki procesori ipak imaju pomoćne naredbe, npr. Intelova LOOP koja smanjuje CX i skače dok CX ≠ 0.</div></details>
+<div class="warn">Primeti da se „upravljanje redosledom izvršavanja instrukcija“ u Modulu 6 navodi kao druga velika grupa naredbi: <b>poređenje i uslovni skokovi, upravljanje iterativnom strukturom, poziv potprograma i aktiviranje korutina</b>. Prva dva smo upravo obradili, a poziv potprograma i korutine dolaze u sledećoj lekciji.</div>
+<div class="bridge">Skok menja BN zauvek: ne pamti odakle je došao. Ali kad pozovemo funkciju, želimo da se posle nje <em>vratimo</em> tamo gde smo stali. Za to treba sačuvati staru vrednost BN negde. Gde? To je tema sledeće lekcije.</div>
+<p class="src">Dodatni izvori: Stallings, <i>Organizacija i arhitektura računara</i>, pogl. 12 (Instruction Sets: Operations, Condition Codes); Intel SDM Vol. 1, odeljak 3.4.3 (EFLAGS register).</p>
+<div class="quiz" data-ch="c19"></div></section>

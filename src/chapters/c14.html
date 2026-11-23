@@ -1,0 +1,190 @@
+<section class="ch" id="c14">
+<div class="ch-head"><span class="ch-num">M4</span><span class="ch-src">Modul 4 · deo 1 od 3 · M4_01_CPU_MEMORY_COMMUNICATION_ASM.pdf, slajdovi 2–12</span></div>
+<h2>Šta se dešava na žicama: procesor razgovara sa memorijom i uređajima</h2>
+<p class="lead">U Modulu 1 smo rekli da procesor „donese instrukciju iz memorije“, a u Modulu 3 smo to razložili na korake unutar procesora. Ali šta se tačno dešava <em>između</em> procesora i memorije? Memorija je poseban čip, desetinama centimetara daleko, sporija od procesora i ne zna ništa o tome šta procesor radi. Njih dvoje moraju da se dogovore preko magistrale: ko šta šalje, kojim redom i kako jedno zna da je drugo završilo. Modul 4 je priča o tom dogovoru, a zatim o tome kako instrukcija kaže <em>gde</em> je podatak i kako taj podatak izgleda u bajtovima.</p>
+<p>Kroz ceo modul pratimo jedan isti primer, nastavak proseka ocena iz Modula 1. U memoriji, počev od adrese <strong>2000</strong>, stoji niz od četiri ocene: <strong>8, 9, 7, 10</strong>. Program ih sabira u petlji, a srce petlje je jedna instrukcija Intel procesora:</p>
+<pre>ADD AL, [SI+2000]     ; AL ← AL + ocena sa adrese 2000 + SI</pre>
+<p>U ovom delu gledamo šta se dešava na magistrali dok procesor donosi tu instrukciju i njen operand, šta ako baš tada pritisneš taster, i kako su ocene uopšte stigle sa diska u memoriju. U delu 2 objašnjavamo zašto je operand zapisan baš kao <code>[SI+2000]</code> (načini adresiranja), a u delu 3 kako sve to izgleda na pravom Intel procesoru i kako su brojevi i slova zapisani u bajtovima.</p>
+
+<h3>Procesor kao mašina stanja (slajdovi 2–3)</h3>
+<p>Naslov predavanja je <strong>„CPU kao state mašina“</strong>. Mašina stanja (state machine) je uređaj koji je u svakom trenutku u tačno jednom <strong>stanju</strong> i na svaki otkucaj takta prelazi u sledeće stanje, zavisno od toga gde je bio i koje signale vidi. U svakom stanju radi jedan mali, tačno određen posao: „stavi adresu na magistralu“, „pošalji signal čitanja“, „upiši ono što je stiglo u registar“. Kad ovako gledamo procesor, nema više magije: donošenje instrukcije je samo niz stanja kroz koja procesor prolazi takt po takt.</p>
+<div class="simple">Slajdovi ovog modula koriste engleska imena registara, a u Modulu 3 smo koristili domaća. Prevod: <strong>PC = BN</strong> (brojač naredbi), <strong>IR = RN</strong> (registar naredbi), <strong>MAR = ARM</strong> (adresni registar memorije), <strong>MBR = PRM</strong> (prihvatni registar memorije). Novi su <strong>SP</strong> (Stack Pointer, pokazivač steka), <strong>PSW</strong> (Program Status Word, zastavice i stanje procesora) i <strong>MMU</strong> (Memory Management Unit, jedinica koja prevodi adrese).</div>
+<figure class="slide"><img src="img/m4a-3.jpg" alt="Komunikacija između CPU i glavne memorije" loading="lazy"><figcaption><b>Slajd 3 · Komunikacija između CPU i glavne memorije</b></figcaption></figure>
+<p>Slajd 3 je isti crtež računarskog sistema koji smo videli na početku Modula 2 (procesor sa kešom, memorija, most, U/I magistrala, mreža i diskovi), ali je sada plavom elipsom i crvenom strelicom istaknut samo jedan spoj: <strong>procesor ↔ glavna memorija</strong> na sistemskoj magistrali. Tekst kaže da je to centralni deo ovog predavanja. Sve ostalo (diskovi, mreža) dolazi na red na kraju ovog dela, kad budemo pričali o U/I.</p>
+
+<h3>Četiri koraka jednog čitanja (slajd 4)</h3>
+<p>Procesor treba da donese našu instrukciju <code>ADD AL, [SI+2000]</code>. Recimo da je ona u memoriji na adresi <strong>0120</strong>. Slajd 4 pokazuje kako izgleda svako čitanje iz memorije, bilo da se čita instrukcija ili podatak:</p>
+<figure class="slide"><img src="img/m4a-4.jpg" alt="CPU memory communication" loading="lazy"><figcaption><b>Slajd 4 · Komunikacija CPU i memorije, po koracima</b></figcaption></figure>
+<p>Levo je <strong>CPU</strong> sa četiri dela: <strong>ADDR. REG.</strong> (adresni registar, to je MAR), <strong>CONTROL</strong> (upravljačka jedinica), <strong>I. REG.</strong> (registar instrukcija) i <strong>D. REG.</strong> (registar podataka). Desno je <strong>MEM</strong>: <strong>DECODE</strong> (dekoder adrese, od broja adrese bira jednu ćeliju), polje ćelija u kome je istaknuta ćelija <strong>DATA</strong>, i <strong>CONT. ROL</strong> (kontroler memorije). Gore je zajednička magistrala <strong>BUS</strong>. Crne linije nose adresu, crvene upravljačke signale (RD, READY), a plave podatke. Brojevi u krugovima su redosled:</p>
+<ol>
+<li><strong>①</strong> CPU iz ADDR. REG. stavlja adresu 0120 na magistralu (ADDR). Memorija je prima i njen DECODE počinje da traži tu ćeliju.</li>
+<li><strong>②</strong> Upravljačka jedinica šalje signal <strong>RD</strong> (read, čitaj) kontroleru memorije.</li>
+<li><strong>③</strong> Kad je memorija spremna, kontroler šalje signal <strong>READY</strong> (spremno) nazad procesoru. Do tada procesor čeka, jer ne može da natera memoriju da radi brže.</li>
+<li><strong>④</strong> Memorija stavlja sadržaj ćelije (<strong>DATA</strong>) na magistralu podataka.</li>
+<li><strong>⑤</strong> CPU uzima ono što je na magistrali i upisuje u I. REG. (ako je to instrukcija, kao sada) ili u D. REG. (ako je podatak).</li>
+</ol>
+<p>Najvažnija reč na slici je <strong>READY</strong>. Procesor i memorija nemaju istu brzinu, pa memorija mora nekako da javi „gotovo je“. Bez tog signala procesor bi uzeo ono što je na magistrali pre nego što je memorija stigla da tamo stavi pravu vrednost.</p>
+<div class="ex">Kao u restoranu: kažeš broj jela sa menija (adresa), kažeš „donesite“ (RD), konobar ode u kuhinju i vrati se kad je jelo gotovo (READY), spusti tanjir na sto (podatak na magistrali) i ti ga uzmeš (upis u registar). Ne možeš da požuriš kuhinju; možeš samo da čekaš konobara.</div>
+<p>Pogledaj ove korake u pokretu. Uključi „sporu memoriju“ da vidiš šta se dešava kad READY kasni:</p>
+<div class="lab" id="busLab"><div class="lab-title">Infografika: čitanje iz memorije, takt po takt</div>
+<div class="row"><label><input type="checkbox" id="busWait"> spora memorija (2 stanja čekanja)</label></div>
+<div class="sx"><svg id="busSvg" class="rsvg" viewBox="0 0 640 260" role="img" aria-label="CPU, magistrale i memorija"></svg></div>
+<div class="row"><button class="btn" id="busNext" type="button">Sledeći takt</button><button class="btn ghost" id="busReset" type="button">Ispočetka</button><span class="score" id="busCount"></span></div>
+<div class="simlog" id="busLog"></div>
+</div>
+<details class="stop"><summary>Zašto procesor ne može jednostavno da sačeka unapred dogovoren broj taktova, nego mu treba signal READY?</summary><div>Zato što memorija ne odgovara uvek za isto vreme: različiti memorijski čipovi su različite brzine, a ponekad je memorija zauzeta (npr. osvežava se ili je koristi DMA kontroler). Signal READY čini dogovor <strong>nezavisnim od brzine memorije</strong>: isti procesor radi i sa brzom i sa sporom memorijom, samo duže čeka.</div></details>
+
+<div class="bridge">Opisali smo čitanje rečima i brojevima u krugovima. Inženjeri, međutim, ovakve postupke crtaju preciznije, tačno po taktovima i sa odlukama. Taj crtež se zove ASM dijagram.</div>
+
+<h3>ASM dijagram: čitanje nacrtano po taktovima (slajdovi 5–6)</h3>
+<p><strong>ASM</strong> znači <strong>Algorithmic State Machine</strong>, algoritamska mašina stanja. To je dijagram toka posebno za uređaje koji rade u taktovima, i ima samo tri elementa:</p>
+<ul>
+<li><strong>Pravougaonik</strong> je <strong>stanje</strong>: šta se radi u jednom taktu. Pored njega je oznaka takta (t1, t2…).</li>
+<li><strong>Romb</strong> je <strong>odluka</strong>: proverava se neki signal (ovde READY) i prema njegovoj vrednosti (1 ili 0) bira se sledeće stanje.</li>
+<li><strong>Strelice</strong> su prelazi između stanja.</li>
+</ul>
+<div class="slides2">
+<figure class="slide"><img src="img/m4a-5.jpg" alt="Primer 1 ASM dijagram" loading="lazy"><figcaption><b>Slajd 5 · Primer 1: ASM dijagram čitanja instrukcije</b></figcaption></figure>
+<figure class="slide"><img src="img/m4a-6.jpg" alt="Primer 2 ASM dijagram sa wait stanjem" loading="lazy"><figcaption><b>Slajd 6 · Primer 2: sa stanjem čekanja</b></figcaption></figure>
+</div>
+<p>Na slajdu 5 su četiri stanja, a desno dole je ista stvar zapisana tekstom, sa oznakom ko radi:</p>
+<div class="tbl"><table>
+<tr><th>Takt</th><th>U pravougaoniku</th><th>Tekstom sa slajda</th><th>Ko radi i šta</th></tr>
+<tr><td>t1</td><td><code>BUS ← A</code></td><td><code>ADDR.BUS ← ADDR</code></td><td>CPU stavlja adresu (0120) na adresnu magistralu. Korak ① sa slajda 4.</td></tr>
+<tr><td>t2</td><td><code>BUS ← RD</code></td><td><code>CTRL.BUS ← RD.CONT</code></td><td>CPU stavlja signal čitanja na upravljačku magistralu. Korak ②.</td></tr>
+<tr><td>romb</td><td>READY?</td><td></td><td>CPU proverava da li je memorija spremna. Korak ③.</td></tr>
+<tr><td>t3</td><td><code>BUS ← D</code></td><td><code>DATA.BUS ← DATA.INS</code></td><td><strong>Memorija</strong> stavlja instrukciju na magistralu podataka. Korak ④.</td></tr>
+<tr><td>t4</td><td><code>IR ← DB</code></td><td><code>INSTR.REG ← DATA.BUS</code></td><td>CPU upisuje instrukciju sa magistrale podataka (DB) u registar instrukcija. Korak ⑤.</td></tr>
+</table></div>
+<p>Razlika između dva slajda je samo u tome šta se dešava kad je READY = 0. Na <strong>slajdu 5</strong> strelica „0“ iz romba vodi nazad iznad t2: procesor ponovo šalje RD i ponovo proverava, sve dok ne dobije 1. Na <strong>slajdu 6</strong> postoji posebno stanje <strong>tw (WAIT)</strong>: procesor ulazi u stanje čekanja i u njemu u svakom taktu proverava READY; tek kad postane 1, prelazi na t3. Takvi ubačeni taktovi zovu se <strong>wait states</strong> (stanja čekanja). U njima procesor ne radi ništa korisno, i svaki je izgubljen takt. Upravo zato postoji keš iz Modula 3: ako je instrukcija u kešu, READY stiže odmah i stanja čekanja nema.</p>
+<details class="stop"><summary>Memorija je spora, pa procesor po slajdu 6 provede 2 takta u stanju tw. Koliko taktova ukupno traje čitanje instrukcije?</summary><div>t1, t2, tw, tw, t3, t4: ukupno <strong>6 taktova</strong> umesto 4. Svaki tw je takt u kome procesor ne radi ništa korisno. Uključi „spora memorija“ u infografici iznad i prebroj.</div></details>
+
+<h3>Pravo čitanje instrukcije: MMU i rezervacija magistrale (slajd 7)</h3>
+<p>ASM dijagram je pojednostavljen. Slajd 7 pokazuje kako izgleda čitanje instrukcije u pravom procesoru, sa još dva detalja koja ASM nije imao:</p>
+<figure class="slide"><img src="img/m4a-7.jpg" alt="Primer 3 čitanje instrukcije" loading="lazy"><figcaption><b>Slajd 7 · Primer 3: čitanje instrukcije</b></figcaption></figure>
+<p>Desno je CPU sa registrima <strong>PC</strong>, <strong>MAR</strong>, <strong>IR</strong>, <strong>MBR</strong> i upravljačkom jedinicom (Control Unit), a pored su tri magistrale: <strong>adresna</strong> (Address Bus), <strong>podataka</strong> (Data Bus) i <strong>upravljačka</strong> (Control Bus), koje vode do memorije. Prati strelice: PC → MAR → adresna magistrala → memorija; memorija → magistrala podataka → MBR → IR. Upravljačka jedinica šalje signale na upravljačku magistralu i (strelica nagore) menja PC. Levo su koraci:</p>
+<div class="tbl"><table>
+<tr><th>#</th><th>Korak</th><th>Šta se dešava sa našom instrukcijom</th></tr>
+<tr><td class="num">1</td><td><code>MAR ← PC</code></td><td>Adresa instrukcije (0120) iz PC ide u MAR.</td></tr>
+<tr><td class="num">2</td><td><code>MAR ← MMU(MAR)</code></td><td><strong>MMU</strong> prevodi <em>virtuelnu</em> adresu (onu koju vidi program) u <em>fizičku</em> (stvarno mesto u RAM-u). Program misli da je na adresi 0120, a stvarno je možda na 7F0120. Ovo je veza sa delom predmeta o operativnim sistemima (virtuelna memorija).</td></tr>
+<tr><td class="num">3</td><td><code>Control Bus ← Reserve</code></td><td>Procesor <strong>rezerviše magistralu</strong>, da je u međuvremenu ne bi koristio neko drugi (DMA kontroler, drugo jezgro).</td></tr>
+<tr><td class="num">4</td><td><code>Control Bus ← Read</code></td><td>Zahtev za čitanje (to je RD sa slajda 4).</td></tr>
+<tr><td class="num">5</td><td><code>PC ← ALU(PC+1)</code></td><td>Dok memorija radi, ALU poveća PC, da pokazuje na sledeću instrukciju. Vreme čekanja se korisno iskoristi.</td></tr>
+<tr><td class="num">6</td><td><code>MBR ← MEM[MAR]</code></td><td>Memorija vrati instrukciju u MBR.</td></tr>
+<tr><td class="num">7</td><td><code>Control Bus ← Release</code></td><td>Magistrala se oslobađa.</td></tr>
+<tr><td class="num">8</td><td><code>IR ← MBR</code></td><td>Instrukcija <code>ADD AL, [SI+2000]</code> je u registru instrukcija i može da se dekodira.</td></tr>
+</table></div>
+<p>Ako uporediš sa Modulom 3, ovo su isti mikrokoraci donošenja instrukcije (ARM ← BN, PRM ← memorija, RN ← PRM, BN ← BN + 1), samo sa engleskim imenima i sa dva nova koraka: prevođenje adrese (MMU) i rezervisanje magistrale.</p>
+<div class="warn">Na ispitu se ovaj redosled često traži napamet. Pomaže da zapamtiš logiku: <em>adresa u MAR, prevedi je, zauzmi magistralu, traži čitanje, (u međuvremenu PC + 1), primi podatak, oslobodi magistralu, instrukcija u IR</em>.</div>
+
+<h3>Donošenje operanda, i zašto nekad treba dva čitanja (slajd 8)</h3>
+<p>Instrukcija je u IR, procesor je dekodirao da treba da sabere AL sa ocenom iz memorije. Sada mora da donese i <strong>operand</strong>, tu ocenu. Za našu instrukciju procesor izračuna adresu (2000 + SI) i uradi <strong>jedno</strong> čitanje, potpuno isto kao gore. Slajd 8 pokazuje teži slučaj, <strong>indirektno adresiranje</strong>, gde u instrukciji ne piše adresa operanda, nego adresa na kojoj <em>piše</em> adresa operanda (detaljno u delu 2). Tada su potrebna <strong>dva čitanja memorije</strong>:</p>
+<figure class="slide"><img src="img/m4a-8.jpg" alt="Primer 4 čitanje operanda indirektno adresiranje" loading="lazy"><figcaption><b>Slajd 8 · Primer 4: čitanje operanda, indirektno adresiranje</b></figcaption></figure>
+<pre>MAR ← Address           adresa iz instrukcije
+MAR ← MMU(MAR)          prevedi u fizičku
+Control Bus ← Reserve
+Control Bus ← Read
+MBR ← MEM[MAR]          ← 1. čitanje: dobili smo ADRESU operanda
+
+MAR ← MBR               ta adresa ide nazad u MAR
+MAR ← MMU(MAR)          i ona se prevodi
+Control Bus ← Read
+MBR ← MEM[MAR]          ← 2. čitanje: dobili smo sam OPERAND
+Control Bus ← Release
+
+ALU? Regs? ← MBR        operand ide u ALU ili u registar</pre>
+<p>Na šemi desno obrati pažnju na strelicu koja ide <strong>iz MBR nazad u MAR</strong>: to je baš korak <code>MAR ← MBR</code>, kad ono što je pročitano postaje nova adresa. Upitnici u poslednjem redu („ALU? Regs?“) znače da operand ide tamo gde ga instrukcija traži: u ALU ako se sabira, u registar ako se samo učitava. I primeti da se magistrala rezerviše jednom i oslobađa tek posle oba čitanja.</p>
+<details class="stop"><summary>Koliko puta procesor ukupno ide u memoriju da izvrši instrukciju koja sabira registar sa operandom adresiranim indirektno memorijski?</summary><div><strong>Tri puta</strong>: jednom da donese samu instrukciju (slajd 7), i dva puta za operand (slajd 8): prvo adresu, pa vrednost. Zato je indirektno adresiranje sporo.</div></details>
+
+<div class="bridge">Procesor je doneo instrukciju i operand i sabira ocene. Ali dok petlja radi, ti pritisneš taster. Procesor ne sme da ignoriše tastaturu, a ne sme ni da izgubi mesto u programu. Kako to rešava? Prekidom.</div>
+
+<h3>Prekid: kako procesor ostavi posao i vrati se (slajd 9)</h3>
+<p><strong>Prekid (interrupt)</strong> je signal kojim neki događaj traži da procesor prekine ono što radi i odmah ga obradi. Izvori prekida su: tastatura (pritisnut taster), disk (prenos završen), tajmer (isteklo vreme; to je osnova kojom operativni sistem deli procesor između više programa), mrežna kartica (stigao paket), ali i greška u samom programu (deljenje nulom).</p>
+<p>Procesor ne prekida instrukciju na pola. Prekide proverava u <strong>poslednjoj fazi ciklusa instrukcije</strong> (faza 8 iz Modula 3), dakle tek kad <strong>završi tekuću instrukciju</strong>. Naš <code>ADD</code> se, dakle, završi do kraja. Onda procesor mora da <strong>sačuva stanje</strong>: gde je stao (PC) i kakve su bile zastavice (PSW), da bi posle obrade prekida mogao da nastavi kao da se ništa nije desilo. Stanje čuva na <strong>steku</strong>, delu memorije na čiji vrh pokazuje registar <strong>SP</strong>.</p>
+<figure class="slide"><img src="img/m4a-9.jpg" alt="Primer 5 tok podataka u slučaju interrupt-a" loading="lazy"><figcaption><b>Slajd 9 · Primer 5: tok podataka u slučaju prekida</b></figcaption></figure>
+<p>Slajd 9 ima istu šemu kao slajd 7, samo su koraci levo grupisani sivim pozadinama. Pročitaj ih kao pet grupa:</p>
+<div class="tbl"><table>
+<tr><th>Grupa</th><th>Koraci</th><th>Objašnjenje</th></tr>
+<tr><td><strong>1. Sačuvaj PC na stek</strong></td><td><code>MAR ← SP</code><br><code>MAR ← MMU(MAR)</code><br><code>Control Bus ← Reserve</code><br><code>MBR ← PC</code><br><code>Control Bus ← Write</code></td><td>Adresa vrha steka iz SP ide u MAR. U MBR se stavi PC (adresa instrukcije od koje treba nastaviti) i upiše u memoriju signalom <strong>Write</strong>. Ovo je čitanje sa slajda 7 „u obrnutom smeru“: podatak ide iz procesora u memoriju.</td></tr>
+<tr><td><strong>2. Sačuvaj PSW na stek</strong></td><td><code>MAR ← SP ← ALU(SP+1)</code><br><code>MAR ← MMU(MAR)</code><br><code>MBR ← PSW</code><br><code>Control Bus ← Write</code><br><code>SP ← ALU(SP+1)</code></td><td>SP se pomeri na sledeće mesto i tamo se upiše PSW (zastavice i stanje procesora). Na kraju SP pokazuje na novi vrh steka.</td></tr>
+<tr><td><strong>3. Promeni režim</strong></td><td><code>PSW ← privileged &amp; disable</code></td><td>Procesor prelazi u <strong>privilegovani režim</strong> (režim jezgra operativnog sistema, u kome sme sve) i <strong>zabranjuje nove prekide</strong>, da ga drugi prekid ne bi prekinuo usred čuvanja stanja.</td></tr>
+<tr><td><strong>4. Pročitaj vektor prekida</strong></td><td><code>MAR ← Interrupt number</code><br><code>Control Bus ← Read</code><br><code>PC ← MBR ← MEM[MAR]</code></td><td>Broj prekida služi kao adresa u <strong>tabeli vektora prekida</strong>. Na toj adresi piše adresa rutine koja obrađuje taj prekid, i ona ide u PC. Strelica sa natpisom <strong>„No address translation!“</strong> kaže da se ovde ne koristi MMU: tabela je na fiksnoj fizičkoj adresi, jer procesor mora da je nađe bez obzira koji program je radio.</td></tr>
+<tr><td><strong>5. Oslobodi</strong></td><td><code>Control Bus ← Release</code></td><td>Magistrala se oslobađa. Sledeći ciklus instrukcije donosi prvu instrukciju rutine za obradu prekida, jer je PC sada pokazuje.</td></tr>
+</table></div>
+<p>Kad rutina završi (pročita taster iz tastature i sačuva ga), posebna instrukcija <strong>povratka iz prekida</strong> (kod x86 <code>IRET</code>) skida PSW i PC sa steka, i naša petlja nastavlja sledeću ocenu tačno odakle je stala. Program za prosek ne zna da je bio prekinut.</p>
+<p>Isprobaj ceo postupak korak po korak. Laboratorija koristi pojednostavljenu memoriju: na adresi 0120 je jedna obična instrukcija sabiranja (zamisli da je to naš <code>ADD</code>), a rutina za tastaturu počinje na adresi 3000, odmah iza našeg niza ocena.</p>
+<div class="lab" id="intLab"><div class="lab-title">Laboratorija: prekid korak po korak, sa stekom</div>
+<p style="margin:0 0 8px;font-size:.92rem">Program izvršava instrukciju na adresi 0120 kad tastatura pošalje prekid broj 9. Prati PC, PSW, SP i stek u memoriji. Stek ovde raste naviše (SP + 1), kao na slajdu 9. Kod Intel x86 stek raste naniže (SP − 2 ili − 4 pri svakom PUSH), ali je princip isti.</p>
+<div class="sim">
+ <div><h5 style="margin:0 0 4px">Memorija</h5><div class="mem" id="intMem"></div></div>
+ <div>
+  <div class="regs">
+   <div class="reg" id="iPC"><small>PC</small><b></b></div>
+   <div class="reg" id="iPSW"><small>PSW</small><b></b></div>
+   <div class="reg" id="iSP"><small>SP (vrh steka)</small><b></b></div>
+  </div>
+  <div class="simlog" id="intLog"></div>
+  <div class="row"><button class="btn" id="intNext" type="button">Sledeći korak</button><button class="btn ghost" id="intReset" type="button">Ispočetka</button><span class="score" id="intCount"></span></div>
+ </div>
+</div>
+</div>
+<div class="ex">Čitaš knjigu (izvršavaš program) i zazvoni telefon (prekid). Završiš rečenicu (tekuću instrukciju), staviš obeleživač (PC na stek), zapamtiš u kakvom si raspoloženju bio (PSW), javiš se (rutina za obradu prekida) i posle nastaviš od obeleživača.</div>
+<details class="stop"><summary>Zašto procesor čuva i PSW, a ne samo PC? Šta bi se desilo da ga ne sačuva?</summary><div>PSW sadrži <strong>zastavice</strong> (npr. da li je poslednji rezultat bio nula ili je bilo prenosa). Rutina za obradu prekida i sama računa i menja zastavice. Da PSW nije sačuvan, posle povratka bi naš program mogao da donese pogrešnu odluku, npr. uslovni skok na kraju petlje bi pogledao zastavicu koju je postavila rutina, a ne naš <code>ADD</code>.</div></details>
+<details class="stop"><summary>Zašto se u koraku 3 zabranjuju novi prekidi?</summary><div>Da drugi prekid ne bi stigao <strong>usred čuvanja stanja</strong>, dok PC ili PSW još nisu bezbedno na steku. Kad rutina sačuva šta joj treba, može ponovo da dozvoli prekide.</div></details>
+
+<div class="bridge">Tastatura je javila prekidom da je taster pritisnut. To je jedan od tri načina na koje procesor razmenjuje podatke sa spoljnim uređajima. A kako su naše ocene uopšte stigle sa diska u memoriju? Za to profesor na slajdu 10 nabraja metode izvršavanja U/I.</div>
+
+<h3>Tri načina razmene podataka sa uređajima (slajd 10)</h3>
+<p>Uređaji (tastatura, disk, mrežna kartica) su <strong>mnogo sporiji</strong> od procesora i rade kad su oni spremni, ne kad procesor hoće. Procesor zato ima tri načina da sa njima razmenjuje podatke, i to su tri metode sa slajda 10:</p>
+<div class="tbl"><table>
+<tr><th>Metoda</th><th>Kako radi</th><th>Prednost</th><th>Mana</th></tr>
+<tr><td><strong>Polling</strong> (busy-waiting, „prozivanje“)</td><td>CPU u petlji stalno čita statusni registar uređaja: „jesi li spreman?“ Kad jeste, sam prenese podatak.</td><td>Najjednostavnije, ne treba poseban hardver.</td><td>CPU troši sve vreme na čekanje i ne radi ništa drugo.</td></tr>
+<tr><td><strong>Interrupt driven I/O</strong> (U/I vođen prekidima)</td><td>CPU zada posao uređaju i radi nešto drugo. Kad je uređaj spreman, pošalje prekid, i CPU tada prenese podatak.</td><td>CPU ne čeka.</td><td>Svaki bajt (ili reč) i dalje prolazi kroz CPU; za veliki prenos ima mnogo prekida.</td></tr>
+<tr><td><strong>DMA</strong> (Direct Memory Access, direktan pristup memoriji)</td><td>CPU kaže <strong>DMA kontroleru</strong>: „prenesi 4096 bajtova sa diska na adresu 2000 u memoriji“. DMA kontroler sam preuzme magistralu i prenese ceo blok. CPU dobije <strong>jedan prekid na kraju</strong>.</td><td>CPU skoro uopšte ne učestvuje; najbolje za velike blokove.</td><td>Treba poseban hardver; DMA i CPU se otimaju za magistralu.</td></tr>
+</table></div>
+<figure>
+<svg class="rsvg" viewBox="0 0 640 210" role="img" aria-label="Šta procesor radi dok traje prenos 4 bloka podataka, za polling, prekide i DMA">
+ <g font-size="12">
+ <text class="s-th" x="10" y="18">Šta radi CPU dok uređaj prenosi podatke (vreme teče udesno)</text>
+ <text class="s-t" x="10" y="58">Polling</text>
+ <rect class="s-bad" x="120" y="42" width="500" height="26"/>
+ <text class="s-t" x="370" y="60" text-anchor="middle">„Jesi li spreman?“ … stalno pita, ne radi ništa drugo</text>
+ <text class="s-t" x="10" y="108">Prekidi</text>
+ <rect class="s-ok" x="120" y="92" width="500" height="26"/>
+ <rect class="s-sigf" x="215" y="92" width="16" height="26"/><rect class="s-sigf" x="335" y="92" width="16" height="26"/><rect class="s-sigf" x="455" y="92" width="16" height="26"/><rect class="s-sigf" x="575" y="92" width="16" height="26"/>
+ <text class="s-tm" x="150" y="134">radi drugi program; narandžasto = prekid, CPU sam prenosi podatak</text>
+ <text class="s-t" x="10" y="168">DMA</text>
+ <rect class="s-ok" x="120" y="152" width="500" height="26"/>
+ <rect class="s-sigf" x="600" y="152" width="16" height="26"/>
+ <text class="s-tm" x="150" y="196">radi drugi program; DMA kontroler sam prenosi sve; jedan prekid na kraju</text>
+ </g>
+</svg>
+<figcaption>Dopunska ilustracija. Zeleno: CPU radi koristan posao. Crveno: CPU troši vreme na čekanje. Narandžasto: CPU obrađuje prekid.</figcaption>
+</figure>
+<p>Za naš primer: kad Excel otvara fajl sa ocenama, operativni sistem kaže disku „pročitaj ovaj blok“ i <strong>DMA kontroler</strong> sam prebaci ceo blok u memoriju, od adrese 2000. Procesor za to vreme radi nešto drugo i dobije jedan prekid kad su ocene stigle. Za tastaturu, gde stiže jedan po jedan znak i to retko, <strong>prekidi</strong> su idealni. Polling se danas koristi samo u najjednostavnijim uređajima (mikrokontroleri) ili za vrlo kratka čekanja.</p>
+<p>DMA može da radi u dva režima: <strong>burst</strong> (preuzme magistralu i prenese ceo blok odjednom; procesor za to vreme ne može u memoriju) ili <strong>cycle stealing</strong> („krađa ciklusa“: uzima magistralu po jedan ciklus između procesorovih pristupa, pa procesor samo malo uspori). Sad je jasno i zašto procesor na slajdu 7 <strong>rezerviše</strong> magistralu: da mu je DMA ne bi uzeo usred čitanja.</p>
+<div class="simple">Polling: svakih pet sekundi gledaš u telefon da li je stigla poruka. Prekid: telefon zazvoni kad poruka stigne. DMA: kurir sam unese sve pakete u stan i pozvoni tek kad završi.</div>
+<details class="stop"><summary>Treba preneti film od 2 GB sa diska u memoriju. Koju metodu bi izabrao i zašto?</summary><div><strong>DMA</strong>. Sa pollingom bi procesor ceo prenos proveo u čekanju, a sa prekidima bi dobio ogroman broj prekida i sam prenosio svaki podatak. DMA prenese ceo blok sam i javi se jednim prekidom.</div></details>
+
+<h3>Kako procesor zna koju rutinu da pozove (slajdovi 11–12)</h3>
+<p>U grupi 4 sa slajda 9 procesor je pročitao „vektor prekida“. Slajd 11 pokazuje kako ta tabela izgleda kod Intel Pentium procesora:</p>
+<div class="slides2">
+<figure class="slide"><img src="img/m4a-11.jpg" alt="Intel Pentium Processor Event Vector Table" loading="lazy"><figcaption><b>Slajd 11 · Intel Pentium tabela vektora događaja</b></figcaption></figure>
+<figure class="slide"><img src="img/m4a-12.jpg" alt="Intel 8259A Programmable Interrupt Controller" loading="lazy"><figcaption><b>Slajd 12 · Intel 8259A kontroler prekida</b></figcaption></figure>
+</div>
+<p>Svaki prekid ima <strong>broj</strong> (vector number) od 0 do 255, i za svaki broj u tabeli piše adresa rutine. Brojevi <strong>0–31</strong> su rezervisani za <strong>izuzetke</strong>, greške koje nastaju u samom procesoru dok izvršava program: 0 deljenje nulom (divide error), 1 debug, 2 NMI (nemaskirajući prekid, za ozbiljne hardverske greške), 3 breakpoint (tačka prekida za debugger), 4 prekoračenje, 6 nepostojeći opkod, 8 dvostruka greška, 12 greška steka, 13 opšta zaštita (program pristupa memoriji koja nije njegova), 14 <strong>page fault</strong> (tražena stranica nije u RAM-u; veza sa virtuelnom memorijom u delu o OS), 16 greška u pokretnom zarezu. Brojevi <strong>32–255</strong> su <strong>maskirajući prekidi</strong> od spoljnih uređaja, koji se mogu privremeno zabraniti (to je „disable“ iz grupe 3).</p>
+<p>Ostaje pitanje: uređaja ima mnogo, a procesor ima jednu liniju za prekid. Slajd 12 prikazuje čip koji to rešava, <strong>Intel 8259A</strong>, programabilni kontroler prekida. On skuplja zahteve od do 8 uređaja (ulazi <strong>IR0–IR7</strong>) i prosleđuje ih procesoru jednom linijom <strong>INT</strong>. Unutra ima:</p>
+<ul>
+<li><strong>IRR</strong> (Interrupt Request Register): pamti koji uređaji trenutno traže prekid,</li>
+<li><strong>Priority Resolver</strong>: ako ih traži više odjednom, bira onaj najvišeg prioriteta,</li>
+<li><strong>ISR</strong> (In-Service Register): pamti koji prekid se upravo obrađuje,</li>
+<li><strong>IMR</strong> (Interrupt Mask Register): koje prekide trenutno treba ignorisati (maskirati),</li>
+<li>Data Bus Buffer i Read/Write logiku prema procesoru, i <strong>Cascade buffer</strong> preko koga se više 8259A čipova povezuje (do 64 prekida).</li>
+</ul>
+<p>Kad procesor prihvati prekid, odgovori signalom <strong>INTA</strong> (interrupt acknowledge), a 8259A mu preko magistrale podataka pošalje broj vektora, npr. 9 za tastaturu. To je onaj „Interrupt number“ koji u grupi 4 ide u MAR. Tako se krug zatvara: taster → 8259A → INT → procesor završi <code>ADD</code> → čuva PC i PSW → INTA → broj 9 → tabela → rutina za tastaturu.</p>
+<details class="stop"><summary>Program podeli broj nulom. Da li za to treba 8259A?</summary><div>Ne. Deljenje nulom je <strong>izuzetak</strong> koji otkriva sam procesor (vektor 0, iz opsega 0–31). 8259A služi samo za prekide od <strong>spoljnih uređaja</strong> (vektori 32–255).</div></details>
+
+<div class="bridge">Sad znamo kako operand putuje magistralom. Ostalo je pitanje koje smo do sada preskakali: zašto je u našoj instrukciji operand zapisan baš kao <code>[SI+2000]</code>? Kako instrukcija uopšte kaže procesoru gde je podatak? To je tema drugog predavanja Modula 4, načini adresiranja.</div>
+<p class="src">Dodatni izvori: <a href="https://www.read.seas.harvard.edu/~kohler/class/04f-aos/ref/hardware/8259A.pdf">Intel 8259A datasheet (Harvard)</a> · <a href="https://engineeringhulk.com/cs-it/computer-organisation/io-systems/">I/O Systems: DMA, Interrupts &amp; Buses</a></p>
+<div class="quiz" data-ch="c14"></div>
+</section>

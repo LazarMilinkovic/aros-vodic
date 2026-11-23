@@ -1,0 +1,176 @@
+<section class="ch" id="c15">
+<div class="ch-head"><span class="ch-num">M4</span><span class="ch-src">Modul 4 · deo 2 od 3 · M4_02_AddressingTypes.pdf, slajdovi 2–28</span></div>
+<h2>Gde je podatak: načini adresiranja</h2>
+<p>Drugo predavanje Modula 4 počinje sadržajem (slajd 2) i sa dve „velike ideje“ (slajdovi 3–5): univerzalni računarski uređaj i rešavanje problema transformacijama kroz slojeve. Njih smo već obradili na kraju dela 5 Modula 1, pa ovde idemo pravo na glavnu temu.</p>
+<p>Instrukcija <code>ADD AL, ???</code> treba da sabere AL sa nečim. Gde je to „nešto“? Može biti broj zapisan u samoj instrukciji, može biti u registru, u memoriji na nekoj adresi, na adresi koja piše u registru, u nizu… <strong>Način adresiranja</strong> određuje kako procesor iz adresnog dela instrukcije dolazi do operanda. <strong>Efektivna adresa (EA)</strong> je konačna, stvarna adresa operanda u memoriji, ona koju procesor na kraju stavlja u MAR.</p>
+<p>Zašto ne postoji samo jedan način? Zato što programi rade sa različitim vrstama podataka, i svaki način odgovara jednoj konstrukciji iz programskih jezika: konstanti (<code>x = 5</code>), promenljivoj (<code>x</code>), pokazivaču (<code>*p</code>), nizu (<code>a[i]</code>), polju strukture (<code>s.polje</code>). Naš primer, sabiranje niza ocena, je baš priča o tome kako se dolazi od najjednostavnijeg načina do onog koji nam treba.</p>
+<h3>Mapa načina adresiranja (slajdovi 6–9)</h3>
+<p>Slajd 6 nabraja sedam načina: <strong>trenutno, direktno memorijsko, direktno registarsko, indirektno memorijsko, indirektno registarsko, bazno registarsko i indeksno</strong>. Slajdovi 7 i 8 ih dele u dve grupe, prema tome kako procesor dolazi do adrese:</p>
+<div class="slides2">
+<figure class="slide"><img src="img/m4b-7.jpg" alt="Adresiranje na osnovu čitanja" loading="lazy"><figcaption><b>Slajd 7 · Adresiranje čitanjem adrese</b></figcaption></figure>
+<figure class="slide"><img src="img/m4b-8.jpg" alt="Adresiranje na osnovu izračunavanja efektivne adrese" loading="lazy"><figcaption><b>Slajd 8 · Adresiranje izračunavanjem adrese</b></figcaption></figure>
+</div>
+<ul>
+<li><strong>Na osnovu čitanja adrese</strong>: 1) trenutno, 2) direktno, 3) indirektno. Procesor adresu (ili sam operand) samo <em>pročita</em>, iz instrukcije, registra ili memorije.</li>
+<li><strong>Na osnovu izračunavanja efektivne adrese</strong>: 1) pomoću indeks registra, 2) pomoću baznog registra, 3) pomoću baznog i indeks registra. Procesor adresu <em>izračuna</em> sabiranjem.</li>
+</ul>
+<figure class="slide"><img src="img/m4b-9.jpg" alt="Ručno nacrtani načini adresiranja" loading="lazy"><figcaption><b>Slajd 9 · Pregled načina adresiranja (crtež)</b></figcaption></figure>
+<p>Slajd 9 je ručno nacrtan pregled, i vredi ga dobro razumeti jer ga je lako zapamtiti kao sliku. Svaki od sedam crteža ima <em>Instruction</em> (instrukciju sa poljima) i, gde treba, <em>Memory</em> ili <em>Registers</em>. Broj strelica pokazuje koliko „skokova“ treba do operanda:</p>
+<ul>
+<li><strong>Immediate</strong> (gore levo): u instrukciji je sam <em>Operand</em>. Nema strelica.</li>
+<li><strong>Direct</strong>: u instrukciji je adresa A, jedna strelica vodi u memoriju na A, tamo je operand.</li>
+<li><strong>Indirect</strong> (gore desno): u instrukciji je A, na adresi A piše B, a na B je operand. Dve strelice.</li>
+<li><strong>Register</strong>: u instrukciji je broj registra R, operand je u tom registru.</li>
+<li><strong>Register Indirect</strong>: R pokazuje na registar u kome je adresa A, a na A u memoriji je operand.</li>
+<li><strong>Displacement</strong> (desno): u instrukciji su R i A; sadržaj registra R se <em>sabere</em> (krug sa +) sa A i to je adresa operanda. Ovo je zajednički crtež za indeksno i bazno adresiranje.</li>
+<li><strong>Stack</strong> (dole): instrukcija ne navodi ništa, operand je <em>implicitno</em> (Implicitly) na vrhu steka.</li>
+</ul>
+
+<h3>1. Trenutno: vrednost je u instrukciji (slajd 10)</h3>
+<figure class="slide"><img src="img/m4b-10.jpg" alt="Trenutno immediate adresiranje" loading="lazy"><figcaption><b>Slajd 10 · Trenutno (immediate) adresiranje</b></figcaption></figure>
+<p>U adresnom delu instrukcije se nalazi <strong>sam operand</strong>, vrednost, a ne adresa. Znak <code>#</code> označava trenutnu vrednost. U <code>MOV #3 R1</code> prva adresa (#3) je trenutno adresiranje, a druga (R1) je direktno adresiranje registra: R1 ← 3. Kod Intela se <code>#</code> ne piše; broj bez zagrada je trenutna vrednost:</p>
+<pre>MOV AX, 2000    AX ← 2000     (broj 2000, ne adresa!)
+MOV AL, 35H     AL ← 35h      (H = heksadecimalno)
+MOV CL, 0A      CL ← 0Ah = 10
+ADD AL, 45      AL ← AL + 45
+AND AX, 0000    AX ← AX I 0   (brisanje registra)</pre>
+<p>Pristupa memoriji za operand: <strong>0</strong>, jer je operand stigao zajedno sa instrukcijom. Zato je ovo najbrži način. Mana: vrednost je fiksna (konstanta) i ograničena brojem bita adresnog polja. U našem primeru, trenutno adresiranje treba na početku: <code>MOV AL, 0</code> (zbir kreće od nule) i <code>MOV SI, 0</code> (počinjemo od prve ocene).</p>
+
+<h3>2. Direktno: adresa je u instrukciji (slajdovi 11–13)</h3>
+<div class="slides2">
+<figure class="slide"><img src="img/m4b-11.jpg" alt="Direktno memorijsko adresiranje" loading="lazy"><figcaption><b>Slajd 11 · Direktno memorijsko</b></figcaption></figure>
+<figure class="slide"><img src="img/m4b-12.jpg" alt="Direktno registarsko adresiranje" loading="lazy"><figcaption><b>Slajd 12 · Direktno registarsko</b></figcaption></figure>
+</div>
+<p><strong>Direktno memorijsko</strong> (slajd 11): adresno polje instrukcije sadrži <strong>efektivnu adresu</strong> operanda. Instrukcija ima dva polja, <em>opkod</em> i <em>adresa</em>, a strelica iz adrese vodi pravo u memoriju do operanda. <code>ADD R1, 1001</code>: 1001 je memorijska adresa na kojoj je operand, pa R1 ← R1 + S(1001). Pristupa memoriji: <strong>1</strong>. U programu to odgovara globalnoj promenljivoj, čija je adresa poznata unapred. Za naš niz: <code>ADD AL, [2000]</code> bi sabrao samo prvu ocenu.</p>
+<p><strong>Direktno registarsko</strong> (slajd 12): adresno polje sadrži <strong>broj registra</strong> u kome je operand. <code>ADD R1, R2</code>: R1 ← R1 + R2. Pristupa memoriji: <strong>0</strong>.</p>
+<figure class="slide"><img src="img/m4b-13.jpg" alt="Direktno adresiranje registarsko i memorijsko" loading="lazy"><figcaption><b>Slajd 13 · Direktno adresiranje, registarsko i memorijsko</b></figcaption></figure>
+<p>Slajd 13 ih stavlja jedno pored drugog, sa brojevima. Levo (registarsko): instrukcija <code>OPKOD 0011</code>; 0011 je 3, pa je operand u registru <strong>R3</strong>. Desno (memorijsko): instrukcija <code>OPKOD 1000</code>; 1000 je adresa, a na adresi 1000 u memoriji je operand <strong>20</strong>. Zapamti ovu sliku, jer će slajd 17 imati iste brojeve za indirektno adresiranje. Uoči i to da je adresa registra samo 4 bita, a memorijska adresa mora biti mnogo duža.</p>
+<p>Odatle i slajd 18, <strong>prednosti i nedostaci korišćenja registara</strong>:</p>
+<ul>
+<li>adresni deo za adresiranje registra je <strong>kraći</strong> (za 16 registara treba 4 bita, a za 4 GB memorije 32 bita), pa je i cela instrukcija kraća,</li>
+<li>pristup registrima je <strong>za red veličine brži</strong> od pristupa memoriji (setimo se hijerarhije memorije iz Modula 1),</li>
+<li>nedostatak: <strong>broj registara je mali</strong>, pa ne mogu svi podaci da budu u registrima.</li>
+</ul>
+<p>Zato naš program drži zbir u registru AL (koristi se u svakom krugu petlje), a ocene u memoriji (ima ih mnogo).</p>
+
+<h3>3. Indirektno: adresa adrese (slajdovi 14–19)</h3>
+<p>Slajd 14 to kaže jednom rečenicom: adresni deo instrukcije sadrži <strong>adresu adrese operanda</strong>. Adresa operanda može biti u <strong>memorijskoj lokaciji</strong> ili u <strong>registru</strong>, pa postoje dve vrste. Zagrade <code>( )</code> u zapisu znače „idi na adresu koja piše ovde“.</p>
+<div class="slides2">
+<figure class="slide"><img src="img/m4b-15.jpg" alt="Indirektno memorijsko adresiranje" loading="lazy"><figcaption><b>Slajd 15 · Indirektno memorijsko</b></figcaption></figure>
+<figure class="slide"><img src="img/m4b-16.jpg" alt="Indirektno registarsko adresiranje" loading="lazy"><figcaption><b>Slajd 16 · Indirektno registarsko</b></figcaption></figure>
+</div>
+<p><strong>Indirektno memorijsko</strong> (slajd 15): <code>LOAD R1, (1005)</code>. Na adresi 1005 je zapisana <em>adresa</em> operanda, pa je EA = S(1005). Pristupa memoriji za operand: <strong>2</strong>, prvo da se pročita 1005 i dobije adresa, pa da se pročita sam operand. To su baš dva čitanja sa slajda 8 iz prvog dela.</p>
+<p><strong>Indirektno registarsko</strong> (slajd 16): <code>LOAD X3, (X2)</code> ili <code>LOAD R1, (R2)</code>. U registru X2 je adresa operanda, pa je EA = S(X2). Na slajdu na adresiranoj lokaciji piše 200, pa X3 ← 200. Pristupa memoriji: <strong>1</strong>, jer je adresa već u registru. Engleska napomena na slajdu kaže samo da se indirektni način označava stavljanjem registra u zagrade.</p>
+<figure class="slide"><img src="img/m4b-17.jpg" alt="Indirektno adresiranje memorijsko i registarsko primer" loading="lazy"><figcaption><b>Slajd 17 · Indirektno adresiranje sa brojevima</b></figcaption></figure>
+<p>Slajd 17 je „blizanac“ slajda 13. Levo (memorijsko): instrukcija <code>OPKOD 1000</code>. Na adresi 1000 u memoriji piše <strong>1024</strong> (to je adresa), a na adresi 1024 piše <strong>20</strong> (to je operand). Desno (registarsko): instrukcija <code>OPKOD 0011</code> bira registar R3; u R3 piše <strong>1000</strong> (adresa), a na adresi 1000 u memoriji je operand <strong>20</strong>. Uporedi: ista instrukcija <code>OPKOD 1000</code> kod <em>direktnog</em> daje 20 (sadržaj adrese 1000), a kod <em>indirektnog</em> daje ono što je na adresi 1024.</p>
+<div class="simple">Indirektno adresiranje je mašinska verzija <strong>pokazivača</strong> (pointera) iz C-a. U <code>p</code> je adresa, a <code>*p</code> je vrednost na toj adresi. Kad funkciji pošalješ niz ocena kao parametar, šalješ samo adresu niza (2000), a funkcija mu pristupa indirektno.</div>
+<figure class="slide"><img src="img/m4b-19.jpg" alt="Razlika između direktnog i indirektnog adresiranja" loading="lazy"><figcaption><b>Slajd 19 · Direktno vs. indirektno</b></figcaption></figure>
+<p>Slajd 19 je tabela poređenja na engleskom. Prevedena:</p>
+<div class="tbl"><table>
+<tr><th>Parametar</th><th>Direktno</th><th>Indirektno</th></tr>
+<tr><td>Adresno polje</td><td>Sadrži efektivnu adresu operanda</td><td>Sadrži referencu na efektivnu adresu</td></tr>
+<tr><td>Pristupi memoriji</td><td>Jedan</td><td>Dva (kod memorijskog)</td></tr>
+<tr><td>Brzina</td><td>Brže</td><td>Sporije</td></tr>
+<tr><td>Podela</td><td>Nema dalje podele</td><td>Memorijsko i registarsko indirektno</td></tr>
+<tr><td>Računanje</td><td>Nije potrebno</td><td>Potrebno je dodatno da se nađe EA</td></tr>
+<tr><td>Adresni prostor</td><td>Ograničen (koliko bita ima polje)</td><td>Velik (u memoriji može da stoji puna adresa)</td></tr>
+<tr><td>Primena</td><td>Statički podaci, promenljive</td><td>Pokazivači, prenos nizova kao parametara</td></tr>
+</table></div>
+<details class="stop"><summary>Instrukcija je LOAD R1, (1000), memorija je ista kao na slajdu 17. Šta će biti u R1? A za LOAD R1, 1000?</summary><div>Za <code>(1000)</code> (indirektno): na 1000 piše 1024, na 1024 piše 20, pa je <strong>R1 = 20</strong>, uz dva čitanja. Za <code>1000</code> (direktno): R1 dobija sadržaj adrese 1000, dakle <strong>R1 = 1024</strong>, uz jedno čitanje. Ista brojka, a potpuno drugačiji rezultat.</div></details>
+
+<div class="bridge">Sa ovim načinima možemo da pročitamo bilo koju jednu ocenu. Ali niz ima četiri (ili četiri hiljade) ocena. Da li za svaku treba posebna instrukcija sa drugom adresom? Ne: tu nastupaju načini koji adresu <em>izračunavaju</em>.</div>
+
+<h3>4. Indeksno: kako se prolazi kroz niz (slajdovi 20–22)</h3>
+<p>Slajd 20 kaže da se ovaj način koristi za <strong>nizove</strong>: jednodimenzionalni niz a[1], a[2], …, a[n] stoji u memoriji na uzastopnim lokacijama. Početna adresa niza (k) je zapisana u instrukciji, a redni broj elementa (i) je u <strong>indeks registru</strong> (IR; kod Intela to su SI i DI). Procesor ih sabere:</p>
+<div class="formula">EA i-tog člana = k + S(IR)</div>
+<div class="warn">Ista skraćenica, drugo značenje: u ovom delu <strong>IR je indeks registar</strong>, a ne registar instrukcija (IR = RN iz Modula 3 i iz dela 1). Slajdovi o adresiranju koriste IR za indeks, a BR za bazni registar. Na ispitu odluči iz konteksta: ako se sabira sa adresom, to je indeks registar.</div>
+<div class="slides2">
+<figure class="slide"><img src="img/m4b-21.jpg" alt="Indeksno adresiranje za jednoadresne mašine" loading="lazy"><figcaption><b>Slajd 21 · Indeksno adresiranje</b></figcaption></figure>
+<figure class="slide"><img src="img/m4b-22.jpg" alt="Adresiranje pomoću indeks registra primeri" loading="lazy"><figcaption><b>Slajd 22 · Primeri</b></figcaption></figure>
+</div>
+<p>Na slajdu 21 instrukcija ima polja <strong>OPKOD | R | b</strong>: R kaže koji registar je indeksni, a b je početna adresa niza. Indeks registar sadrži i. Sabirač (krug sa +) sabere b i S(R) i dobije adresu elementa a[i]. Naslov kaže „za jednoadresne mašine“: isti adresni deo instrukcije ima dva dela, adresu registra i baznu adresu niza. Slajd 22 je isti crtež sa oznakom k (pomeraj od početka memorije do početka niza) i dva Intel primera: <code>MOV AX, [SI+2000]</code> i <code>MOV AL, [DI+3000]</code>.</p>
+<p>Ovo je odgovor na pitanje iz uvoda: <strong>naš <code>ADD AL, [SI+2000]</code> je indeksno adresiranje</strong>. Ocene su na 2000, 2001, 2002, 2003. Petlja koristi jednu te istu instrukciju, a samo se SI povećava za 1 u svakom krugu:</p>
+<div class="tbl"><table>
+<tr><th>Krug</th><th class="num">SI</th><th class="num">EA = 2000 + SI</th><th class="num">Ocena</th><th class="num">AL posle ADD</th></tr>
+<tr><td>1.</td><td class="num">0</td><td class="num">2000</td><td class="num">8</td><td class="num">8</td></tr>
+<tr><td>2.</td><td class="num">1</td><td class="num">2001</td><td class="num">9</td><td class="num">17</td></tr>
+<tr><td>3.</td><td class="num">2</td><td class="num">2002</td><td class="num">7</td><td class="num">24</td></tr>
+<tr><td>4.</td><td class="num">3</td><td class="num">2003</td><td class="num">10</td><td class="num">34</td></tr>
+</table></div>
+<p>Instrukcija se ne menja, a svaki put čita drugu ocenu. Bez indeksnog adresiranja, program bi morao da ima posebnu instrukciju za svaki element niza, ili da menja sopstveni kod. Prosek je onda 34 / 4 = 8,5.</p>
+
+<h3>5. Bazno: program koji radi bilo gde u memoriji (slajdovi 23–25)</h3>
+<p>Postoji i drugi problem. Naš program je pisan kao da je niz na adresi 2000. Šta ako operativni sistem učita program negde drugde, jer je na 2000 već neki drugi program? Rešenje sa slajda 23: sve adrese podataka i instrukcija programa pišu se <strong>relativno u odnosu na početak programa</strong> (baznu adresu), a u <strong>bazni registar</strong> se pri učitavanju upiše stvarna početna adresa programa:</p>
+<div class="formula">EA = S(BR) + pomeraj (P)</div>
+<div class="slides2">
+<figure class="slide"><img src="img/m4b-24.jpg" alt="Relativno bazno registarsko adresiranje" loading="lazy"><figcaption><b>Slajd 24 · Relativno (bazno registarsko) adresiranje</b></figcaption></figure>
+<figure class="slide"><img src="img/m4b-25.jpg" alt="Adresiranje pomoću baznog registra primer" loading="lazy"><figcaption><b>Slajd 25 · Primer</b></figcaption></figure>
+</div>
+<p>Slajd 24 je crtež „Displacement“ sa slajda 9: instrukcija ima polja <em>opkod | reg. | pomeraj</em>, sadržaj izabranog registra se sabere sa pomerajem i dobije se adresa operanda. Slajd 25 pokazuje smisao: bazni registar BR sadrži b, adresu na kojoj počinje <strong>Program</strong> u memoriji, a pomeraj P iz instrukcije kaže koliko je operand daleko od početka programa.</p>
+<p><strong>Najvažnija prednost</strong>: program može da se izvršava <strong>u bilo kom delu memorije</strong> (premestivost, relocation). Kad OS učita program na adresu 50000 umesto 10000, ne mora da menja nijednu instrukciju; samo upiše 50000 u bazni registar. Ovo je osnova za to da više programa istovremeno bude u memoriji, o čemu govori deo predmeta o operativnim sistemima.</p>
+<div class="simple">Indeksno i bazno izgledaju isto (registar + konstanta), ali se koriste obrnuto. Kod <strong>indeksnog</strong> je u instrukciji <em>fiksna početna adresa niza</em>, a u registru <em>promenljivi redni broj</em>. Kod <strong>baznog</strong> je u registru <em>početna adresa programa</em> (koju bira OS), a u instrukciji <em>fiksni pomeraj</em>.</div>
+
+<h3>6. Bazno + indeksno: niz unutar programa koji može biti bilo gde (slajdovi 26–27)</h3>
+<p>Sada spojimo oba problema: niz ocena je na pomeraju D od početka našeg programa, a program može biti bilo gde. Slajd 26 uvodi tri dela:</p>
+<ul>
+<li><strong>BR</strong>: adresa opšteg registra koji se koristi kao bazni (početak bloka, programa),</li>
+<li><strong>IR</strong>: adresa opšteg registra koji se koristi kao indeksni (redni broj elementa),</li>
+<li><strong>D</strong>: pomeraj (displacement), relativna adresa niza u odnosu na baznu adresu bloka u kome počinje niz.</li>
+</ul>
+<div class="formula">EA i-tog člana = S(BR) + D + S(IR) = K + S(IR),&nbsp;&nbsp;&nbsp;gde je K = S(BR) + D</div>
+<figure class="slide"><img src="img/m4b-27.jpg" alt="Adresiranje pomoću baznog i indeksnog registra primer" loading="lazy"><figcaption><b>Slajd 27 · Bazno + indeksno, primer</b></figcaption></figure>
+<p>Na slajdu 27 instrukcija ima četiri polja: <strong>OPKOD | BR | IR | D</strong>. Bazni registar sadrži b (početak bloka u memoriji), pomeraj D vodi od b do početka niza (zajedno daju K), a indeks registar sadrži i, pa se dolazi do a[i]. Intel primer sa slajda: <code>ADD AX, [BX+SI]</code>, gde je BX bazni, a SI indeksni registar.</p>
+<div class="ex">Program je učitan od adrese 1000 (BR = 1000), niz ocena je 20 mesta od početka programa (D = 20), a treba nam ocena sa rednim brojem 3 (IR = 3). EA = 1000 + 20 + 3 = <strong>1023</strong>. Ako OS premesti program na 5000, samo BR postaje 5000, a ista instrukcija čita 5023.</div>
+<p>Sad isprobaj sve načine na istim registrima i istoj memoriji. Obrati pažnju koliko puta se ide u memoriju i kako se menja put do operanda:</p>
+<div class="lab" id="adrLab">
+<div class="lab-title">Laboratorija: izračunaj efektivnu adresu</div>
+<div class="row"><label for="adrSel">Način adresiranja</label>
+<select id="adrSel">
+<option value="imm">Trenutno: LOAD R1, #1000</option>
+<option value="dreg">Direktno registarsko: LOAD R1, R2</option>
+<option value="dmem" selected>Direktno memorijsko: LOAD R1, 1000</option>
+<option value="ireg">Indirektno registarsko: LOAD R1, (R2)</option>
+<option value="imem">Indirektno memorijsko: LOAD R1, (1000)</option>
+<option value="idx">Indeksno: LOAD R1, 1000[IR]</option>
+<option value="base">Bazno: LOAD R1, 24[BR]</option>
+<option value="bidx">Bazno + indeksno: LOAD R1, 20[BR][IR]</option>
+</select></div>
+<div class="two" style="margin-top:6px">
+ <div><h5>Registri</h5><div class="mono" style="font-size:.88rem">R2 = 1024<br>IR = 3<br>BR = 1000</div></div>
+ <div><h5>Memorija</h5><div class="mono" style="font-size:.88rem">[1000] = 1024<br>[1003] = 55<br>[1023] = 91<br>[1024] = 20</div></div>
+</div>
+<div class="sx"><svg id="adrSvg" class="rsvg" viewBox="0 0 680 200" role="img" aria-label="Put od instrukcije do operanda"></svg></div>
+<div class="simlog" id="adrOut"></div>
+</div>
+<h3>Svi načini na jednom mestu</h3>
+<div class="tbl"><table>
+<tr><th>Način</th><th>Primer</th><th>Efektivna adresa / operand</th><th class="num">Pristupa memoriji</th><th>Odgovara u C-u</th></tr>
+<tr><td>Trenutno</td><td><code>MOV #3, R1</code></td><td>operand = 3 (u instrukciji)</td><td class="num">0</td><td><code>x = 3</code></td></tr>
+<tr><td>Direktno registarsko</td><td><code>ADD R1, R2</code></td><td>operand = S(R2)</td><td class="num">0</td><td>lokalna promenljiva u registru</td></tr>
+<tr><td>Direktno memorijsko</td><td><code>ADD R1, 1001</code></td><td>EA = 1001</td><td class="num">1</td><td>globalna promenljiva</td></tr>
+<tr><td>Indirektno registarsko</td><td><code>LOAD R1, (R2)</code></td><td>EA = S(R2)</td><td class="num">1</td><td><code>*p</code> (p u registru)</td></tr>
+<tr><td>Indirektno memorijsko</td><td><code>LOAD R1, (1005)</code></td><td>EA = S(1005)</td><td class="num">2</td><td><code>*p</code> (p u memoriji)</td></tr>
+<tr><td>Indeksno</td><td><code>MOV AX, [SI+2000]</code></td><td>EA = k + S(IR)</td><td class="num">1</td><td><code>a[i]</code></td></tr>
+<tr><td>Bazno</td><td>OPKOD BR, P</td><td>EA = S(BR) + P</td><td class="num">1</td><td>premestiv program, <code>s.polje</code></td></tr>
+<tr><td>Bazno + indeksno</td><td><code>ADD AX, [BX+SI]</code></td><td>EA = S(BR) + D + S(IR)</td><td class="num">1</td><td><code>s.niz[i]</code></td></tr>
+</table></div>
+<div class="warn">Najčešća zamka: kod <strong>trenutnog</strong> adresiranja u instrukciji je <em>vrednost</em>, kod <strong>direktnog</strong> je <em>adresa</em>, kod <strong>indirektnog</strong> je <em>adresa adrese</em>. Broj pristupa memoriji za operand: 0, 1, 2. Kod Intela: <code>MOV AX, 2000</code> je trenutno (AX = 2000), a <code>MOV AX, [2000]</code> je direktno memorijsko (AX = sadržaj adrese 2000).</div>
+<p>Proveri da li razlikuješ načine kad ih vidiš u stvarnim instrukcijama:</p>
+<div class="lab" id="admLab"><div class="lab-title">Vežba: prepoznaj način adresiranja</div>
+<p class="lab-sub">Za svaku instrukciju izaberi način adresiranja <strong>izvornog</strong> operanda (onog posle zareza; kod LOAD i MOV to je ono što se čita). Posle odgovora dobijaš objašnjenje.</p>
+<div id="admList" class="sort wide"></div><p class="score" id="admScore"></p></div>
+
+<h3>Šta određuje koliko je instrukcija dugačka (slajd 28)</h3>
+<p>Videli smo da instrukcija sa memorijskom adresom mora biti duža od one sa registrom, a bazno + indeksno ima čak četiri polja. Slajd 28 nabraja šta sve utiče na dužinu instrukcije:</p>
+<ul>
+<li><strong>veličina memorije</strong>: veća memorija traži duže adrese,</li>
+<li><strong>organizacija memorije</strong>: da li se adresira svaki bajt ili cela reč (bajt-adresabilna memorija iste veličine traži više adresa),</li>
+<li><strong>struktura magistrale</strong>: koliko bita se prenese odjednom; instrukcija koja staje u jedan prenos donosi se najbrže,</li>
+<li><strong>složenost procesora</strong>: više instrukcija i više načina adresiranja traže duži opkod i dodatna polja,</li>
+<li><strong>brzina procesora</strong>: brz procesor ne sme da čeka na donošenje dugačkih instrukcija.</li>
+</ul>
+<details class="stop"><summary>Zašto bi projektant procesora uopšte uvodio sporo indirektno memorijsko adresiranje, kad postoji brže indirektno registarsko?</summary><div>Zato što registara ima malo. Ako program ima mnogo pokazivača, ne mogu svi da budu u registrima, pa adresa mora da stoji u memoriji. Indirektno memorijsko to omogućava jednom instrukcijom. Mnogi savremeni RISC procesori ga ipak nemaju: umesto njega koriste dve instrukcije (učitaj adresu u registar, pa indirektno registarsko).</div></details>
+<div class="bridge">Naučili smo načine adresiranja na opštim primerima (R1, BR, IR). Kako sve to izgleda na procesoru koji imaš u računaru? Poslednji deo modula prelazi na Intel: njegove registre, njegove instrukcije, i na to kako su brojevi i slova zapisani u bajtovima.</div>
+<p class="src">Dodatni izvori: <a href="https://geeksforgeeks.org/addressing-modes-8086-microprocessor">GeeksforGeeks, Addressing modes in 8086</a> · <a href="https://www.youtube.com/watch?v=wLXIWKUWpSs">Intro to x86 Assembly Language (video sa slajda)</a></p>
+<div class="quiz" data-ch="c15"></div>
+</section>

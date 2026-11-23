@@ -1,0 +1,108 @@
+<section class="ch" id="d4">
+<div class="ch-head"><span class="ch-num">D</span><span class="ch-src">Dopuna 4 · teme iz ispitnih pitanja kojih nema na slajdovima · izvori: Simić i Bataveljić, Tanenbaum pogl. 1 i 5, Intel SDM, Intel Itanium Architecture Manual</span></div>
+<h2>Pentium, IA-64 i softver oko procesora: kompatibilnost, prevodioci i logika</h2>
+<p class="lead">Ovo je poslednja dopuna za prvi kolokvijum. Skuplja teme koje se pitaju, a razbacane su po knjizi: šta Pentium (IA-32) radi sa brojačem naredbi i zastavicama, po čemu je IA-64 (Itanium) drugačiji, šta znači kompatibilnost naniže, zašto su hardver i softver „ekvivalentni“, kako se program prevodi i puni u memoriju, i na kraju malo logike i brojeva (zakon apsorpcije, heksadecimalni brojevi, drugi komplement).</p>
+
+<h3>Pentium (IA-32): registri, instrukcije i brojač naredbi</h3>
+<p>U Modulu 4 (<a href="#c16">lekcija 4.3</a>) i Modulu 5 (<a href="#c18">lekcija 5.1</a>) smo videli registre Intel procesora. Ovde je ono što se pita direktno:</p>
+<div class="tbl"><table>
+<tr><th>Registar (IA-32)</th><th>Namena</th></tr>
+<tr><td><b>EIP</b></td><td>Instruction Pointer, pokazivač instrukcija: isto što i BN (program counter, brojač naredbi); drži adresu sledeće instrukcije</td></tr>
+<tr><td><b>EAX</b></td><td>akumulator: koristi se za operande i čuvanje rezultata aritmetičkih operacija, povratnu vrednost funkcija</td></tr>
+<tr><td><b>EBX</b></td><td>bazni registar, pokazivač na podatke</td></tr>
+<tr><td><b>ECX</b></td><td>brojač u petljama i operacijama nad nizovima</td></tr>
+<tr><td><b>EDX</b></td><td>registar podataka; <b>U/I pokazivač</b> (drži adresu U/I porta za IN/OUT) i proširenje EAX kod množenja i deljenja</td></tr>
+<tr><td><b>ESI, EDI</b></td><td>indeksi izvora i odredišta (nizovi, stringovi)</td></tr>
+<tr><td><b>ESP, EBP</b></td><td>pokazivač vrha steka i bazni pokazivač okvira steka</td></tr>
+<tr><td><b>EFLAGS</b></td><td>zastavice (statusna reč)</td></tr>
+</table></div>
+<p><b>Važni statusni bitovi</b> (zastavice) u EFLAGS:</p>
+<ul>
+<li><b>CF – Carry Flag</b>: označava prenos ili pozajmicu iz najvišeg bita (MSB) kod neoznačene aritmetike.</li>
+<li><b>ZF – Zero Flag</b>: postavlja se na 1 ako je rezultat 0.</li>
+<li><b>SF – Sign Flag</b>: dobija vrednost najvišeg bita (MSB) rezultata, koji je bit znaka za označene cele brojeve (1 = negativan).</li>
+<li><b>OF – Overflow Flag</b>: postavlja se na 1 kad dođe do prekoračenja kod označene aritmetike (rezultat ne staje u opseg).</li>
+</ul>
+<p>To su N, Z, V, C iz <a href="#c19">lekcije 5.2</a> pod Intelovim imenima.</p>
+<p><b>Načini kontrole sadržaja BN (EIP) kod Pentium-a</b>: EIP ne može da se upiše običnom MOV instrukcijom. Menja se (1) <b>instrukcijama za prenos upravljanja</b>: JMP, uslovni skokovi (Jcc), CALL, RET, LOOP; (2) <b>prekidima</b> (INT i hardverski prekidi, IRET za povratak); (3) <b>izuzecima</b> (greške pri izvršavanju, npr. deljenje nulom).</p>
+<p><b>Dužina instrukcija kod Pentium-a</b>: instrukcije su <b>promenljive dužine, od 1 do 17 bajtova</b> (kod Pentium 4 najviše 15 bajtova po Intelovoj specifikaciji, a knjiga navodi do 17). Format: prefiksi (0–4 bajta), operacioni kod (1–2 bajta), ModR/M (0–1), SIB (0–1), pomeraj (0, 1, 2 ili 4 bajta) i neposredni operand (0, 1, 2 ili 4 bajta). To je tipičan CISC.</p>
+<p><b>Načini adresiranja kod Pentium-a</b>: trenutno (neposredno), registarsko, direktno (pomeraj), registarsko indirektno (bazno), bazno sa pomerajem, indeksno sa pomerajem (skalirani indeks), bazno-indeksno sa pomerajem, relativno (u odnosu na EIP, kod skokova). Detaljno u <a href="#c16">lekciji 4.3</a>.</p>
+<details class="stop exq" id="k1-78"><summary>Navesti načine kontrole sadržaja BN-a kod Pentium procesora.</summary><div>Sadržaj BN (registra EIP) ne može se direktno menjati instrukcijom prenosa, nego (1) <b>instrukcijama za prenos upravljanja</b>: JMP, uslovni skokovi, CALL, RET (RETURN), LOOP; (2) <b>prekidima</b> (hardverskim i softverskim, INT i IRET); (3) <b>izuzecima</b> (exceptions), koji nastaju pri greškama u izvršavanju instrukcija.</div></details>
+<details class="stop exq" id="k1-87"><summary>Koji se registar kod Intel Pentium (IA-32) procesora koristi kao a) akumulator, b) U/I pokazivač, c) brojač naredbi? Kolike su AX, AH i AL ako je EAX = 12345678h?</summary><div>a) akumulator: <b>EAX</b>; b) U/I pokazivač: <b>EDX</b>; c) brojač naredbi: <b>EIP</b>. Za EAX = 12345678h: <b>AX = 5678h</b> (donjih 16 bitova), <b>AH = 56h</b> (gornji bajt AX), <b>AL = 78h</b> (donji bajt AX).</div></details>
+
+<h3>IA-64 (Itanium): eksplicitni paralelizam</h3>
+<p>IA-64 je arhitektura koju su Intel i HP razvili kao naslednika x86 (prvi Itanium 2001). Nije uspela na tržištu (AMD-ov x86-64 je pobedio jer je bio kompatibilan unazad), ali se na ispitu pita jer ima zanimljive ideje. Osnovna ideja je <b>EPIC</b> (Explicitly Parallel Instruction Computing): <em>kompajler</em>, a ne procesor, unapred odlučuje koje instrukcije mogu da se izvrše paralelno, i pakuje ih zajedno. Instrukcije se pakuju u <b>snopove</b> (bundle) od 128 bita: tri instrukcije po 41 bit i 5-bitni šablon (template) koji kaže kojim izvršnim jedinicama idu.</p>
+<p><b>Tipovi izvršnih jedinica u IA-64:</b></p>
+<div class="tbl"><table>
+<tr><th>Jedinica</th><th>Šta izvršava</th></tr>
+<tr><td><b>I-jedinica</b> (integer)</td><td>celobrojna aritmetika, logičke instrukcije, poređenja, pomeranja, multimedijalne (SIMD) instrukcije</td></tr>
+<tr><td><b>M-jedinica</b> (memory)</td><td>učitavanje i skladištenje podataka između registara i memorije (LD, ST), a može i jednostavnu celobrojnu aritmetiku</td></tr>
+<tr><td><b>B-jedinica</b> (branch)</td><td>instrukcije grananja (skokovi, pozivi, povratak)</td></tr>
+<tr><td><b>F-jedinica</b> (floating-point)</td><td>instrukcije za rad u pokretnom zarezu</td></tr>
+</table></div>
+<p><b>Spekulativno učitavanje (speculation)</b>: memorija je spora, pa IA-64 dozvoljava da se podatak iz memorije <b>učita pre nego što je programu potreban</b>, čak i pre grananja od kog zavisi da li će uopšte biti potreban. Instrukcija <code>ld.s</code> (spekulativni load) se pomeri ranije u kodu; ako učitavanje izazove grešku, greška se ne prijavljuje odmah nego se označi bitom NaT (Not a Thing) u registru, a instrukcija <code>chk.s</code> na mestu gde je podatak stvarno potreban proverava da li je sve u redu. Tako se sakriva kašnjenje memorije.</p>
+<p><b>Predikacija</b>: umesto uslovnog skoka, obe grane if-a se izvrše, ali svaka instrukcija ima <b>predikatski registar</b> (jedan od 64 jednobitna, p0–p63); rezultat se upisuje samo ako je predikat 1. Nema skoka, pa nema kontrolnog hazarda (Modul 6). Pomenuto i kod Itanium registara u <a href="#c20">lekciji 5.3</a>: 128 opštih, 128 FP, 64 predikatska, 8 registara grananja.</p>
+<p><b>Instrukcije u IA-64</b> (grupe): aritmetičke (add, sub), logičke (and, or, xor), pomeranja (shl, shr), poređenja (cmp, postavljaju predikate), pristup memoriji (ld, st, xchg), prenos među registrima (mov), skokovi (br), SIMD instrukcije (padd, psub: paralelno sabiranje i oduzimanje više manjih brojeva u jednom registru) i instrukcije za realne brojeve.</p>
+<details class="stop exq" id="k1-65"><summary>IA-64: navesti tipove izvršnih jedinica, objasniti spekulativno učitavanje i navesti grupe instrukcija.</summary><div><b>Izvršne jedinice:</b> I-jedinica (celobrojna aritmetika, logičke instrukcije, poređenja, pomeranja), M-jedinica (učitava i skladišti podatke između registara i memorije), B-jedinica (instrukcije grananja), F-jedinica (instrukcije u pokretnom zarezu). <b>Spekulativno učitavanje</b> omogućava procesoru da podatke iz memorije učita pre nego što budu potrebni programu (i pre grananja od kog zavise), da bi se izbeglo kašnjenje spore memorije; eventualna greška se odlaže (NaT bit) i proverava tek kad se podatak koristi (chk.s). <b>Grupe instrukcija:</b> aritmetičke (add, sub), logičke (and, or, xor), pomeranja (shl, shr), poređenja (cmp), pristup memoriji (ld, st, xchg), prenos među registrima (mov), skokovi (br), SIMD (padd, psub) i instrukcije za realne brojeve. Instrukcije se pakuju po tri u 128-bitne snopove (EPIC), a koristi se i predikacija.</div></details>
+
+<h3>Kompatibilnost naniže</h3>
+<p>Procesor je <b>kompatibilan „naniže“</b> (backward compatible, downward compatible) ako može da izvršava prevedeni (mašinski) kod napisan za bilo koji prethodni model procesora iste serije. Drugim rečima: viši model u seriji može da izvrši sve sistemske i korisničke programe koji su radili na prethodnim modelima. Svaki novi Intel procesor i danas izvršava instrukcije 8086 iz 1978. To je postignuto tako što se <b>ISA samo proširuje</b>, nikad ne menja (8086 → 80386 dodao je E-registre, x86-64 dodao je R-registre, a stari nazivi i instrukcije su ostali, <a href="#c18">lekcija 5.1</a>). Cena: složen dekoder i nasleđene, retko korišćene instrukcije. Mikroprogramiranje je istorijski omogućavalo kompatibilnost serije (<a href="#c23">lekcija 6.2</a>).</p>
+<details class="stop exq" id="k1-22"><summary>Objasniti šta znači za procesore kompatibilnost „naniže“.</summary><div>Kompatibilnost „naniže“ (backward ili downward compatible) znači da je procesor u mogućnosti da izvršava prevedeni kod za bilo koji prethodni model procesora iste serije, tj. da viši model u istoj seriji može da izvršava sve sistemske i korisničke programe koji su se mogli izvršiti na prethodnim modelima. Postiže se tako što novi model zadržava ceo skup instrukcija, registre i načine adresiranja prethodnih (ISA se samo proširuje). Primer: savremeni x86 procesori izvršavaju programe pisane za 8086, 80386 i Pentium.</div></details>
+
+<h3>Ekvivalencija hardvera i softvera</h3>
+<p><b>Sve što se može uraditi pomoću softvera može se takođe uraditi i pomoću hardvera, i sve što se može uraditi pomoću hardvera može se uraditi i pomoću softvera.</b> Ovaj princip ne govori o brzini implementacije: hardverske implementacije su skoro uvek brže od softverskih. <b>Izbor</b> između hardverskog i softverskog rešenja zavisi od faktora kao što su <b>cena, brzina, pouzdanost i učestanost očekivanih promena</b>.</p>
+<div class="ex">Množenje: rani procesori nisu imali instrukciju MUL, pa je množenje bila softverska rutina (niz sabiranja i pomeranja). Danas je to hardverska jedinica. Obrnuto: dekodiranje videa se nekad radilo samo softverski, a danas grafičke kartice imaju hardverske dekodere. Mikroprogramiranje je baš na ovoj granici: instrukcija je realizovana „softverom“ (mikroprogramom) unutar hardvera. Otud i <b>firmver</b>.</div>
+<details class="stop exq" id="k1-66"><summary>Objasniti princip ekvivalencije hardvera i softvera.</summary><div>Sve što se može uraditi pomoću softvera može se uraditi i pomoću hardvera, i sve što se može uraditi pomoću hardvera može se uraditi i pomoću softvera. Princip ne govori o brzini: hardverske implementacije su skoro uvek brže od softverskih. Izbor između hardverskog i softverskog rešenja zavisi od faktora kao što su cena, brzina, pouzdanost i učestanost očekivanih promena (softver se lakše menja).</div></details>
+
+<h3>Od izvornog koda do programa u memoriji</h3>
+<p><b>Veza između višeg jezika i mašinskog jezika je 1 : n</b>: jedna naredba višeg programskog jezika prevodi se u više (n) mašinskih instrukcija (npr. <code>b += a</code> u C-u postaje nekoliko instrukcija LOAD/ADD/STORE). Veza asemblera i mašinskog jezika je 1 : 1.</p>
+<p><b>Mogućnosti prevođenja</b> koda sa višeg jezika na mašinski:</p>
+<div class="tbl"><table>
+<tr><th>Način</th><th>Kako</th><th>Primeri</th></tr>
+<tr><td><b>Kompajler</b> (programski prevodilac)</td><td>prevodi ceo program odjednom, pre izvršavanja; dobija se izvršni fajl</td><td>C, C++, Pascal, Go, Rust</td></tr>
+<tr><td><b>Interpreter</b></td><td>prevodi i izvršava naredbu po naredbu, dok program radi</td><td>Perl, JavaScript (prvobitno), Python, BASIC, shell</td></tr>
+<tr><td><b>Hibridno</b></td><td>kompajler prevodi u međukod (bajtkod), a njega izvršava interpreter ili JIT prevodilac virtuelne mašine</td><td>Java (bajtkod + JVM), C# (.NET CLR)</td></tr>
+</table></div>
+<p>Posle prevođenja: <b>povezivač</b> (linker) spaja prevedene module i biblioteke u jedan program; <b>program za punjenje</b> (loader) se koristi kada korisnik sistema zahteva izvršavanje prevedenog i povezanog programa: učitava ga sa diska u glavnu memoriju, podešava adrese (relokacija, ako program nije preveden za tačnu adresu na koju se puni) i predaje mu upravljanje (upisuje adresu prve instrukcije u BN). Ceo put je u <a href="#c12">lekciji 3.3</a>.</p>
+<p><b>Dekompozicija softvera</b>:</p>
+<div class="tree"><pre>Softver
+├── Aplikativni softver (programi za korisnike: obrada teksta, igre, baze podataka, pregledač)
+└── Sistemski softver
+     ├── Prevodioci (kompajleri, interpreteri)
+     ├── Asembleri
+     ├── Povezivači i programi za punjenje (linker, loader)
+     └── Operativni sistemi
+          ├── upravljanje procesima i procesorom
+          ├── upravljanje memorijom (virtuelna memorija)
+          ├── sistemi datoteka (fajl sistemi)
+          └── upravljanje U/I uređajima</pre></div>
+<details class="stop exq" id="k1-100"><summary>Koja veza postoji između instrukcija višeg jezika i mašinskog jezika, i koje mogućnosti postoje kod prevođenja?</summary><div>Veza je <b>1 : n</b>: jedna naredba višeg programskog jezika odgovara većem broju mašinskih instrukcija. Prevođenje je moguće: <b>pomoću kompajlera</b> (programskog prevodioca koji prevodi ceo program odjednom, npr. C, C++), <b>pomoću interpretera</b> (prevodi i izvršava instrukciju po instrukciju, npr. Perl, JavaScript, Python) i <b>hibridno</b> (kompajler prevodi u međukod koji izvršava interpreter ili virtuelna mašina, npr. Java i JVM).</div></details>
+<details class="stop exq" id="k1-101"><summary>Prikazati dekompoziciju softvera.</summary><div>Softver se deli na <b>aplikativni</b> i <b>sistemski</b>. Sistemski softver čine <b>prevodioci</b> (kompajleri, interpreteri), <b>asembleri</b> (i povezivači i programi za punjenje) i <b>operativni sistemi</b>. Delovi operativnog sistema su upravljanje procesima, <b>virtuelna memorija</b> (upravljanje memorijom), <b>sistemi datoteka</b> i upravljanje <b>U/I uređajima</b>.</div></details>
+<details class="stop exq" id="k1-67"><summary>Šta je program za punjenje (loader)?</summary><div>Program za punjenje („loader“) je deo sistemskog softvera koji se koristi kada korisnik sistema zahteva izvršavanje prevedenog i povezanog programa: učitava izvršni program sa diska u glavnu memoriju, po potrebi prilagođava adrese u programu stvarnom mestu u memoriji (relokacija), i predaje mu upravljanje upisom adrese prve instrukcije u brojač naredbi.</div></details>
+
+<h3>Malo logike: tabele istinitosti i zakon apsorpcije</h3>
+<p>Logička kola računara rade po zakonima Bulove algebre. Zakon <b>apsorpcije</b> kaže:</p>
+<div class="formula">X + X·Y = X &nbsp;&nbsp;&nbsp;&nbsp;i&nbsp;&nbsp;&nbsp;&nbsp; X·(X + Y) = X</div>
+<p>(„+“ je ILI/OR, „·“ je I/AND.) Dokaz tabelom istinitosti: napravimo sve kombinacije X i Y i uporedimo kolonu leve strane sa kolonom X.</p>
+<div class="tbl"><table>
+<tr><th>X</th><th>Y</th><th>X·Y</th><th>X + X·Y</th><th>X + Y</th><th>X·(X + Y)</th></tr>
+<tr><td>0</td><td>0</td><td>0</td><td><b>0</b></td><td>0</td><td><b>0</b></td></tr>
+<tr><td>0</td><td>1</td><td>0</td><td><b>0</b></td><td>1</td><td><b>0</b></td></tr>
+<tr><td>1</td><td>0</td><td>0</td><td><b>1</b></td><td>1</td><td><b>1</b></td></tr>
+<tr><td>1</td><td>1</td><td>1</td><td><b>1</b></td><td>1</td><td><b>1</b></td></tr>
+</table></div>
+<p>Kolone X + X·Y i X·(X + Y) su u svim redovima jednake koloni X (0, 0, 1, 1), pa su izrazi jednaki. Intuicija: ako je X = 1, cela suma je 1 bez obzira na Y; ako je X = 0, onda je i X·Y = 0.</p>
+<details class="stop exq" id="k1-72"><summary>Korišćenjem tabele istinitosti dokazati zakon apsorpcije X + X·Y = X.</summary><div>Tabela za sve kombinacije: X=0,Y=0: X·Y=0, X+X·Y=0; X=0,Y=1: X·Y=0, X+X·Y=0; X=1,Y=0: X·Y=0, X+X·Y=1; X=1,Y=1: X·Y=1, X+X·Y=1. Kolona X+X·Y (0,0,1,1) je u svakom redu jednaka koloni X (0,0,1,1), pa je X + X·Y = X. Analogno se dokazuje dualni oblik X·(X + Y) = X.</div></details>
+
+<h3>Brojevi: heksadecimalni sistem i drugi komplement</h3>
+<p><b>Prevođenje iz heksadecimalnog u dekadni</b>: svaka cifra se množi stepenom broja 16 prema poziciji (A = 10, B = 11, C = 12, D = 13, E = 14, F = 15).</p>
+<pre>C12 (hex) = 12·16² + 1·16¹ + 2·16⁰ = 12·256 + 16 + 2 = 3072 + 18 = 3090 (dek)</pre>
+<p>Iz dekadnog u heksadecimalni: uzastopno deljenje sa 16, ostaci odozdo nagore. Iz binarnog u heksadecimalni: grupe od po 4 bita (1100 0001 0010 = C12). Ako je „C12“ zadat kao <b>12-bitni broj u drugom komplementu</b>, najviši bit je 1, pa je broj negativan: −(1000 0000 0000 − 1100 0001 0010) = −(0011 1110 1110) = −3EE = <b>−1006</b>.</p>
+<p><b>Drugi komplement</b> je način zapisa negativnih celih brojeva koji koriste svi procesori. Za n bita: pozitivni brojevi se pišu normalno (najviši bit 0), a −x se dobija tako što se <b>invertuju svi bitovi x i doda 1</b>. Opseg je od −2<sup>n−1</sup> do 2<sup>n−1</sup> − 1 (za 8 bita: −128 do 127). Prednost: sabiranje i oduzimanje rade isto za pozitivne i negativne brojeve, pa ALU ne treba posebna kola.</p>
+<pre>+5 = 0000 0101
+invertuj → 1111 1010
+dodaj 1  → 1111 1011 = −5        provera: 0000 0101 + 1111 1011 = (1)0000 0000 = 0 ✓</pre>
+<details class="stop"><summary>Prevesti broj C12 (heksadecimalno) u dekadni.</summary><div>C12<sub>16</sub> = 12·16² + 1·16 + 2 = 3072 + 16 + 2 = <b>3090</b><sub>10</sub> (kao neoznačen broj).</div></details>
+<div class="bridge">Ovim su pokrivena sva teorijska pitanja za prvi kolokvijum. Sledi drugi deo predmeta: operativni sistemi.</div>
+<p class="src">Izvori: A. Tanenbaum, <i>Structured Computer Organization</i>, pogl. 1.1 (hardver i softver su logički ekvivalentni), 5.5 (IA-32), 5.8 (IA-64); Intel Itanium Architecture Software Developer's Manual, Vol. 1; Intel SDM Vol. 1 pogl. 3; D. Simić, P. Bataveljić, <i>Organizacija računara i operativni sistemi</i>, FON 2011.</p>
+<div class="quiz" data-ch="d4"></div></section>

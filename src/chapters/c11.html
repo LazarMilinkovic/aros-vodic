@@ -1,0 +1,173 @@
+<section class="ch" id="c11">
+<div class="ch-head"><span class="ch-num">M3</span><span class="ch-src">Modul 3 · deo 2 od 4 · M3_01, slajdovi 12–42</span></div>
+<h2>Jedna instrukcija korak po korak: mikrooperacije, faze i ciklus</h2>
+
+<h3>Najvažnija slika Modula 3 (slajd 12)</h3>
+<figure class="slide"><img src="img/m3a-12.jpg" alt="Izvršavanje instrukcija na primeru programa za sabiranje brojeva" loading="lazy"><figcaption><b>Slajd 12 · Izvršavanje instrukcija na primeru programa za sabiranje brojeva</b></figcaption></figure>
+<p>Ovu sliku profesor detaljno prolazi na tabli, jer je na njoj ceo naš program u pokretu. Čitaj je deo po deo:</p>
+<ul>
+<li><strong>Memorija</strong> (sredina levo) ima lokacije 0–15. Program je ovde smešten na adrese <strong>4–7</strong> (LOAD 8, ADD 9, STORE 10, HALT), a podaci na <strong>8, 9, 10</strong> (20, 60, a posle izvršenja 80).</li>
+<li><strong>Brojač naredbi</strong> (gore desno) prikazuje sve vrednosti kroz koje prolazi: 4, 5, 6, 7, jednu po instrukciji.</li>
+<li><strong>Adresni registar memorije</strong> (gore) prikazuje redom sve adrese koje su u njega upisane: <strong>4, 8, 5, 9, 6, 10, 7</strong>. Zapamti ovaj niz, jer pokazuje ritam rada: naizmenično adresa instrukcije pa adresa podatka. Linija <em>adresa instrukcije</em> dolazi iz brojača naredbi, a linija <em>adresa podataka</em> iz adresnog dela registra instrukcija.</li>
+<li><strong>Prihvatni registar memorije</strong> (dole levo) prima redom sve što je pročitano: instrukciju LOAD 8, podatak 20, instrukciju ADD 9, podatak 60, instrukciju STORE 10, a pri upisu sadrži 80.</li>
+<li>Instrukcije odatle idu desno u <strong>registar instrukcija</strong>, a opkod iz njega u <strong>dekoder operacionog koda</strong>. Podaci idu dole u <strong>A/L jedinicu</strong> i <strong>akumulator</strong>, koji redom sadrži 20, pa 80.</li>
+</ul>
+<details class="stop"><summary>Zašto se adresa 7 pojavljuje u adresnom registru memorije, a adresa 11 ne?</summary><div>Na adresi 7 je instrukcija HALT, koja mora da se donese da bi se izvršila. HALT nema operand, pa posle nje nema pristupa podatku. Adresa 11 se nigde u programu ne koristi.</div></details>
+
+<h3>Šta se tačno dešava: mikrooperacije (slajd 13)</h3>
+<p>Slika 12 pokazuje <em>šta</em> prolazi kroz registre. Slajd 13 kaže <em>kojim redom</em>. Svaka instrukcija se izvršava kroz niz sitnih koraka koji se zovu <strong>mikrooperacije</strong>; svaki je jedno prebacivanje između registara ili jedno čitanje memorije. Evo ih za prvu instrukciju našeg programa, LOAD 8, sa adrese 4:</p>
+<div class="tbl"><table>
+<tr><th>#</th><th>Mikrooperacija</th><th>Šta se dešava</th><th>Faza</th></tr>
+<tr><td class="num">1</td><td><code>ARM ← S(BN)</code></td><td>Adresa instrukcije (iz BN, ovde 4) se upiše u adresni registar memorije</td><td rowspan="4">Donošenje (fetch)</td></tr>
+<tr><td class="num">2</td><td><code>PRM ← S(S(ARM))</code></td><td>Memorija pročita lokaciju čija je adresa u ARM i stavi instrukciju u PRM. Dvostruko S znači: „sadržaj lokacije čija adresa je sadržaj ARM“</td></tr>
+<tr><td class="num">3</td><td><code>RN ← S(PRM)</code></td><td>Instrukcija se prebaci u registar naredbi</td></tr>
+<tr><td class="num">4</td><td><code>BN ← S(BN) + 1</code></td><td>BN se poveća za 1 (sada je 5); tako se obezbeđuje automatski prelazak na sledeću instrukciju</td></tr>
+<tr><td class="num">5</td><td>ANALIZIRAJ</td><td>Dekoder pročita opkod 0001 i zaključi: LOAD</td><td>Dekodiranje</td></tr>
+<tr><td class="num">6</td><td><code>ARM ← S(RNA)</code></td><td>Adresni deo instrukcije (RNA = adresni deo RN, ovde 8) ide u ARM</td><td rowspan="3">Izvršavanje</td></tr>
+<tr><td class="num">7</td><td><code>PRM ← S(S(ARM))</code></td><td>Memorija pročita lokaciju 8; podatak 20 stiže u PRM</td></tr>
+<tr><td class="num">8</td><td><code>AK ← S(PRM)</code></td><td>Podatak se upiše u akumulator</td></tr>
+</table></div>
+<p>Prva četiri koraka su ista za <strong>svaku</strong> instrukciju: tako se instrukcija donosi. Razlikuje se samo ono posle dekodiranja. Za ADD 9 bi poslednji korak bio <code>AK ← S(AK) + S(PRM)</code> (sabiranje u ALU), a za STORE 10 bi se podatak kretao obrnuto: <code>PRM ← S(AK)</code>, pa upis u memoriju na adresu iz ARM.</p>
+<div class="simple">Primeti: procesor <strong>nikada</strong> ne pristupa memoriji direktno iz bilo kog registra. Uvek ide preko para ARM (adresa) i PRM (podatak). To su „vrata“ procesora prema memoriji, i upravo ih vidiš kao dve kolone na slici 12.</div>
+<details class="stop"><summary>Napiši mikrooperacije za izvršni deo instrukcije ADD 9 (posle dekodiranja).</summary><div><code>ARM ← S(RNA)</code> (adresa 9 u ARM), <code>PRM ← S(S(ARM))</code> (podatak 60 u PRM), <code>AK ← S(AK) + S(PRM)</code> (ALU sabira 20 + 60, u akumulatoru je 80).</div></details>
+
+<div class="bridge">Osam mikrooperacija za jednu jednostavnu instrukciju. Kod složenijih instrukcija (sa više operanada, sa upisom u memoriju, sa prekidima) koraka ima više. Kako se svi ti koraci mogu opisati jednim opštim modelom koji važi za svaku instrukciju?</div>
+
+<h3>Modeli izvršavanja: 3, 8 i 9 faza (slajdovi 14–16)</h3>
+<p>Slajd 14 kaže da izvršavanje instrukcije obuhvata više koraka, ili <strong>faza</strong>. Najjednostavniji model ima <strong>3 faze</strong>: <strong>donošenje</strong> (fetch), <strong>dekodiranje</strong> (decode) i <strong>izvršavanje</strong> (execute). Naših osam mikrooperacija se uklapa u njega: koraci 1–4 su donošenje, 5 je dekodiranje, 6–8 izvršavanje. Ali „izvršavanje“ tu krije mnogo toga, pa udžbenik koristi detaljniji model sa <strong>9 faza</strong>:</p>
+<div class="tbl"><table>
+<tr><th class="num">#</th><th>Faza</th><th>Engleski (sa slike)</th><th>Objašnjenje</th></tr>
+<tr><td class="num">1</td><td>Donošenje instrukcije iz memorije u procesor</td><td>Instruction fetch</td><td>MAR ← PC, čitanje, IR ← MBR</td></tr>
+<tr><td class="num">2</td><td>Dekodiranje operacionog koda</td><td>Instruction operation decoding</td><td>Šta treba uraditi i koliko operanada ima</td></tr>
+<tr><td class="num">3</td><td>Izračunavanje adrese operanda</td><td>Operand address calculation</td><td>Zavisi od načina adresiranja (Modul 4)</td></tr>
+<tr><td class="num">4</td><td>Donošenje operanda iz memorije</td><td>Operand fetch</td><td>Ako ima više operanada, faze 3–4 se ponove</td></tr>
+<tr><td class="num">5</td><td>Izvršavanje instrukcije</td><td>Data operation</td><td>ALU radi operaciju</td></tr>
+<tr><td class="num">6</td><td>Izračunavanje adrese za upis rezultata</td><td>Operand address calculation</td><td>Gde ide rezultat</td></tr>
+<tr><td class="num">7</td><td>Upisivanje rezultata u memoriju</td><td>Operand store</td><td>Ako ima više rezultata, faze 6–7 se ponove</td></tr>
+<tr><td class="num">8</td><td>Provera da li postoji prekid</td><td>Interrupt check</td><td>Ako je stigao zahtev za prekid, ide se na obradu prekida</td></tr>
+<tr><td class="num">9</td><td>Izračunavanje adrese sledeće instrukcije</td><td>Instruction address calculation</td><td>Obično PC + 1 (ili + dužina instrukcije); kod skoka nova adresa</td></tr>
+</table></div>
+<p>Model sa 8 faza (slajd 15) je isti, samo bez provere prekida. Faze nisu obavezne za svaku instrukciju: LOAD 8 ima donošenje operanda, ali nema upis rezultata u memoriju; STORE 10 ima upis, ali ne donosi operand iz memorije; HALT nema nijedan operand.</p>
+<div class="slides2">
+<figure class="slide"><img src="img/m3a-15.jpg" alt="Dijagram stanja za ciklus instrukcija 8 faza" loading="lazy"><figcaption><b>Slajd 15 · Dijagram stanja, 8 faza</b></figcaption></figure>
+<figure class="slide"><img src="img/m3a-16.jpg" alt="Dijagram stanja za ciklus instrukcija 9 faza" loading="lazy"><figcaption><b>Slajd 16 · Dijagram stanja, 9 faza</b></figcaption></figure>
+</div>
+<p>Slajdovi 15 i 16 crtaju faze kao <strong>dijagram stanja</strong>: svaki krug je jedno stanje (faza), a strelice su prelazi. Crvena strelica označava <strong>prvu fazu</strong>. Gornji red krugova su faze u kojima se <strong>pristupa memoriji</strong> (instruction fetch, operand fetch, operand store); donji red su faze <strong>unutar procesora</strong> (računanje adresa, dekodiranje, operacija). Tri petlje na dijagramu treba da prepoznaš: <em>Multiple operands</em> (između 3 i 4: ako instrukcija ima više operanada, vrati se i donesi sledeći), <em>Multiple results</em> (između 6 i 7: više rezultata) i <em>Return for string or vector data</em> (iz 5 nazad na 3: instrukcija koja radi nad nizom ponavlja to za svaki element). Na slajdu 16 je dodata faza 8, <strong>Interrupt check</strong>: ako nema prekida (<em>No interrupt</em>), ide se na fazu 9 i sledeću instrukciju; ako ima (<em>Interrupt</em>), ide se u stanje <strong>Interrupt</strong> (obrada prekida, Modul 4), pa tek onda na sledeću instrukciju.</p>
+<p>U infografici ispod pusti kroz dijagram svaku instrukciju našeg programa i gledaj koje faze preskače:</p>
+<div class="lab" id="cycLab"><div class="lab-title">Infografika: prođi kroz 9 faza sa pravom instrukcijom</div>
+<div class="row"><label for="cycSel">Instrukcija</label>
+<select id="cycSel">
+<option value="load">LOAD 8 (akumulatorska mašina)</option>
+<option value="add">ADD 9</option>
+<option value="store">STORE 10</option>
+<option value="halt">HALT</option>
+<option value="mm">ADD A, B, C (memorija–memorija, VAX)</option>
+</select>
+<label><input type="checkbox" id="cycInt"> stigao je zahtev za prekid</label></div>
+<div class="sx"><svg id="cycSvg" class="rsvg" viewBox="0 0 640 230" role="img" aria-label="Dijagram stanja ciklusa instrukcije"></svg></div>
+<div class="row"><button class="btn" id="cycNext" type="button">Sledeća faza</button><button class="btn ghost" id="cycReset" type="button">Ispočetka</button><span class="score" id="cycCount"></span></div>
+<div class="simlog" id="cycLog"></div>
+<p class="score" style="margin:4px 0 0">Gornji red: faze u kojima se pristupa memoriji. Donji red: faze unutar procesora. Sivo: faze koje ova instrukcija preskače.</p>
+</div>
+<details class="stop"><summary>Koje faze od 9 prolazi instrukcija STORE 10 na akumulatorskoj mašini?</summary><div>1 (donošenje), 2 (dekodiranje), 6 (adresa rezultata, 10), 7 (upis akumulatora u memoriju), 8 (provera prekida) i 9 (adresa sledeće). Faze 3, 4 i 5 preskače: nema operanda iz memorije niti računanja u ALU.</div></details>
+
+<div class="bridge">Do sada je naša mašina znala samo osam instrukcija. Pravi procesori imaju stotine. Kakve sve vrste instrukcija postoje, i kako izgleda program na mašini koja ima i registre opšte namene, a ne samo akumulator?</div>
+
+<h3>Kakve sve instrukcije postoje (slajdovi 17–18)</h3>
+<div class="slides2">
+<figure class="slide"><img src="img/m3a-17.jpg" alt="Primer skupa instrukcija" loading="lazy"><figcaption><b>Slajd 17 · Primer skupa instrukcija</b></figcaption></figure>
+<figure class="slide"><img src="img/m3a-18.jpg" alt="Primer skupa instrukcija nastavak" loading="lazy"><figcaption><b>Slajd 18 · Nastavak</b></figcaption></figure>
+</div>
+<p>Slajdovi 17 i 18 su tabela iz Stallingsove knjige sa tipičnim instrukcijama, podeljenim u grupe. Grupe vredi zapamtiti, jer svaka odgovara jednoj od četiri funkcije računara iz Modula 1: prenos podataka i U/I su <em>prenos</em>, aritmetičke i logičke su <em>obrada</em>, a prenos upravljanja je <em>upravljanje</em>.</p>
+<div class="tbl"><table>
+<tr><th>Grupa</th><th>Instrukcija</th><th>Šta radi</th></tr>
+<tr><td rowspan="8"><strong>Prenos podataka</strong><br>(Data Transfer)</td><td>Move (transfer)</td><td>Prenosi reč ili blok sa izvora na odredište</td></tr>
+<tr><td>Store</td><td>Prenosi reč iz procesora u memoriju</td></tr>
+<tr><td>Load (fetch)</td><td>Prenosi reč iz memorije u procesor</td></tr>
+<tr><td>Exchange</td><td>Zameni sadržaje izvora i odredišta</td></tr>
+<tr><td>Clear (reset)</td><td>Upiše sve nule</td></tr>
+<tr><td>Set</td><td>Upiše sve jedinice</td></tr>
+<tr><td>Push</td><td>Stavi reč na vrh steka</td></tr>
+<tr><td>Pop</td><td>Skini reč sa vrha steka</td></tr>
+<tr><td rowspan="2"><strong>Aritmetičke</strong></td><td>Add, Subtract, Multiply, Divide</td><td>Zbir, razlika, proizvod, količnik dva operanda</td></tr>
+<tr><td>Absolute, Negate, Increment, Decrement</td><td>Apsolutna vrednost, promena znaka, +1, −1</td></tr>
+<tr><td rowspan="4"><strong>Logičke</strong></td><td>AND, OR, NOT, XOR</td><td>Logičke operacije bit po bit</td></tr>
+<tr><td>Test, Compare</td><td>Proveri uslov ili uporedi; postavi zastavice prema rezultatu (rezultat se ne upisuje)</td></tr>
+<tr><td>Set Control Variables</td><td>Podešavanja za zaštitu, prekide, tajmer</td></tr>
+<tr><td>Shift, Rotate</td><td>Pomeranje bitova levo/desno. Shift na kraj ubacuje konstantu (0); Rotate ubacuje bit koji je ispao sa drugog kraja („u krug“)</td></tr>
+<tr><td rowspan="7"><strong>Prenos upravljanja</strong><br>(Transfer of Control)</td><td>Jump (branch)</td><td>Bezuslovni skok: upiši zadatu adresu u PC</td></tr>
+<tr><td>Jump Conditional</td><td>Proveri uslov; ako važi upiši adresu u PC, ako ne, ne radi ništa</td></tr>
+<tr><td>Jump to Subroutine</td><td>Sačuvaj trenutno stanje (adresu povratka) na poznato mesto i skoči na potprogram</td></tr>
+<tr><td>Return</td><td>Vrati PC i druge registre sa sačuvanog mesta (povratak iz potprograma)</td></tr>
+<tr><td>Execute</td><td>Izvrši operand kao instrukciju, bez menjanja PC</td></tr>
+<tr><td>Skip, Skip Conditional</td><td>Preskoči sledeću instrukciju (PC + 1), bezuslovno ili uslovno</td></tr>
+<tr><td>Halt, Wait, No operation</td><td>Zaustavi; čekaj dok se ne ispuni uslov; ne radi ništa (ali nastavi)</td></tr>
+<tr><td rowspan="2"><strong>Ulaz/izlaz</strong></td><td>Input, Output</td><td>Prenos podatka sa U/I porta u memoriju ili registar i obrnuto</td></tr>
+<tr><td>Start I/O, Test I/O</td><td>Pokreni U/I operaciju na U/I procesoru; pročitaj status U/I sistema</td></tr>
+<tr><td><strong>Konverzija</strong></td><td>Translate, Convert</td><td>Prevedi vrednosti preko tabele; pretvori iz jednog oblika u drugi (npr. pakovani decimalni u binarni)</td></tr>
+</table></div>
+<p>Posebno obrati pažnju na <strong>prenos upravljanja</strong>. To su jedine instrukcije koje menjaju BN drugačije nego „+1“, i upravo one omogućavaju petlje i odluke (if). Bez njih bi svaki program bio samo prav niz koraka.</p>
+
+<h3>Mašina sa registrima i njen skup instrukcija (slajd 19)</h3>
+<figure class="slide"><img src="img/m3a-19.jpg" alt="Primer skupa instrukcija sa registrima" loading="lazy"><figcaption><b>Slajd 19 · Skup instrukcija koji se koristi u primeru izvršavanja</b></figcaption></figure>
+<p>Za primer izvršavanja koji sledi, slajd 19 uvodi nešto bogatiju mašinu: pored akumulatora ima i <strong>registre opšte namene</strong> R1 i R2. Imena instrukcija su skraćenice koje se čitaju kao „odakle-kuda“:</p>
+<div class="tbl"><table>
+<tr><th>Instrukcija</th><th>Opis</th></tr>
+<tr><td><code>INP val mem</code></td><td>Upiši brojnu vrednost val u lokaciju mem</td></tr>
+<tr><td><code>MAM mem</code></td><td>Kopiraj iz <strong>A</strong>kumulatora u <strong>M</strong>emoriju (M-A-M)</td></tr>
+<tr><td><code>MMR mem reg</code></td><td>Kopiraj iz <strong>M</strong>emorije u <strong>R</strong>egistar</td></tr>
+<tr><td><code>MRA reg</code></td><td>Kopiraj iz <strong>R</strong>egistra u <strong>A</strong>kumulator</td></tr>
+<tr><td><code>MAR reg</code></td><td>Kopiraj iz <strong>A</strong>kumulatora u <strong>R</strong>egistar (ovo nije registar MAR!)</td></tr>
+<tr><td><code>ADD / SUB / MUL / DIV reg1 reg2</code></td><td>reg1 op reg2, rezultat u akumulator</td></tr>
+<tr><td><code>JMP mem</code></td><td>Bezuslovni skok na mem (postavlja BN = mem − 1, jer će se BN posle povećati za 1)</td></tr>
+<tr><td><code>JPZ mem</code></td><td>Skok ako je AK = 0</td></tr>
+<tr><td><code>JPN mem</code></td><td>Skok ako AK ≠ 0</td></tr>
+<tr><td><code>JPL mem</code></td><td>Skok ako je AK &lt; 0</td></tr>
+<tr><td><code>JPG mem</code></td><td>Skok ako je AK &gt; 0</td></tr>
+<tr><td><code>HLT</code></td><td>Kraj programa</td></tr>
+</table></div>
+<p>Na ovoj mašini naša naredba A = B + C (B na adresi 06, C na 07, A na 08) izgleda ovako: <code>MMR 06 R1</code>, <code>MMR 07 R2</code>, <code>ADD R1 R2</code>, <code>MAM 08</code>, <code>HLT</code>. Pet instrukcija umesto četiri, ali sabiranje se sada radi nad registrima, što je u stvarnim procesorima mnogo brže od rada nad memorijom.</p>
+<div class="task"><b>Vežba: napiši program sa uslovnim skokom</b>Brojevi su na adresama 10 i 11. Izračunaj S(10) − S(11). Ako je razlika 0, upiši 1 na adresu 13; inače upiši razliku na adresu 12.
+<pre>00: MMR 10 R1
+01: MMR 11 R2
+02: SUB R1 R2      AK = R1 − R2
+03: JPZ 06         ako je AK = 0, sledeća instrukcija je ona na 06
+04: MAM 12         inače upiši razliku u 12
+05: HLT
+06: INP 1 13       upiši 1 u 13
+07: HLT</pre>
+Primeti kako JPZ menja redosled izvršavanja: umesto 03 → 04, ide 03 → 06. Na slajdu stoji da JMP postavlja BN = mem − 1: to je zato što se posle izvršenja BN automatski poveća za 1, pa sledeća instrukcija bude baš ona na adresi mem.</div>
+
+<h3>Ceo program u pokretu (slajdovi 20–40)</h3>
+<figure class="slide"><img src="img/m3a-20.jpg" alt="Primer izvršavanja programa" loading="lazy"><figcaption><b>Slajd 20 · Primer izvršavanja programa</b></figcaption></figure>
+<p>Slajdovi 20–40 su jedna animacija od 21 slike: isti crtež, a na svakom slajdu se pomeri po jedna vrednost. Levo je <strong>memorija</strong> sa programom na adresama 00–04 i podacima 100 i 200 na adresama 06 i 07. Desno je <strong>CPU</strong>: upravljačka jedinica (uzima, dekodira, izvršava instrukcije) sa registrima <strong>BN</strong> i <strong>RN</strong>, A/L jedinica sa registrima <strong>R1</strong>, <strong>R2</strong> i akumulatorom <strong>AC</strong>, i magistrala podataka između njih. Tekst ispod svakog slajda kaže u kom smo koraku.</p>
+<p>Priča počinje pre prve instrukcije (slajd 21): program se pokreće <strong>pomoću operativnog sistema</strong>, koji prebaci instrukcije i podatke u memoriju (to radi loader, videćemo u delu 3) i postavi BN na prvu instrukciju programa, 00. Tek tada počinje da se ponavlja ciklus <strong>„Uzmi – analiziraj – izvrši“</strong>, posle koga se BN poveća. Klikći i prati sve registre:</p>
+<div class="lab" id="simLab">
+<div class="lab-title">Laboratorija: izvrši program korak po korak</div>
+<p style="margin:0 0 8px;font-size:.92rem">Ovo je tačno ono što prikazuje 20 slajdova (20–40). Klikći „Sledeći korak“ i prati BN, RN, R1, R2 i AC. Narandžasto je lokacija na koju pokazuje BN, zeleno ona kojoj se upravo pristupa.</p>
+<div class="sim">
+ <div class="mem" id="simMem" aria-label="Memorija"></div>
+ <div>
+  <div class="phase" id="simPhase"><span>Uzmi</span><span>Analiziraj</span><span>Izvrši</span><span>BN+1</span></div>
+  <div class="regs">
+   <div class="reg" id="rBN"><small>BN (brojač naredbi)</small><b>00</b></div>
+   <div class="reg" id="rRN"><small>RN (registar naredbi)</small><b>–</b></div>
+   <div class="reg" id="rR1"><small>R1</small><b>–</b></div>
+   <div class="reg" id="rR2"><small>R2</small><b>–</b></div>
+   <div class="reg" id="rAC"><small>AC (akumulator)</small><b>–</b></div>
+  </div>
+  <div class="simlog" id="simLog">Program je učitan u memoriju; OS je postavio BN na 00.</div>
+  <div class="row"><button class="btn" id="simNext">Sledeći korak</button><button class="btn ghost" id="simReset">Ispočetka</button><span class="score" id="simCount"></span></div>
+ </div>
+</div>
+</div>
+<p>Pet instrukcija, pet ciklusa, i svaki ima ista četiri koraka. U prvom ciklusu (slajdovi 22–25) instrukcija sa lokacije 00 stiže u RN, upravljačka jedinica je dekodira, vrednost 100 se kopira u R1, a BN postaje 01. U drugom (26–29) isto za 200 i R2. U trećem (30–33) ALU sabira registre i u AC je 300. U četvrtom (34–37) MAM 08 upisuje 300 u memoriju. U petom (38–40) dolazi HLT: kraj programa. Poslednji slajd kaže šta se tada dešava: procesor <strong>pita operativni sistem za sledeću vrednost BN</strong>, to jest za adresu sledećeg programa koji treba izvršiti. Procesor nikad zaista ne „staje“; samo prelazi na drugi program.</p>
+<details class="stop"><summary>Koliko je BN posle izvršenja instrukcije MAM 08, i zašto?</summary><div><strong>04</strong>. MAM 08 je na adresi 03, a posle svakog ciklusa BN se poveća za 1. BN ne zavisi od toga na koju adresu MAM upisuje; to je adresa podatka, ne instrukcije.</div></details>
+
+<h3>Kako to izgleda u pravom procesoru (slajdovi 41–42)</h3>
+<p>Na kraju prvog dela predavanja profesor pokazuje da naš model nije samo školski. Slajd 41 opisuje <strong>Intel Core 2 Duo</strong>: Intelov procesor sa 64-bitnom arhitekturom i x86-64 skupom instrukcija, sa <strong>dva nezavisna jezgra</strong> koja dele do 6 MB L2 keša, razvijen sa novom mikroarhitekturom koja se zove <strong>Core Microarchitecture</strong>.</p>
+<figure class="slide"><img src="img/m3a-42.jpg" alt="Core Microarchitecture" loading="lazy"><figcaption><b>Slajd 42 · Core mikroarhitektura (Intel Core 2 Duo)</b></figcaption></figure>
+<p>Dve identične kolone na slajdu 42 su dva jezgra, a u sredini je zajednički <strong>L2 keš</strong> povezan sa sistemskom magistralom (System Bus). Svako jezgro odozgo nadole prati upravo naš ciklus instrukcije, samo kao stvarne hardverske blokove: <strong>Instruction Fetch and PreDecode</strong> (donošenje i preliminarno dekodiranje), <strong>Instruction Queue</strong> (red instrukcija koje čekaju), <strong>Decode</strong> (dekodiranje; uz njega je <strong>uCode ROM</strong>, mikroprogramska memorija za složene x86 instrukcije, o kojoj više u delu 4), <strong>Rename/Alloc</strong> (preimenovanje registara da bi nezavisne instrukcije mogle paralelno), <strong>Reorder Buffer / Retirement Unit</strong> (instrukcije se izvršavaju van redosleda, a ovde se vraćaju u pravi redosled), <strong>Schedulers</strong> (raspoređivači koji šalju instrukcije izvršnim jedinicama), pa <strong>izvršne jedinice</strong>: FPU, dve ALU, Load i Store. Na dnu je <strong>L1 D-Cache</strong> (keš podataka) i D-TLB. Ovo je superskalarni procesor iz Modula 2: faze se preklapaju (protočna obrada), a više instrukcija se izvršava istovremeno.</p>
+<div class="bridge">Program koji je procesor izvršio bio je u memoriji kao niz bitova, ali ga je neko napisao simbolički (MMR, ADD, MAM) i neko ga je pretvorio u bitove. Ko, i kako? To je asembler, slajdovi 43–45. A pošto procesor stalno čeka memoriju, odmah posle njega dolazi i keš.</div>
+<div class="quiz" data-ch="c11"></div>
+</section>

@@ -1,0 +1,31 @@
+<section class="ch" id="c1">
+<div class="ch-head"><span class="ch-num">M1</span><span class="ch-src">Modul 1 · deo 1 od 6 · Uvod 2025-2026.pdf, slajdovi 1–10</span></div>
+<h2>Šta se zapravo desi kad računar nešto izračuna?</h2>
+<p class="lead">Otvoriš Excel, upišeš ocene 8, 9 i 10, napišeš <code>=AVERAGE(A1:A3)</code> i pritisneš Enter. Za manje od milisekunde na ekranu piše 9. Između tvog pritiska na taster i te devetke desilo se nekoliko miliona sitnih koraka u hardveru. Prvi deo predmeta AROS (Arhitektura računara) je, u suštini, jedno dugačko objašnjenje tih koraka: kako je računar napravljen, kako izvršava program i kako mu delovi međusobno razgovaraju.</p>
+<p>Modul 1 je uvod u tu priču. On ne ulazi u detalje nego postavlja <strong>mapu</strong>: daje pojmove (algoritam, arhitektura, organizacija, apstrakcija, magistrala, Von Neumann) koje ćeš posle sretati u svakom predavanju. Zato ga ovde pričamo redom kojim ga priča i profesor, slajd po slajd, a kroz ceo modul pratimo <strong>jedan isti primer: program koji računa prosek ocena</strong>. Na svakom koraku ćemo se pitati gde je taj program sada i šta mu se dešava.</p>
+
+<h3>Prvo organizacija: ko predaje i kako se polaže (slajdovi 1–8)</h3>
+<p>Predmet drže dr Dejan Simić i dr Bojan Jovanović, uz docente dr Mariju Bogićević-Sretenović i dr Ivana Milenkovića; auditorne vežbe drže i Bojan Marčeta i ostali sa slajda 3. Osnovni udžbenik je D. Simić, P. Bataveljić, <em>Organizacija računara i operativni sistemi</em> (FON, skriptarnica), a materijali su na Teams-u. Dopunska literatura: W. Stallings, <em>Organizacija i arhitektura računara</em>, i D. Milićev, <em>Osnovi operativnih sistema</em>. Ako ti neka tema iz ovog vodiča treba još detaljnije, Stallings je knjiga iz koje su uzete mnoge slike sa predavanja.</p>
+<p>Ispit ima dve nezavisne celine: <strong>teoriju</strong> (pismeni deo) i <strong>laboratorijske vežbe</strong>. Teorija se dalje deli na dva dela: prvi deo pitanja je iz <em>Arhitekture računara</em> (to je ovaj vodič), drugi iz <em>Operativnih sistema</em>. Svaki deo se smatra položenim sa 51 ili više poena.</p>
+<div class="tbl"><table>
+<tr><th>Šta</th><th class="num">Poeni</th><th>Bitno da znaš</th></tr>
+<tr><td>Pismeni deo (teorijski test)</td><td class="num">80</td><td>AR + OS; svaki deo položen sa 51+.</td></tr>
+<tr><td>Test iz laboratorijskih vežbi</td><td class="num">20</td><td>Nezavisan od teorije, može u svakom roku; prag 51 od 100.</td></tr>
+<tr><td>Prisustvo predavanjima</td><td class="num">+10</td><td>Za 10 i više potvrđenih dolazaka.</td></tr>
+<tr><td>Domaći / projekat</td><td class="num">5 / 15</td><td>Samo ako na prvom kolokvijumu imaš 80+. Domaći se brani do kraja decembra.</td></tr>
+</table></div>
+<p>Kolokvijum iz AR se radi u prvoj kolokvijumskoj nedelji i na njega mogu svi upisani studenti, bez preduslova. Ključna zamka: <strong>položen kolokvijum važi samo u januarskom i februarskom roku</strong>. Ako do kraja februara ne završiš sve (oba dela pismenog i lab. vežbe), rezultat kolokvijuma propada. Od januara se pismeni može polagati i deo po deo, a položen deo važi do kraja školske godine.</p>
+<div class="warn">Slajdovi nose oznaku „2024/2025“ i rok „15.01.2024“ za prijavu projekta, dakle preneti su iz ranije godine. Tačne datume za ovu godinu proveri na Teams-u.</div>
+
+<h3>Mapa celog predmeta (slajdovi 9–10)</h3>
+<p>Slajd „Sadržaj predmeta“ nabraja teme jednu ispod druge, pa izgledaju kao spisak nepovezanih stvari. One su zapravo četiri pitanja koja logično slede jedno iz drugog, i baš tim redom ide i ovaj vodič:</p>
+<div class="roadmap">
+<div><b>1</b><span><strong>Šta je računar?</strong> Arhitektura, organizacija, model, osnovne funkcije. <em>Modul 1, ovaj deo vodiča.</em></span></div>
+<div><b>2</b><span><strong>Koliko je brz i kako to merimo?</strong> Performanse, CPU vreme, Amdalov zakon, preklapanje instrukcija. <em>Modul 2.</em></span></div>
+<div><b>3</b><span><strong>Kako izvršava program?</strong> Izvršavanje instrukcija u procesoru, format i tipovi instrukcija, asembler, mikroprogramski nivo. <em>Modul 3.</em></span></div>
+<div><b>4</b><span><strong>Kako razgovara sa memorijom i uređajima?</strong> Magistrale, prekidi, U/I, načini adresiranja. <em>Modul 4.</em></span></div>
+</div>
+<p>Drugi deo predmeta (slajd 10) su operativni sistemi: procesi, upravljanje memorijom, dodela procesora, deadlock (potpuni zastoj), upravljanje i zaštita podataka. To dolazi posle kolokvijuma.</p>
+<div class="bridge">Da bismo razumeli kako računar „računa“ prosek, prvo moramo precizno da kažemo šta uopšte znači izračunati nešto. Tu počinje i profesor, slajdom 11.</div>
+<div class="quiz" data-ch="c1"></div>
+</section>

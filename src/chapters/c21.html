@@ -1,0 +1,146 @@
+<section class="ch" id="c21">
+<div class="ch-head"><span class="ch-num">M5</span><span class="ch-src">Modul 5 · deo 4 od 4 · ProgramiranjeUAsembleru.pdf, slajdovi 3, 9–21</span></div>
+<h2>Programiranje u asembleru x86: od <code>b += a</code> do zbira prvih n brojeva</h2>
+<p class="lead">Sve što smo naučili u Modulu 5, registre, adresiranje, skokove, poređenje i stek, sada vidimo u pravom jeziku. Asembler je jezik u kome svaka naredba odgovara tačno jednoj mašinskoj instrukciji, pa se u njemu vidi kako procesor stvarno radi. Na kraju lekcije čitamo ceo program koji sabira prve n prirodnih brojeva, red po red, i prepoznajemo u njemu petlju sastavljenu od poređenja i skokova.</p>
+
+<h3>Unutrašnjost 8086 još jednom (slajd 3)</h3>
+<figure class="slide"><img src="img/m5b-3.jpg" alt="Interna arhitektura procesora Intel 8086" loading="lazy"><figcaption><b>Slajd 3 · Interna arhitektura procesora Intel 8086</b></figcaption></figure>
+<p>Ovo je isti procesor kao u prethodnim lekcijama, nacrtan malo drugačije. Levo dole je <b>Execution Unit (EU)</b>: opšti registri AX, BX, CX, DX (sa polovinama AH/AL…), SP, BP, DI, SI, ALU Data Bus (16 bita), privremeni registri (Temporary Registers), ALU i Flag Register. Desno je <b>Bus Interface Unit (BIU)</b>: Address Bus (20 bita), sabirač Σ, segmentni registri CS, DS, SS, ES, pokazivač IP, „Internal Communication Registers“, Bus Control Logic koja izlazi na spoljnu magistralu 8086 i Instruction Queue (red instrukcija, 6 bajtova). Između njih je Q Bus (8 bita) kojim instrukcije iz reda idu u EU Control System. Ova slika je osnova za čitanje svih naredbi ispod: registri koje imenujemo u asembleru su upravo ovi.</p>
+
+<h3>Čemu služi asembler danas (slajd 9)</h3>
+<figure class="slide"><img src="img/m5b-9.jpg" alt="Namena i primena asemblera" loading="lazy"><figcaption><b>Slajd 9 · Namena i primena asemblera</b></figcaption></figure>
+<p>Leva strana slajda kaže glavnu stvar: <b>„Asembler daje potpunu kontrolu nad sistemskim resursima.“</b> U višem jeziku kompajler odlučuje koji registar se koristi i koje instrukcije; u asembleru to odlučuje programer. Zato se asembler koristi (crvene kutije):</p>
+<ul>
+<li><b>za direktnu manipulaciju nad hardverom</b> (upis u registre uređaja, U/I portove);</li>
+<li><b>za pristup specijalizovanim instrukcijama procesora</b> koje kompajler ne koristi (npr. SIMD instrukcije, instrukcije za kriptografiju);</li>
+<li><b>za rešavanje kritičnih problema koji se odnose na performanse</b> (najčešće izvršavani delovi koda).</li>
+</ul>
+<p>Plave kutije kažu gde se primenjuje: <b>u sistemima za rad u realnom vremenu</b> (gde vreme odziva mora biti tačno poznato), <b>kod analize malicioznog koda disasembliranjem</b> (virus nemamo u izvornom kodu, samo u mašinskom, koji disasembler pretvara u asembler), <b>u drajverima uređaja</b> (device drivers) i <b>u ugrađenim sistemima</b> (embedded systems, mali procesori u veš mašinama, automobilima, ruterima).</p>
+
+<h3>Deklarisanje podataka (slajd 10)</h3>
+<p>Pre koda program kaže koje podatke ima. U Intel (MASM/NASM) sintaksi to se radi u odeljku <code>.DATA</code> direktivama koje rezervišu memoriju:</p>
+<figure class="slide"><img src="img/m5b-10.jpg" alt="Primeri deklaracije podataka i nizova" loading="lazy"><figcaption><b>Slajd 10 · Primeri deklaracije podataka i nizova</b></figcaption></figure>
+<div class="tbl"><table>
+<tr><th>Direktiva</th><th>Veličina</th><th>Primer sa slajda i značenje</th></tr>
+<tr><td><b>DB</b> (Define Byte)</td><td>1 bajt</td><td><code>var DB 64</code>: bajt na lokaciji <i>var</i> sa vrednošću 64. <code>var2 DB ?</code>: neinicijalizovan bajt (? = vrednost nije zadata). <code>DB 10</code> bez imena: bajt sa vrednošću 10 na adresi var2 + 1.</td></tr>
+<tr><td><b>DW</b> (Define Word)</td><td>2 bajta</td><td><code>X DW ?</code>: neinicijalizovana 2-bajtna vrednost na lokaciji X.</td></tr>
+<tr><td><b>DD</b> (Define Doubleword)</td><td>4 bajta</td><td><code>Y DD 30000</code>: 4-bajtna vrednost 30000 na lokaciji Y.</td></tr>
+</table></div>
+<p>Nizovi:</p>
+<ul>
+<li><code>Z DD 1, 2, 3</code>: tri 4-bajtne vrednosti 1, 2 i 3. Vrednost na lokaciji <b>Z + 8</b> je 3 (svaki element zauzima 4 bajta: Z+0 = 1, Z+4 = 2, Z+8 = 3).</li>
+<li><code>bytes DB 10 DUP(?)</code>: 10 neinicijalizovanih bajtova. <b>DUP</b> = duplicate, ponovi.</li>
+<li><code>arr DD 100 DUP(0)</code>: 100 četvorobajtnih reči, sve postavljene na 0.</li>
+<li><code>str DB 'hello',0</code>: 6 bajtova, ASCII kodovi slova h, e, l, l, o i nulti bajt na kraju (tako se u C-u označava kraj stringa).</li>
+</ul>
+<div class="bridge">Ovo je isto ono što smo u Modulu 4 videli kao tipove podataka (bajt, reč, dvostruka reč) i ASCII kodove. Sada vidimo kako programer kaže asembleru koliko memorije da rezerviše.</div>
+
+<h3>Adresiranje memorije u x86 (slajdovi 11–12)</h3>
+<p>Instrukcija <code>mov</code> prebacuje podatak. U Intel sintaksi redosled je <b>opkod, odredište (destination), izvor (source)</b>: <code>mov odredište, izvor</code>. Uglaste zagrade <code>[ ]</code> znače „sadržaj memorije na ovoj adresi“.</p>
+<figure class="slide"><img src="img/m5b-11.jpg" alt="Primeri adresiranja memorije" loading="lazy"><figcaption><b>Slajd 11 · Primeri adresiranja memorije</b></figcaption></figure>
+<div class="tbl"><table>
+<tr><th>Instrukcija</th><th>Šta radi</th><th>Način adresiranja (Modul 4)</th></tr>
+<tr><td><code>mov eax, [ebx]</code></td><td>4 bajta iz memorije sa adrese koja je u EBX → u EAX</td><td>registarsko indirektno</td></tr>
+<tr><td><code>mov [var], ebx</code></td><td>sadržaj EBX → u 4 bajta na adresi var (var je 32-bitna konstanta)</td><td>direktno</td></tr>
+<tr><td><code>mov eax, [esi-4]</code></td><td>4 bajta sa adrese ESI + (−4) → u EAX</td><td>bazno sa pomerajem</td></tr>
+<tr><td><code>mov [esi+eax], cl</code></td><td>sadržaj CL → u bajt na adresi ESI + EAX</td><td>bazno + indeksno</td></tr>
+<tr><td><code>mov edx, [esi+4*ebx]</code></td><td>4 bajta sa adrese ESI + 4·EBX → u EDX</td><td>bazno + skalirani indeks (za niz 4-bajtnih elemenata)</td></tr>
+</table></div>
+<p>Dole na slajdu su <b>nevalidna</b> računanja adrese:</p>
+<ul>
+<li><code>mov eax, [ebx-ecx]</code>: <i>„Can only add register values“</i>. Registri se u adresi mogu samo <b>sabirati</b>, ne oduzimati.</li>
+<li><code>mov [eax+esi+edi], ebx</code>: <i>„At most 2 registers in address computation“</i>. U adresi mogu biti <b>najviše dva registra</b> (baza i indeks).</li>
+</ul>
+<div class="simple">Opšti oblik adrese kod x86 je: <b>baza + indeks × skala + pomeraj</b>, gde je skala 1, 2, 4 ili 8. Svi načini adresiranja iz Modula 4 su specijalni slučajevi ovog oblika.</div>
+<figure class="slide"><img src="img/m5b-12.jpg" alt="Oznake u x86 instrukcijama" loading="lazy"><figcaption><b>Slajd 12 · Oznake u x86 instrukcijama</b></figcaption></figure>
+<p>Slajd 12 objašnjava oznake koje se koriste u opisu instrukcija: <code>&lt;reg32&gt;</code> = bilo koji 32-bitni registar (EAX, EBX, ECX, EDX, ESI, EDI, ESP, EBP); <code>&lt;reg16&gt;</code> = 16-bitni (AX, BX, CX, DX); <code>&lt;reg8&gt;</code> = 8-bitni (AH, BH, CH, DH, AL, BL, CL, DL); <code>&lt;reg&gt;</code> = bilo koji registar; <code>&lt;mem&gt;</code> = adresa u memoriji (npr. <code>[eax]</code>, <code>[var+4]</code> ili <code>dword ptr [eax+ebx]</code>); <code>&lt;con32&gt;</code>, <code>&lt;con16&gt;</code>, <code>&lt;con8&gt;</code> = 32-, 16- ili 8-bitna konstanta; <code>&lt;con&gt;</code> = bilo koja od njih.</p>
+
+<h3>Prenos podataka i stek (slajdovi 13–14)</h3>
+<figure class="slide"><img src="img/m5b-13.jpg" alt="x86 instrukcije za prenos podataka" loading="lazy"><figcaption><b>Slajd 13 · x86 instrukcije za prenos podataka</b></figcaption></figure>
+<p>Dozvoljeni oblici <code>mov</code> su: <code>mov &lt;reg&gt;,&lt;reg&gt;</code>, <code>mov &lt;reg&gt;,&lt;mem&gt;</code>, <code>mov &lt;mem&gt;,&lt;reg&gt;</code>, <code>mov &lt;reg&gt;,&lt;const&gt;</code>, <code>mov &lt;mem&gt;,&lt;const&gt;</code>. Primeri: <code>mov eax, ebx</code> kopira EBX u EAX; <code>mov byte ptr [var], 5</code> upisuje 5 u bajt na lokaciji var (<code>byte ptr</code> kaže asembleru da je odredište jedan bajt, jer iz <code>[var]</code> to ne može da zna).</p>
+<div class="warn"><b>Nema oblika <code>mov &lt;mem&gt;,&lt;mem&gt;</code>.</b> To je ono što Modul 6 kaže rečenicom: „Prenos podataka iz jedne memorijske lokacije u neku drugu memorijsku lokaciju ne može se uraditi pomoću jedne instrukcije.“ Mora preko registra: <code>mov eax, [a]</code> pa <code>mov [b], eax</code>.</div>
+<figure class="slide"><img src="img/m5b-14.jpg" alt="x86 instrukcije za rad sa stack memorijom" loading="lazy"><figcaption><b>Slajd 14 · x86 instrukcije za rad sa stack memorijom</b></figcaption></figure>
+<p>Ovo je stek iz prethodne lekcije, sada sa pravim naredbama:</p>
+<ul>
+<li><code>push &lt;reg32&gt;</code>, <code>push &lt;mem&gt;</code>, <code>push &lt;con32&gt;</code>: stavlja 4 bajta na vrh steka. Npr. <code>push eax</code> (stavi EAX na stek), <code>push [var]</code> (stavi 4 bajta sa adrese var). Procesor prvo smanji ESP za 4, pa upiše vrednost na adresu [ESP]. Stek kod x86 <b>raste nadole</b>, ka nižim adresama.</li>
+<li><code>pop &lt;reg32&gt;</code>, <code>pop &lt;mem&gt;</code>: uzima vrh steka. Npr. <code>pop edi</code> (vrh steka u EDI), <code>pop [ebx]</code> (vrh steka u memoriju, u 4 bajta od adrese EBX). Procesor pročita [ESP], pa poveća ESP za 4.</li>
+</ul>
+<p>Intelove instrukcije <code>call</code> i <code>ret</code> rade baš ono što smo opisali kao „stek način“: <code>call adresa</code> = push EIP (adresa povratka) + skok; <code>ret</code> = pop EIP.</p>
+
+<h3>Druga sintaksa: AT&amp;T (slajdovi 15–16)</h3>
+<p>Isti procesor može da se programira u dve sintakse. Do sada je bila <b>Intel</b> sintaksa. Linux alati (GNU asembler <code>as</code>, <code>gcc</code>) koriste <b>AT&amp;T</b> sintaksu, koja je „različita od prethodne“:</p>
+<figure class="slide"><img src="img/m5b-15.jpg" alt="Sintaksa različita od prethodne" loading="lazy"><figcaption><b>Slajd 15 · Sintaksa (različita od prethodne)</b></figcaption></figure>
+<div class="tbl"><table>
+<tr><th></th><th>Intel</th><th>AT&amp;T (slajd 15)</th></tr>
+<tr><td>Redosled operanada</td><td><code>mnemonik odredište, izvor</code></td><td><b><code>mnemonik izvor, odredište</code></b></td></tr>
+<tr><td>Registri</td><td><code>eax</code></td><td>prefiks <b>%</b>: <code>%eax</code></td></tr>
+<tr><td>Neposredni operandi (konstante)</td><td><code>5</code></td><td>prefiks <b>$</b>: <code>$5</code></td></tr>
+<tr><td>Veličina operanda</td><td>iz registra ili <code>byte/word/dword ptr</code></td><td>sufiks mnemonika: <b>b</b> (1 bajt), <b>w</b> (2 bajta), <b>l</b> (4 bajta)</td></tr>
+<tr><td>Labela</td><td colspan="2">ime labele + „:“ (npr. <code>kraj:</code>)</td></tr>
+</table></div>
+<figure class="slide"><img src="img/m5b-16.jpg" alt="Primeri instrukcija" loading="lazy"><figcaption><b>Slajd 16 · Primeri instrukcija</b></figcaption></figure>
+<ol>
+<li><code>addl %eax, %ebx</code> &nbsp;# %ebx = %eax + %ebx. Izvor je prvi, odredište drugo; rezultat ide u EBX.</li>
+<li><code>addl $1, %eax</code> &nbsp;# %eax = %eax + 1.</li>
+<li><code>addl %eax, $1</code> je <b>neispravna</b> komanda: „Ne možemo da u konstantu upišemo rezultat.“ Odredište mora biti registar ili memorija.</li>
+<li><code>addb %al, %bl</code>: sabiranje dva jednobajtna broja (sufiks b, registri AL i BL).</li>
+<li><code>addw %ax, %bx</code>: sabiranje dva 16-bitna broja; AX i BX su oznake registara za rad sa 16-bitnim vrednostima.</li>
+</ol>
+<details class="stop"><summary>U AT&amp;T sintaksi, šta radi <code>movl $3, %eax</code>, a šta bi isto bilo u Intel sintaksi?</summary><div>Upisuje konstantu 3 (prefiks $) u 32-bitni (sufiks l) registar EAX (prefiks %). U Intel sintaksi: <code>mov eax, 3</code>, odredište ide prvo, bez prefiksa.</div></details>
+
+<h3>Prvi program: <code>b += a</code> (slajdovi 17–19)</h3>
+<figure class="slide"><img src="img/m5b-17.jpg" alt="Primer 1 programa u C jeziku" loading="lazy"><figcaption><b>Slajd 17 · Primer 1 programa u C jeziku</b></figcaption></figure>
+<figure class="slide"><img src="img/m5b-18.jpg" alt="Primer 1 programa u asembleru" loading="lazy"><figcaption><b>Slajd 18 · Primer 1 programa u asembleru</b></figcaption></figure>
+<p>Program sa početka modula (<code>a=3; b=6; b+=a;</code>) u AT&amp;T asembleru, red po red:</p>
+<pre>.section .data        # odeljak sa podacima (ovde prazan: a i b držimo u registrima)
+.section .text        # odeljak sa kodom
+.global main          # labela main je vidljiva spolja: odatle program počinje
+main:
+    movl $3, %eax     # a = 3   (a je u EAX)
+    movl $6, %ebx     # b = 6   (b je u EBX)
+    addl %eax, %ebx   # b += a  → EBX = 9
+kraj:
+    movl $1, %eax     # broj sistemskog poziva 1 = exit (završi program)
+    int  $0x80        # pozovi operativni sistem (Linux, 32 bita)</pre>
+<p>Primeti dve stvari. Prvo, promenljive <code>a</code> i <code>b</code> ne moraju da budu u memoriji: kompajler (ili programer) može da ih drži u registrima, što je mnogo brže. Drugo, program ne može sam da „završi“: mora da zamoli operativni sistem. Instrukcija <code>int $0x80</code> je <b>softverski prekid</b> (INT, interrupt) broj 80h: procesor skače u rutinu operativnog sistema, kao kod hardverskog prekida iz Modula 4. OS pogleda EAX, vidi broj 1 (sistemski poziv <i>exit</i>) i završi program. Ovo je prvi put da vidimo vezu procesora i <b>operativnog sistema</b>, glavne teme drugog dela predmeta.</p>
+<figure class="slide"><img src="img/m5b-19.jpg" alt="Značenje instrukcija" loading="lazy"><figcaption><b>Slajd 19 · Značenje instrukcija</b></figcaption></figure>
+<ul>
+<li><b>mov</b>: prebaci izvorni operand u odredišni.</li>
+<li><b>cmp</b>: poređenje izvornog i odredišnog operanda. Ažuriraju se flegovi <b>z</b> (zero) i <b>c</b> (carry). (Ovo je CMP iz prethodne lekcije: oduzima, a rezultat samo postavlja zastavice.)</li>
+<li><b>je, ja, jmp</b>: skokovi. <b>je</b> = jump if equal, skače ako je z = 1. <b>ja</b> = jump if above, skače ako je c = 0 i z = 0 (veće, kod brojeva bez znaka). <b>jmp</b> = bezuslovni skok (GOTO).</li>
+<li><b>sub</b>: oduzima izvorni operand od odredišnog i rezultat upisuje u odredište.</li>
+</ul>
+
+<h3>Ceo program: zbir prvih n prirodnih brojeva (slajd 20)</h3>
+<figure class="slide"><img src="img/m5b-20.jpg" alt="Primer sabiranja prvih n prirodnih brojeva" loading="lazy"><figcaption><b>Slajd 20 · Primer sabiranja prvih n prirodnih brojeva</b></figcaption></figure>
+<pre> 1  #zbir prvih n prirodnih brojeva
+ 3  .section .text
+ 4  .global main
+ 5  main:
+ 6      movl $0, %eax       # zbir = 0
+ 7      movl $10, %ecx      # i = n = 10
+ 8  uporedi:
+ 9      cmpl $0, %ecx       # uporedi i sa 0  (i == 0 → kraj)
+10      je   kraj           # ako je z = 1 (i = 0), skoči na kraj
+11      addl %ecx, %eax     # zbir += i
+12      subl $1, %ecx       # i = i − 1
+13      jmp  uporedi        # nazad na proveru
+14  kraj:
+15      movl $1, %eax       # sistemski poziv exit
+16      int  $0x80</pre>
+<p>Ovo je tačno ona petlja koju smo nacrtali kod uslovnog grananja: <b>poređenje</b> (<code>cmpl</code>), <b>uslovni skok napolje</b> (<code>je kraj</code>) i <b>bezuslovni skok nazad</b> (<code>jmp uporedi</code>). Registar <b>ECX</b> je brojač i (to mu je i „specijalnost“ iz tabele registara), a <b>EAX</b> akumulator za zbir. Pratimo nekoliko prolaza:</p>
+<div class="tbl"><table>
+<tr><th>Prolaz</th><th>ECX pre poređenja</th><th>Z posle cmpl</th><th>EAX posle addl</th></tr>
+<tr><td>1</td><td>10</td><td>0 → nastavi</td><td>10</td></tr>
+<tr><td>2</td><td>9</td><td>0</td><td>19</td></tr>
+<tr><td>3</td><td>8</td><td>0</td><td>27</td></tr>
+<tr><td>…</td><td>…</td><td>…</td><td>…</td></tr>
+<tr><td>10</td><td>1</td><td>0</td><td>55</td></tr>
+<tr><td>11</td><td>0</td><td><b>1 → je kraj</b></td><td>55 (konačan zbir)</td></tr>
+</table></div>
+<p>Rezultat je 1 + 2 + … + 10 = <b>55</b> = n(n+1)/2. Pažnja: u redu 15 se EAX prepisuje brojem 1 za sistemski poziv, pa se zbir posle toga gubi. U pravom programu bi se zbir pre toga sačuvao, npr. u EBX (koji Linux vraća kao izlazni kod programa).</p>
+<details class="stop"><summary>Zašto u ovom programu nema naredbe „for“, i od čega je sastavljena petlja?</summary><div>Jer na konvencionalnom mašinskom nivou ne postoje eksplicitne instrukcije za petlje. Petlja je sastavljena od naredbe poređenja <code>cmpl $0, %ecx</code> (postavlja zastavicu z), uslovnog skoka <code>je kraj</code> (izlazak kada je z = 1) i bezuslovnog skoka <code>jmp uporedi</code> (povratak na proveru). Brojač se menja naredbom <code>subl</code>.</div></details>
+<p>Slajd 21 daje korisne adrese za učenje x86 asemblera, među njima vodič Univerziteta u Virdžiniji (odakle su primeri sa slajdova 10–14) i online asembler <b>mycompiler.io/new/asm-x86_64</b>, gde možeš sam da pokreneš ovakve programe.</p>
+<div class="bridge">Ovim je zatvoren Modul 5: znamo kako procesor upravlja tokom programa. Modul 6 pravi pregled svih vrsta instrukcija i spušta se ispod konvencionalnog mašinskog nivoa, do mikroprograma i protočne obrade.</div>
+<p class="src">Dodatni izvori: D. Evans, <i>x86 Assembly Guide</i>, University of Virginia CS216; GNU as dokumentacija (AT&amp;T sintaksa); Linux <code>man 2 syscalls</code>.</p>
+<div class="quiz" data-ch="c21"></div></section>

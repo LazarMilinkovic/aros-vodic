@@ -1,0 +1,111 @@
+<section class="ch" id="c9">
+<div class="ch-head"><span class="ch-num">M2</span><span class="ch-src">Modul 2 · deo 3 od 3 · slajdovi 32–38 i 51–52 · uz M3_02 slajdove 4–6, 8–9, 12–13</span></div>
+<h2>Paralelizam u procesoru i oko njega, i princip lokalnosti</h2>
+<p>Do sada smo paralelizam videli na nivou celog programa: delovi albuma na različitim jezgrima. Slajdovi 32–38 idu korak dublje i odgovaraju na dva pitanja. Prvo: kako su više procesora i memorija uopšte povezani? Drugo: kako i jedan procesor iznutra radi više stvari odjednom?</p>
+
+<h3>Kako više procesora deli memoriju (slajd 32)</h3>
+<figure class="slide"><img src="img/m2-32.jpg" alt="Deljena i distribuirana memorija" loading="lazy"><figcaption><b>Slajd 32 · Deljena i distribuirana memorija</b></figcaption></figure>
+<p>Kad imamo više procesora, odmah se postavlja pitanje: gde su podaci? Slajd 32 pokazuje dva odgovora. Levo su četiri CPU-a oko <strong>jedne zajedničke memorije</strong> (Memory u sredini). To je <strong>deljena memorija</strong>, a procesori se zovu <em>čvrsto spregnuti</em>: svi vide iste podatke i komuniciraju tako što pišu i čitaju istu memoriju. Tako rade jezgra u tvom laptopu, i tako bi radio naš album: svih pet jezgara čita fotografije iz istog RAM-a.</p>
+<p>Desno su četiri para <strong>CPU + sopstvena memorija</strong>, povezani međusobno. To je <strong>distribuirana memorija</strong>, a procesori su <em>labavo spregnuti</em>: svaki ima svoje podatke, a sa drugima razmenjuje poruke preko mreže. Tako rade klasteri servera i superračunari. Prednost: može se povezati ogroman broj čvorova. Mana: slanje poruke preko mreže traje mnogo duže od čitanja iz sopstvene memorije, pa to postaje deo onog „dodatnog opterećenja“ koje kvari Amdalovu krivu (crvena kriva sa slajda 21).</p>
+
+<h3>Ko raspoređuje posao na jezgra (slajd 33)</h3>
+<p>Većina današnjih operativnih sistema podržava rad sa više jezgara (multi-core). OS komunicira sa svakim jezgrom kao sa <strong>posebnim procesorom</strong>, a njegov <strong>planer (scheduler)</strong> raspoređuje niti (thread-ove) i procese na različita jezgra. Kad naša aplikacija pokrene 5 niti za obradu slika, upravo planer odlučuje koja nit ide na koje jezgro i kada. Ovo je most ka drugom delu predmeta (operativni sistemi, dodela procesora procesima).</p>
+<div class="bridge">Sada se spuštamo u jedno jezgro. Da bismo razumeli kako ono radi više stvari istovremeno, prvo moramo da vidimo šta radi kad izvršava samo jednu instrukciju.</div>
+
+<h3>Ciklus izvršavanja instrukcije (slajdovi 34–35)</h3>
+<figure class="slide"><img src="img/m2-34.jpg" alt="Ciklus izvršavanja instrukcije" loading="lazy"><figcaption><b>Slajd 34 · Ciklus izvršavanja instrukcije</b></figcaption></figure>
+<p>Levo na slajdu 34 je ciklus kroz koji prolazi svaka instrukcija, u šest koraka koji se ponavljaju u krug:</p>
+<ol>
+<li><strong>Fetch[PC]</strong>: donesi instrukciju sa adrese na koju pokazuje PC (brojač naredbi iz Modula 1);</li>
+<li><strong>Decode</strong>: dekodiraj je, to jest shvati šta treba uraditi;</li>
+<li><strong>Read Inputs</strong>: pročitaj operande (ulazne podatke);</li>
+<li><strong>Execute</strong>: izvrši operaciju u ALU;</li>
+<li><strong>Write Output</strong>: upiši rezultat;</li>
+<li><strong>Next PC</strong>: pređi na sledeću instrukciju, pa nazad na korak 1.</li>
+</ol>
+<p>Desno je isto to na šemi. PC pokazuje na instrukciju I-1 u programu u memoriji (program je niz I-1, I-2, I-3, I-4). Ona se donese (<em>fetch</em>) u registar instrukcije (<em>instruction register</em>) i tamo dekodira (<em>decode</em>, zaokruženo crveno). Operandi op1 i op2 se čitaju (<em>read</em>) iz registara, ALU izvršava operaciju (<em>execute</em>) i postavlja zastavice (<em>flags</em>), a rezultat (<em>output</em>) se upisuje (<em>write</em>) nazad u registre. Ovo je onaj isti krug sa slajda 16 iz Modula 1, sada sa imenima faza.</p>
+<figure class="slide"><img src="img/m2-35.jpg" alt="Faze u kojima se koriste ulazni podaci i upisuju rezultati" loading="lazy"><figcaption><b>Slajd 35 · Faze u kojima se koriste ulazni podaci i upisuju rezultati</b></figcaption></figure>
+<p>Slajd 35 ponavlja istu sliku i crveno izdvaja faze <strong>Read Inputs</strong> i <strong>Write Output</strong>. To su faze u kojima se <em>pristupa podacima</em> (registrima ili memoriji). Zašto su posebno označene? Zato što tu nastaju zastoji ako je memorija spora, i tu nastaju problemi kad dve instrukcije rade istovremeno, a koriste iste podatke (druga hoće da pročita ono što prva još nije upisala). Zapamti ovo, trebaće nam za trenutak.</p>
+
+<h3>Četiri načina da procesor radi više stvari odjednom (slajd 36)</h3>
+<p>Slajd 36 kaže: da bi procesori bili brži, paralelizam se može ostvariti na četiri načina. Ovo su osnovni <strong>principi dizajna</strong> savremenih procesora.</p>
+<p><strong>1. Pipelining (protočna obrada).</strong> Faze iz slajda 34 rade različiti delovi procesora. Dok jedan deo izvršava instrukciju 1, drugi već dekodira instrukciju 2, a treći donosi instrukciju 3 iz memorije. Isto kao pokretna traka u fabrici, ili pranje veša: dok se prva tura suši, druga se pere. Pojedinačna instrukcija ne traje kraće, ali kad se traka napuni, <strong>u svakom ciklusu se završi po jedna</strong>, pa CPI teži 1.</p>
+<div class="lab" id="pipeLab"><div class="lab-title">Laboratorija: protočna obrada</div>
+<div class="row">
+<label for="pipeK">Broj faza k: <b id="pipeKv">5</b></label><input type="range" id="pipeK" min="2" max="8" value="5">
+<label for="pipeN">Broj instrukcija n: <b id="pipeNv">4</b></label><input type="range" id="pipeN" min="1" max="12" value="4">
+</div>
+<div class="sx"><svg id="pipeSvg" class="rsvg" viewBox="0 0 640 200" role="img" aria-label="Dijagram protočne obrade"></svg></div>
+<div class="simlog" id="pipeOut"></div>
+</div>
+<div class="formula">Bez protočne obrade: n × k ciklusa&nbsp;&nbsp;·&nbsp;&nbsp;Sa protočnom: k + (n − 1) ciklusa&nbsp;&nbsp;·&nbsp;&nbsp;Ubrzanje = n·k / (k + n − 1) → k kad n → ∞</div>
+<p>Zašto baš <code>k + (n − 1)</code>? Prvoj instrukciji treba svih k ciklusa da prođe kroz celu traku. Posle toga traka je puna i <strong>u svakom sledećem ciklusu izlazi po jedna instrukcija</strong>, pa preostalih n − 1 instrukcija traje još n − 1 ciklusa. Za mnogo instrukcija ubrzanje se približava broju faza k, ali ga nikad ne dostiže.</p>
+<p>A sad se vraća slajd 35. Ako instrukcija 2 treba rezultat instrukcije 1, a instrukcija 1 ga još nije upisala (Write Output), imamo <strong>hazard podataka</strong>: traka mora da stane i čeka. Ako je instrukcija 1 skok, ne znamo koja je sledeća instrukcija dok se skok ne izvrši: to je <strong>upravljački hazard</strong>, pa procesor ili čeka ili „pogađa“ (predviđanje skokova). Hazardi su razlog što pravi CPI nije tačno 1.</p>
+<p><strong>2. ILP (Instruction Level Parallelism), paralelizam na nivou instrukcija.</strong> Procesor ima više izvršnih jedinica (npr. dve ALU, jedinicu za decimalne brojeve, jedinicu za Load/Store) i u istom ciklusu pokrene više <em>nezavisnih</em> instrukcija. Takav procesor se zove <strong>superskalarni</strong>. Na primer, <code>a = b + c</code> i <code>x = y * z</code> ne zavise jedna od druge, pa mogu istovremeno. Tako CPI pada i ispod 1 (dve instrukcije po ciklusu znače CPI = 0,5).</p>
+<p><strong>3. DLP (Data Level Parallelism), paralelizam na nivou podataka.</strong> <em>Ista</em> operacija nad <em>mnogo podataka</em> odjednom. Vektorske (SIMD) instrukcije, npr. AVX, saberu 8 parova brojeva jednom instrukcijom. Grafička kartica je ekstremni primer. To su oni redovi „plus vectorization“ i „plus AVX intrinsics“ iz tabele sa slajda 5 koji su dali najveće ubrzanje. U našem albumu to je idealno: popravka boja radi istu operaciju nad milionima piksela.</p>
+<p><strong>4. TLP (Thread Level Parallelism), paralelizam na nivou niti.</strong> Program se podeli na više <strong>niti</strong> (thread-ova) koje rade na različitim jezgrima. To je tačno ono što smo radili sa albumom u delu 1, i na šta se odnosi Amdalov zakon.</p>
+<div class="simple">Pipelining: više instrukcija u <em>različitim fazama</em> istovremeno. ILP: više instrukcija u <em>istoj fazi</em> istovremeno. DLP: jedna instrukcija, mnogo podataka. TLP: više niti na više jezgara.</div>
+<details class="stop"><summary>Koji od četiri oblika paralelizma pomaže i programu koji je potpuno sekvencijalan (f = 0 po Amdalu)?</summary><div><strong>Pipelining i ILP</strong>. Oni rade unutar jednog jezgra, preklapanjem instrukcija jednog toka, pa ne traže da programer deli posao na niti. Amdalov zakon se odnosi na TLP (podelu na jezgra).</div></details>
+
+<h3>Šta je danas u procesoru (M3_02, slajdovi 4–6, 12–13)</h3>
+<p>Na početku Modula 3 profesor ponovo pokazuje procesor i memoriju, pa to ovde dodajemo jer zatvara priču o performansama.</p>
+<figure class="slide"><img src="img/m3b-5.jpg" alt="Procesor i memorija" loading="lazy"><figcaption><b>M3_02, slajd 5 · Procesor i memorija</b></figcaption></figure>
+<p>Levo je memorija (ili cela hijerarhija memorije), desno CPU, a između njih <strong>magistrala</strong>. U CPU su <strong>upravljačka jedinica</strong> (Control Unit) i <strong>Data Path</strong> (put podataka, izvršna jedinica): registri i A/L jedinica. Rečenica ispod je cilj Modula 4: <em>razumevanje komunikacije između centralnog procesora i glavne memorije</em>.</p>
+<figure class="slide"><img src="img/m3b-6.jpg" alt="CPU Central Processing Unit Intel Core i9" loading="lazy"><figcaption><b>M3_02, slajd 6 · CPU</b></figcaption></figure>
+<p>Primer sa slajda je Intel Core i9-10900K: <strong>10 jezgara, 20 niti, 3,30 GHz osnovna frekvencija, 13,75 MB L3 keša</strong>. U savremenim računarima ceo CPU je na jednom čipu integrisanog kola koji se zove <strong>mikroprocesor</strong>. Kao <strong>ključne faktore koji utiču na performanse</strong> profesor navodi broj jezgara, frekvenciju (GHz), veličinu keša (L1, L2, L3) i tip procesora (CISC ili RISC). Sve četiri smo u ovom modulu povezali sa formulom: jezgra preko Amdala, frekvencija preko T, keš preko CPI, a tip procesora preko IC i CPI.</p>
+<p>Slajd 13 iz istog predavanja nabraja <strong>moguće načine za poboljšanje performansi</strong>, i sad za svaki znaš zašto radi i gde mu je granica:</p>
+<ol>
+<li>Povećanje frekvencije takta: smanjuje T, ali je ograničeno toplotom (kraj Denardovog skaliranja).</li>
+<li>Protočna obrada (pipelining): smanjuje CPI prema 1.</li>
+<li>Superskalarni pristup (više protočnih linija u procesoru): smanjuje CPI ispod 1.</li>
+<li>Povećanje veličine i brzine keša (L1, L2, L3): manje čekanja na memoriju, manji CPI.</li>
+<li>Povećanje broja procesora: TLP, ograničeno Amdalovim zakonom.</li>
+<li>Povećanje broja jezgara unutar procesora (multi-core): isto, TLP i Amdal.</li>
+</ol>
+
+<h3>Hyper-Threading (M3_02, slajdovi 8–9)</h3>
+<p>Na slici i9 piše „10 jezgara, 20 niti“. Kako 10 jezgara izvršava 20 niti? <strong>Multithreading</strong> je podela posla na više softverskih niti koje se izvršavaju paralelno, po jedna nit na jednom jezgru. <strong>Hyper-Threading</strong> (Intelov naziv za SMT, simultaneous multithreading) je hardverska tehnologija koja dozvoljava da <strong>na jednom fizičkom jezgru rade 2 niti istovremeno</strong>. Operativni sistem jedno fizičko jezgro vidi kao <strong>2 „logička jezgra“</strong>.</p>
+<p>Iznutra, jezgro dobije dupli skup registara (svaka nit ima svoj PC, svoje registre i svoje stanje), ali obe niti <strong>dele izvršne jedinice</strong> (ALU, FPU) i keš. Zašto to pomaže? Jedna nit često čeka, na primer podatak iz RAM-a, što traje stotine ciklusa (seti se hijerarhije memorije iz Modula 1). Dok ona čeka, izvršne jedinice bi bile besposlene; sa Hyper-Threading-om ih koristi druga nit.</p>
+<div class="ex">Kuvar (jezgro) sprema dva jela (dve niti). Dok se testenina kuva 10 minuta (čekanje na memoriju), on ne stoji, nego seče povrće za drugo jelo. Nema dva kuvara, ali je kuhinja (izvršne jedinice) bolje iskorišćena.</div>
+<p>Zato Hyper-Threading <strong>nije isto što i duplo više jezgara</strong>. Prema slajdu, povećava propusnost <strong>do oko 30%</strong> u serverskim aplikacijama. Kod programa koji već maksimalno koriste izvršne jedinice dobitak je mali ili ga nema.</p>
+<details class="stop"><summary>Laptop ima 4 fizička jezgra sa Hyper-Threading-om. Koliko „procesora“ vidi operativni sistem, i da li je to kao 8 pravih jezgara?</summary><div>OS vidi <strong>8 logičkih jezgara</strong>. Ali to nije kao 8 pravih: parovi niti dele izvršne jedinice, pa je dobitak tipično do oko 30%, a ne duplo.</div></details>
+
+<h3>Princip lokalnosti (slajd 37)</h3>
+<p>Ostao je još jedan princip dizajna, možda najvažniji za brzinu u praksi. Slajd 37: <strong>programi provode oko 90% vremena izvršavanja u oko 10% svog koda</strong>. Zbog toga se sa razumnom tačnošću može predvideti koje instrukcije i podatke će program koristiti u bliskoj budućnosti. Lokalnost ima dva oblika:</p>
+<ul>
+<li><strong>Vremenska lokalnost</strong>: ono što je upravo korišćeno, verovatno će uskoro biti korišćeno opet. Primer: telo petlje se izvršava 1000 puta, a promenljiva <code>suma</code> se koristi u svakom krugu.</li>
+<li><strong>Prostorna lokalnost</strong>: ako je korišćena jedna adresa, verovatno će uskoro biti korišćene i susedne. Primer: elementi niza a[0], a[1], a[2] stoje jedan do drugog u memoriji, a i instrukcije se izvršavaju redom.</li>
+</ul>
+<p>U našem albumu obe su prisutne: kod za obradu jedne slike je mala petlja koja se ponavlja 1000 puta (vremenska), a pikseli jedne slike se obrađuju redom, jedan do drugog (prostorna). Na lokalnosti počiva <strong>keš memorija</strong>: kad procesor zatraži jedan bajt, keš donese ceo blok oko njega (npr. 64 bajta, prostorna lokalnost) i čuva ga neko vreme (vremenska lokalnost). Zato 90% i više pristupa „pogodi“ keš, i procesor retko čeka spori RAM. Kako keš tačno radi, detaljno radimo u Modulu 3.</p>
+<details class="stop"><summary>Program prolazi kroz niz element po element. Koja je to lokalnost? A brojač petlje i koji se menja u svakom krugu?</summary><div>Prolazak kroz niz je <strong>prostorna</strong> lokalnost (susedne adrese). Brojač i je <strong>vremenska</strong> lokalnost (ista promenljiva iznova).</div></details>
+
+<h3>Rezime predavanja (slajd 38)</h3>
+<figure class="slide"><img src="img/m2-38.jpg" alt="Rezime predavanja 2" loading="lazy"><figcaption><b>Slajd 38 · Rezime</b></figcaption></figure>
+<p>Profesor celo predavanje sažima u tri kutije:</p>
+<ul>
+<li><strong>Amdalov zakon</strong>: S = 1/(s + f/p). Na slajdu je s = 1 − f sekvencijalni deo, a p broj procesora (isto što i N u ovom vodiču).</li>
+<li><strong>Princip dizajna „make the common case fast“</strong>.</li>
+<li><strong>CPU performanse</strong>: T = N_instr × CPI / f. Pazi: ovde T znači <em>ukupno CPU vreme</em>, a ne trajanje jednog ciklusa kao u T = 1/f; N_instr je isto što i IC.</li>
+<li><strong>Principi dizajna</strong>: iskoristi paralelizam, iskoristi princip lokalnosti, ubrzaj deo koda koji se često koristi.</li>
+</ul>
+
+<h3>Domaći zadaci (slajdovi 51–52)</h3>
+<p>Predavanje se završava sa dva domaća zadatka: računari sa 4 i sa 6 jezgara, keš L1 od 64 KB sa linijama od 32 bajta, RAM od 16 GB i od 128 GB. Pitanja su koliko lokacija procesor može da adresira, koliko linija ima keš i koliko adresa keš može da mapira. Za njih ti trebaju stepeni dvojke iz Modula 1 (deo 1.6) i keš memorija iz Modula 3, zato su potpuno rešena, korak po korak, u završnom poglavlju ★.</p>
+
+<h3>Ceo Modul 2 u jednom pogledu</h3>
+<ol class="recap">
+<li>Kad takt više ne raste, ubrzanje dolazi „sa vrha“: bolji softver, algoritmi i arhitektura, i <strong>više jezgara</strong> (sl. 3–5).</li>
+<li>Program ima <strong>sekvencijalni</strong> deo (1 − f) i deo koji se može <strong>paralelizovati</strong> (f); sekvencijalni deo se ne smanjuje dodavanjem jezgara (sl. 10–15).</li>
+<li><strong>Amdalov zakon</strong>: S = 1/((1 − f) + f/N), a najviše 1/(1 − f). Naš album: f = 0,5, na 5 jezgara 1,67 puta brže, nikad više od 2 (sl. 13–22).</li>
+<li>Generalizacija: za bilo koje poboljšanje F puta, S = 1/((1 − f) + f/F); zato <strong>„make the common case fast“</strong> (sl. 18, 40–45).</li>
+<li><strong>CPU vreme = IC × CPI × T = IC × CPI / f</strong>, gde je T = 1/f; prosečan CPI je ponderisani prosek po klasama instrukcija (sl. 24–31).</li>
+<li>Program i kompajler menjaju IC, ISA i kompajler i CPI, organizacija CPI i takt, tehnologija samo takt; „A je n puta brži“ znači vreme_B / vreme_A = n (sl. 25, 27).</li>
+<li>Više procesora deli memoriju (čvrsto spregnuti) ili ima svaki svoju (labavo spregnuti); OS planer raspoređuje niti na jezgra (sl. 32–33).</li>
+<li>Jedno jezgro ubrzavaju <strong>pipelining, ILP, DLP</strong>, a više jezgara <strong>TLP</strong>; Hyper-Threading daje 2 niti po jezgru; <strong>lokalnost</strong> (90% vremena u 10% koda) omogućava keš (sl. 34–37).</li>
+</ol>
+<p class="src">Dodatni izvori: <a href="http://www.johngustafson.net/pubs/pub13/amdahl.htm">J. Gustafson, Amdahl's Law</a> · <a href="https://www.youtube.com/watch?v=BOGVVL3O618">Georgia Tech, Amdahl's Law Quiz (video sa slajda)</a> · <a href="https://www.cl.cam.ac.uk/teaching/0607/CompArch/documents/all/beyond-risc/intel-smt.pdf">Intel, Hyper-Threading Technology Architecture (Cambridge)</a> · <a href="https://www.youtube.com/watch?v=vgPFzblBh7w">Intel, Architecture All Access: Modern CPU Architecture (video sa slajda)</a></p>
+<div class="bridge">Sada znamo kako se meri brzina i da je ključ u tome koliko ciklusa traje jedna instrukcija. Ali šta se tačno dešava u procesoru tokom tih ciklusa? Kako izgleda instrukcija u bitovima, koje registre koristi i kroz koje faze prolazi? To je Modul 3: izvršavanje instrukcija.</div>
+<div class="quiz" data-ch="c9"></div>
+</section>
+
+<!-- ============ MODUL 3 kao jedna priča ============ -->

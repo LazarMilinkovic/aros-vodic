@@ -1,0 +1,111 @@
+<section class="ch" id="d2">
+<div class="ch-head"><span class="ch-num">D</span><span class="ch-src">Dopuna 2 · teme iz ispitnih pitanja kojih nema na slajdovima · izvori: Stallings pogl. 3–6, Tanenbaum pogl. 2–3, Simić i Bataveljić</span></div>
+<h2>Putevi i skladišta: magistrale i vrste memorija</h2>
+<p class="lead">U Modulu 4 smo pratili jedno čitanje iz memorije preko magistrale, korak po korak. Ispitna pitanja idu šire: od čega se sastoji magistrala, zašto jedna magistrala nije dovoljna, koje magistrale ima PC računar, kako se podaci prenose (sinhrono i asinhrono), i od čega su napravljene memorije (SRAM, DRAM, DDR). Ovo predavanje ide od žica ka čipovima.</p>
+
+<h3>Magistrala: zajednički put za sve</h3>
+<p><b>Magistrala</b> (bus) je skup paralelnih žica (linija) preko kojih komponente računara razmenjuju podatke, adrese i upravljačke signale. Bitno je da je <b>deljena</b>: na istu magistralu je vezano više uređaja, ali u jednom trenutku samo jedan može da šalje. <b>Sistemska magistrala</b> povezuje procesor, memoriju i U/I module, i sastoji se od tri dela:</p>
+<div class="tbl"><table>
+<tr><th>Deo</th><th>Šta nosi</th><th>Od čega zavisi</th></tr>
+<tr><td><b>Magistrala podataka</b> (data bus)</td><td>podatke i instrukcije koji se prenose</td><td>širina (8, 16, 32, 64 linije) određuje koliko bitova se prenese odjednom</td></tr>
+<tr><td><b>Adresna magistrala</b> (address bus)</td><td>adresu: odakle se čita ili gde se piše (memorijska lokacija ili U/I port)</td><td>širina određuje koliko memorije može da se adresira: n linija → 2<sup>n</sup> adresa</td></tr>
+<tr><td><b>Upravljačka magistrala</b> (control bus)</td><td>upravljačke signale: čitanje (RD), pisanje (WR), spremno (READY), takt, zahtev za magistralu, dozvola, zahtev za prekid, reset</td><td>upravlja pristupom i korišćenjem linija podataka i adresa; omogućava korisnicima magistrale da signaliziraju kada su podaci raspoloživi</td></tr>
+</table></div>
+<figure class="diag"><svg viewBox="0 0 520 170" role="img" aria-label="Povezivanje komponenata računara pomoću magistrale"><g font-family="Inter,sans-serif" font-size="13" fill="none" stroke="currentColor" stroke-width="1.5">
+<rect x="20" y="10" width="110" height="44" rx="6"/><rect x="160" y="10" width="110" height="44" rx="6"/><rect x="300" y="10" width="90" height="44" rx="6"/><rect x="410" y="10" width="90" height="44" rx="6"/>
+<path d="M75 54v36M215 54v36M345 54v36M455 54v36"/><path d="M75 54v66M215 54v66M345 54v66M455 54v66" stroke-dasharray="0"/><path d="M75 54v96M215 54v96M345 54v96M455 54v96"/>
+<path d="M10 90h500M10 120h500M10 150h500" stroke-width="3"/></g>
+<g font-family="Inter,sans-serif" font-size="13" fill="currentColor" text-anchor="middle"><text x="75" y="37">Procesor</text><text x="215" y="37">Memorija</text><text x="345" y="37">U/I modul</text><text x="455" y="37">U/I modul</text></g>
+<g font-family="Inter,sans-serif" font-size="11" fill="currentColor"><text x="14" y="85">magistrala podataka</text><text x="14" y="115">adresna magistrala</text><text x="14" y="145">upravljačka magistrala</text></g></svg><figcaption>Povezivanje osnovnih komponenata računara pomoću sistemske magistrale: svaka komponenta je vezana na sve tri grupe linija.</figcaption></figure>
+<details class="stop"><summary>Koliko adresnih linija treba procesoru koji adresira 64 GB memorije (adresiranje po bajtu)?</summary><div>64 GB = 2<sup>6</sup> · 2<sup>30</sup> B = 2<sup>36</sup> B, pa je potrebno <b>36 adresnih linija</b>. Pravilo: n linija adresira 2<sup>n</sup> lokacija.</div></details>
+
+<h3>Problem jedne magistrale i kako se rešava</h3>
+<p>Najjednostavnija arhitektura: procesor, memorija i svi U/I uređaji na <b>jednoj</b> sistemskoj magistrali. Glavni nedostatak: <b>sistemska magistrala postaje usko grlo</b>. Svi podaci moraju da prođu preko nje, a u jednom trenutku samo jedan uređaj može da je koristi. Što je više uređaja, to je magistrala duža (veće kašnjenje signala) i više se čeka na nju. Pri tom brz procesor i spori uređaji (štampač, tastatura) moraju da dele isti put.</p>
+<p>Metode poboljšanja:</p>
+<ol>
+<li><b>Keš memorija između procesora i sistemske magistrale</b>: većina pristupa memoriji se zadovolji iz keša i uopšte ne ide na magistralu.</li>
+<li><b>Proširenje U/I modula baferima i složenijom upravljačkom logikom</b>: U/I modul sam prima podatke u bafer i obrađuje ih, pa magistralu koristi ređe i u većim blokovima (DMA iz Modula 4).</li>
+<li><b>Višestruka hijerarhija magistrala</b>: brzi delovi (procesor, keš, memorija) imaju svoju brzu magistralu, a spori uređaji su na posebnim, sporijim magistralama, vezanim preko mostova (bridge). Ovo je slika „računarskog sistema“ iz Modula 2: lokalna magistrala, sistemska, pa magistrala za proširenja.</li>
+</ol>
+<details class="stop exq" id="k1-74"><summary>Kod jednostavne arhitekture gde su CPU, memorija i U/I povezani preko jedne sistemske magistrale, koji je glavni nedostatak i kako se arhitektura poboljšava?</summary><div><b>Nedostatak:</b> sistemska magistrala je usko grlo sistema, jer svi podaci moraju da prođu preko nje, a u jednom trenutku može da je koristi samo jedan uređaj; sa više uređaja rastu kašnjenje i čekanje. <b>Poboljšanja:</b> (1) dodavanje keša između procesora i sistemske magistrale; (2) proširivanje U/I modula baferima i sofisticiranijom upravljačkom logikom (i DMA); (3) uvođenje višestruke hijerarhije magistrala (lokalna, sistemska, magistrale za brze i spore uređaje, povezane mostovima).</div></details>
+
+<h3>Magistrale PC računara</h3>
+<p>Klasičan PC iz vremena Pentium-a (knjiga Simić–Bataveljić, Tanenbaum) ima čitavu hijerarhiju magistrala:</p>
+<div class="tbl"><table>
+<tr><th>Magistrala</th><th>Čemu služi</th></tr>
+<tr><td><b>Lokalna magistrala</b></td><td>unutar procesorskog modula, veza procesora sa najbližim kolima</td></tr>
+<tr><td><b>Cache (keš) magistrala</b></td><td>komunikacija procesora sa keš memorijom van čipa (L2 keš na posebnoj, brzoj magistrali, „backside bus“)</td></tr>
+<tr><td><b>Memorijska magistrala</b></td><td>veza sa glavnom memorijom (kod Pentium 4: 64 bita, „frontside bus“ do kontrolera memorije)</td></tr>
+<tr><td><b>PCI magistrala</b></td><td>Peripheral Component Interconnect (Intel, 1992): povezivanje <b>brzih</b> uređaja (grafičke, mrežne i SCSI kartice, kontroleri diskova)</td></tr>
+<tr><td><b>ISA magistrala</b></td><td>Industry Standard Architecture (IBM PC/AT, 1984, 16 bita, 8,33 MHz): povezivanje <b>sporih</b> uređaja (štampač, zvučna kartica, modem); zadržana zbog kompatibilnosti sa starim karticama</td></tr>
+<tr><td><b>SCSI magistrala</b></td><td>Small Computer System Interface: brzi diskovi, skeneri, trake, uglavnom kod servera</td></tr>
+<tr><td><b>IDE (ATA) magistrala</b></td><td>Integrated Drive Electronics: hard diskovi i CD/DVD uređaji (danas SATA)</td></tr>
+<tr><td><b>USB</b></td><td>Universal Serial Bus (1996): serijska magistrala za spoljne uređaje (tastatura, miš, flash disk, kamera); do 127 uređaja, priključivanje u radu („hot plug“)</td></tr>
+</table></div>
+<p><b>Karakteristike PCI magistrale:</b> sinhrona, 32 bita na 33 MHz (133 MB/s), u proširenoj verziji <b>64 bita na 66 MHz</b> (528 MB/s), što je dovoljno brzo za sve periferije, ali ne i za memoriju (zato memorija ima svoju magistralu). Ima centralizovanu arbitražu (uređaj traži magistralu signalom REQ i dobija je signalom GNT), multipleksirane adresne i linije podataka (iste linije nose prvo adresu, pa podatke, da bi bilo manje pinova), podržava „Plug and Play“ (sistem sam konfiguriše karticu) i nezavisna je od procesora (koristi se i van Intel sistema). Danas je zamenjena serijskom <b>PCI Express</b> magistralom.</p>
+<p><b>Sistemi sa Pentium 4 procesorom</b> koriste: memorijsku magistralu (frontside bus ka čipsetu), PCI (i AGP za grafiku, kasnije PCI Express), ISA (kod starijih matičnih ploča), USB, a diskovi su na IDE/SATA.</p>
+<details class="stop exq" id="k1-32"><summary>Da li je Pentium 4 64-bitni ili 32-bitni procesor? Obrazložiti.</summary><div>Zavisi od perspektive (ovo je odgovor iz Tanenbaum-ove knjige). <b>Iz perspektive hardvera</b> može se reći da je 64-bitni, jer ka memoriji i od nje prenosi podatke u jedinicama od 64 bita (magistrala podataka je 64-bitna). <b>Iz perspektive softvera</b> je 32-bitni, jer ima isti 32-bitni skup registara (EAX, EBX…) i instrukcija kao prethodni modeli (Pentium II, Pentium Pro), arhitekture IA-32. Napomena: kasniji modeli Pentium 4 (od 2004) dobili su i 64-bitna proširenja (EM64T, danas x86-64), pa ti modeli mogu da rade i kao pravi 64-bitni procesori.</div></details>
+
+<h3>Kako se podaci prenose: sinhrono i asinhrono</h3>
+<p>Kad procesor i memorija razmenjuju podatak preko magistrale, moraju da se dogovore o vremenu: kada je adresa važeća, kada su podaci spremni. Postoje dva načina:</p>
+<div class="tbl"><table>
+<tr><th></th><th>Sinhroni prenos</th><th>Asinhroni prenos</th></tr>
+<tr><td>Vremenska kontrola</td><td>zajednički <b>takt</b> na magistrali; svi događaji se dešavaju na ivicama takta, u unapred određenom broju ciklusa</td><td>nema zajedničkog takta; svaki korak počinje kad se završi prethodni, na osnovu signala <b>„rukovanja“</b> (handshake)</td></tr>
+<tr><td>Signali</td><td>takt, RD/WR; ako je uređaj sporiji, ubacuju se „stanja čekanja“ (wait states)</td><td>MSYN (master sync: „adresa i komanda su postavljeni“) i SSYN (slave sync: „podaci su spremni / primljeni“)</td></tr>
+<tr><td>Prednosti</td><td>jednostavna realizacija i testiranje</td><td>uređaji različitih brzina rade svaki svojom brzinom; prenos je onoliko brz koliko dozvoljavaju učesnici</td></tr>
+<tr><td>Mane</td><td>svi moraju da prate isti takt; najsporiji uređaj određuje ritam; teško je iskoristiti nove, brže uređaje</td><td>složenija logika; više signala po prenosu</td></tr>
+<tr><td>Primeri</td><td>PCI, memorijska magistrala</td><td>stare magistrale (Unibus), USB i SCSI imaju asinhrone režime</td></tr>
+</table></div>
+<p>Signal <b>READY</b> iz Modula 4 je primer rukovanja: memorija javlja „gotovo je“, a procesor čeka dok ga ne dobije. Asinhroni prenos sa četiri koraka: (1) gospodar (master) postavi adresu i signal čitanja, pa aktivira MSYN; (2) sluga (slave) postavi podatak i aktivira SSYN; (3) gospodar preuzme podatak i ukine MSYN; (4) sluga ukine SSYN. Svaki korak je odgovor na prethodni, pa nema potrebe za taktom.</p>
+<p><b>Vrste prenosa podataka putem magistrale</b> (po Stallings-u): <b>upis</b> (write, master → slave), <b>čitanje</b> (read, slave → master), <b>čitanje-izmena-upis</b> (read-modify-write, nedeljiva operacija koja se koristi za zaštitu deljenih resursa kod više procesora), <b>čitanje posle upisa</b> (read-after-write, provera upisa) i <b>blokovski prenos</b> (block transfer: jedna adresa, pa niz podataka sa uzastopnih adresa). Pored toga, prema tome ko upravlja prenosom sa uređajima, razlikuju se programirani U/I, U/I sa prekidima i DMA (Modul 4).</p>
+<p>Pristup magistrali reguliše <b>arbitraža</b>: <b>centralizovana</b> (jedan arbitar odlučuje ko sledeći dobija magistralu, npr. PCI) ili <b>distribuirana</b> (uređaji se sami dogovaraju, npr. SCSI).</p>
+<details class="stop exq" id="k1-27"><summary>Kakva je razlika između sinhronog i asinhronog prenosa (procesa) na magistrali?</summary><div>Kod <b>sinhronog</b> prenosa svi događaji na magistrali su određeni zajedničkim taktom: svaka faza (adresa, čitanje, podaci) traje unapred zadati broj ciklusa takta. Jednostavno je za realizaciju, ali svi uređaji moraju da prate isti takt, pa sporiji uređaji usporavaju ili traže stanja čekanja. Kod <b>asinhronog</b> prenosa nema zajedničkog takta: svaki korak se pokreće završetkom prethodnog, pomoću signala rukovanja (npr. MSYN i SSYN, ili READY), pa uređaji različitih brzina mogu da rade svaki svojom brzinom, uz složeniju logiku.</div></details>
+
+<h3>Načini pristupa memoriji</h3>
+<div class="tbl"><table>
+<tr><th>Način pristupa</th><th>Kako</th><th>Primer</th></tr>
+<tr><td><b>Sekvencijalni</b></td><td>podacima se pristupa redom; da bi se stiglo do podatka, mora se proći kroz sve pre njega</td><td><b>magnetna traka</b> (tipičan primer)</td></tr>
+<tr><td><b>Direktni</b></td><td>skoči se u blizinu (stazu), pa se traži sekvencijalno</td><td>magnetni disk</td></tr>
+<tr><td><b>Proizvoljni</b> (random)</td><td>svakoj lokaciji se pristupa direktno po adresi, za isto vreme</td><td>glavna memorija (RAM)</td></tr>
+<tr><td><b>Asocijativni</b></td><td>lokacija se pronalazi po delu <em>sadržaja</em>, a ne po adresi; poređenje sa svim lokacijama istovremeno</td><td>keš memorija (TLB, tagovi)</td></tr>
+</table></div>
+
+<h3>SRAM i DRAM: dve tehnologije poluprovodničke memorije</h3>
+<p>Glavna memorija i keš su obe poluprovodničke, sa proizvoljnim pristupom (RAM, Random Access Memory), ali su napravljene od različitih ćelija:</p>
+<div class="tbl"><table>
+<tr><th></th><th>SRAM (statička)</th><th>DRAM (dinamička)</th></tr>
+<tr><td>Ćelija</td><td><b>flip-flop</b> (kolo slično D flip-flopu), 4–6 tranzistora</td><td>jedan tranzistor i jedan <b>kondenzator</b>; bit je naelektrisanje kondenzatora</td></tr>
+<tr><td>Osvežavanje</td><td>ne treba: podatak stoji dok ima napajanja</td><td><b>mora se periodično osvežavati</b> (na svakih nekoliko ms), jer kondenzator gubi naelektrisanje</td></tr>
+<tr><td>Brzina</td><td><b>brža</b></td><td><b>sporija</b></td></tr>
+<tr><td>Gustina i cena</td><td>manja gustina, skuplja po bitu</td><td>veća gustina (više bitova po čipu), jeftinija</td></tr>
+<tr><td>Upotreba</td><td><b>keš memorija</b>, registri</td><td><b>glavna memorija</b></td></tr>
+</table></div>
+<p>Obe su <b>nepostojane</b> (volatile): gube sadržaj kad nestane napajanja. Za razliku od njih, ROM, flash i diskovi su postojani.</p>
+<p><b>DDR SDRAM</b> = <b>Double Data Rate Synchronous Dynamic Random-Access Memory</b>, sinhrona dinamička memorija sa proizvoljnim pristupom i dvostrukom brzinom prenosa podataka. Razložimo: <b>D</b>RAM (dinamička, kondenzatori), <b>S</b>ynchronous (radi sinhrono sa taktom magistrale, pa kontroler zna tačno kada stižu podaci), <b>DDR</b> (podaci se prenose i na rastućoj i na opadajućoj ivici takta, dakle dva prenosa po ciklusu). Generacije DDR, DDR2, DDR3 (vidi Core i7 iz Modula 5), DDR4, DDR5 udvostručuju brzinu prenosa.</p>
+<details class="stop exq" id="k1-51"><summary>Dopuniti sa SRAM ili DRAM: __ se često koristi za glavnu memoriju; __ se konstruiše od kola sličnih D flip-flopu; __ se često koristi za keš; __ je sporija.</summary><div><b>DRAM</b> se često koristi za glavnu memoriju. <b>SRAM</b> se konstruiše od kola koja su slična D flip-flopu. <b>SRAM</b> se često koristi za keš memoriju. <b>DRAM</b> je sporija memorija (jer se čita naelektrisanje kondenzatora i mora se osvežavati).</div></details>
+
+<h3>Da li je zadata memorija moguća?</h3>
+<p>Ispitna pitanja često daju tri broja: dužinu adrese (ili MAR) u bitovima, broj ćelija i veličinu ćelije, i pitaju da li je takva memorija moguća i da li ima smisla. Pravilo je jednostavno:</p>
+<div class="formula">n-bitna adresa može da adresira najviše 2<sup>n</sup> ćelija. Memorija je <b>moguća</b> ako je broj ćelija ≤ 2<sup>n</sup>, a <b>racionalna</b> (ima smisla) ako je broj ćelija blizu 2<sup>n</sup>, tj. adresni bitovi nisu protraćeni.</div>
+<p>Veličina ćelije (8, 16 ili 1024 bita) ne utiče na to da li je memorija moguća: ona samo kaže koliko bitova ima jedna lokacija.</p>
+<div class="tbl"><table>
+<tr><th>Adresa (MAR)</th><th>Broj ćelija</th><th>Veličina ćelije</th><th>Odgovor</th></tr>
+<tr><td>9 bita</td><td>2048</td><td>16 bita</td><td>2<sup>9</sup> = 512 &lt; 2048 → <b>nije moguća</b> (nema dovoljno adresa)</td></tr>
+<tr><td>10 bita</td><td>1000</td><td>1024 bita</td><td>2<sup>10</sup> = 1024 ≥ 1000 → <b>moguća</b> (i skoro racionalna, 24 adrese neiskorišćene)</td></tr>
+<tr><td>10 bita</td><td>2048</td><td>1 bajt</td><td>1024 &lt; 2048 → <b>nije moguća</b>, MAR je premali</td></tr>
+<tr><td>12 bita</td><td>2048</td><td>1024 bita</td><td>4096 ≥ 2048 → <b>moguća</b>, ali neracionalna (jedan adresni bit je višak)</td></tr>
+<tr><td>32 bita</td><td>10</td><td>16 bita</td><td>moguća, ali <b>potpuno neracionalna</b> (za 10 ćelija dovoljna su 4 bita)</td></tr>
+</table></div>
+<div class="warn">U skripti za pitanje 40 piše „2<sup>9</sup> = 519“. Tačno je <b>2<sup>9</sup> = 512</b>. Zaključak (nije moguća) ostaje isti.</div>
+
+<h3>Tri vrste promašaja u kešu</h3>
+<p>U Modulu 3 smo videli da keš radi jer programi imaju lokalnost. Kad podatak <em>nije</em> u kešu, to je <b>promašaj</b> (miss), i mora se doneti iz glavne memorije. Promašaji se dele na „tri C“:</p>
+<ol>
+<li><b>Obavezni (Compulsory)</b>: prvi pristup bloku. Keš je na početku izvršavanja programa prazan, pa svaki blok koji se prvi put koristi mora da se donese. Zovu se i „hladni start“ (cold start). Smanjuju se većim blokovima i unapred donošenjem (prefetch).</li>
+<li><b>Promašaji kapaciteta (Capacity)</b>: keš nije dovoljno veliki da memoriše ceo radni skup programa (podatke koje program trenutno koristi), pa se blokovi izbacuju i kasnije ponovo donose. Smanjuju se većim kešom.</li>
+<li><b>Promašaji zbog konflikta (Conflict)</b>: kod direktnog i skupno-asocijativnog preslikavanja, više blokova memorije se preslikava u istu keš lokaciju, pa jedan izbacuje drugi iako u kešu ima slobodnog mesta. Smanjuju se većom asocijativnošću.</li>
+</ol>
+<details class="stop exq" id="k1-50"><summary>Navesti i objasniti 3 tipa promašaja („misses“) kod keš memorije.</summary><div><b>Obavezni (compulsory, „cold start“):</b> nastaju pri prvom pristupu bloku, jer je keš na početku izvršavanja programa prazan. <b>Kapacitet (capacity):</b> keš nije dovoljno veliki da memoriše ceo radni skup programa, pa se blokovi izbacuju i ponovo donose. <b>Konflikt (conflict):</b> kod direktnog ili skupno-asocijativnog preslikavanja više blokova se preslikava u istu keš lokaciju (u kojoj je već upisana druga vrednost), pa se međusobno izbacuju iako keš nije pun.</div></details>
+<div class="bridge">Magistrala i memorija određuju koliko brzo procesor dobija podatke. Sledeća dopuna se bavi drugim smerom komunikacije: kako uređaji „prekidaju“ procesor da bi mu javili da su spremni.</div>
+<p class="src">Izvori: W. Stallings, <i>Organizacija i arhitektura računara</i>, pogl. 3 (Top-Level View: Bus Interconnection), 4 (Cache Memory), 5 (Internal Memory: SRAM, DRAM, DDR); A. Tanenbaum, <i>Structured Computer Organization</i>, pogl. 3.4–3.6 (Buses, PCI, USB); Hennessy &amp; Patterson, pogl. 5 („three Cs“).</p>
+<div class="quiz" data-ch="d2"></div></section>

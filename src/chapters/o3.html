@@ -1,0 +1,107 @@
+<section class="ch" id="o3">
+<div class="ch-head"><span class="ch-num">M8</span><span class="ch-src">Modul 8 · Upravljanje procesima 2, slajdovi 8–20</span></div>
+<h2>Ko sledeći dobija procesor: algoritmi planiranja</h2>
+<p class="lead">U redu spremnih procesa čeka pet procesa, a procesor je jedan. Kratkoročni planer mora da izabere jednog, i to radi stotine puta u sekundi. Izgleda kao sitnica, ali od tog izbora zavisi da li će miš „kočiti“, da li će dugačak proračun ikad završiti i koliko će procesa sistem završiti za sat. U ovoj lekciji prvo definišemo čime merimo da li je planiranje dobro, a zatim prolazimo kroz pet klasičnih algoritama (FCFS, SJF, SRTF, prioritetni i Round-Robin) i planiranje u više redova, uz primere sa slajdova izračunate do kraja. Na kraju je simulator u kome možeš da isprobaš svaki algoritam na svojim procesima.</p>
+
+<h3>Čime merimo planiranje: kriterijumi (slajdovi 8 i 9)</h3>
+<figure class="slide"><img src="img/m8b-8.jpg" alt="Algoritmi planiranja: kriterijumi" loading="lazy"><figcaption><b>Slajd 8 · Algoritmi planiranja, kriterijumi</b></figcaption></figure>
+<figure class="slide"><img src="img/m8b-9.jpg" alt="Vreme čekanja i vreme odziva" loading="lazy"><figcaption><b>Slajd 9 · Termini: vreme čekanja i vreme odziva</b></figcaption></figure>
+<p>Pet kriterijuma, koje treba znati i definisati:</p>
+<ol>
+<li><b>Iskorišćenje centralnog procesora</b>: koliki deo vremena procesor radi koristan posao. Želimo što veće (realno 40% kod slabo opterećenog do 90% kod jako opterećenog sistema).</li>
+<li><b>Propusnost sistema</b> (throughput): <em>broj programa koji završe obradu u nekom vremenskom intervalu</em>, npr. 10 procesa u sekundi. Želimo što veću.</li>
+<li><b>Vreme provedeno u sistemu</b> (turnaround time): od trenutka kad je proces poslat do trenutka kad je završen. Po slajdu, to je <em>zbir vremena koje je proces proveo čekajući da uđe u memoriju, vremena u redu spremnih, vremena potrošenog na U/I operacije i vremena procesorskog izvršavanja</em>. Želimo što manje.</li>
+<li><b>Vreme čekanja</b>: <em>vreme provedeno u redu procesa spremnih za izvršavanje</em>. Samo to, ne i vreme U/I ili izvršavanja. Ovo je jedino vreme na koje algoritam planiranja direktno utiče, pa se algoritmi najčešće porede po <b>prosečnom vremenu čekanja</b>.</li>
+<li><b>Vreme odziva</b> (response time): <em>vreme koje protekne od zahteva do početka davanja odgovora</em> (ne do kraja). Važno za interaktivne sisteme: korisnik hoće da vidi da se nešto dešava.</li>
+</ol>
+<div class="formula">vreme u sistemu = trenutak završetka − trenutak dolaska &nbsp;&nbsp;·&nbsp;&nbsp; vreme čekanja = vreme u sistemu − vreme izvršavanja (kad nema U/I)</div>
+<p>Kriterijumi su delom u sukobu: ono što skraćuje odziv (često prekidanje) smanjuje iskorišćenje (više promena konteksta). Zato ne postoji jedan najbolji algoritam.</p>
+<details class="stop"><summary>U sistemu postoji n procesa koji se izvršavaju na jednom procesoru (bez prekidanja). Koliko ima mogućih načina (redosleda) dodele procesora?</summary><div><b>n!</b> (n faktorijel). Prvi proces se bira na n načina, drugi na n−1, i tako do poslednjeg: n·(n−1)·…·1 = n!. Već za 10 procesa to je 3.628.800 redosleda, i zato planer ne isprobava sve, nego koristi pravilo (algoritam).</div></details>
+
+<h3>FCFS: ko pre devojci, njegova devojka (slajdovi 10, 16, 17)</h3>
+<figure class="slide"><img src="img/m8b-10.jpg" alt="FCFS (First Come, First Served)" loading="lazy"><figcaption><b>Slajd 10 · FCFS, prvi došao, prvi opslužen</b></figcaption></figure>
+<p><b>FCFS</b> (First Come, First Served). Implementacija se svodi na <b>FIFO red</b>: proces koji je prvi stigao prvi dobija procesor. <b>Bez prekidanja</b> (non-preemptive): proces koji ima procesor koristi ga sve dok mu je potreban (dok ne završi ili sam ne zatraži U/I). Prednost: veoma jednostavan. Nedostaci: <b>neodgovarajući za interaktivne sisteme</b> (jedan dug proces drži sve ostale) i <b>velike varijacije u prosečnom vremenu</b>, zavisno od toga kojim redom procesi stignu. Da je to ozbiljno, pokazuju dva primera sa istim procesima.</p>
+<figure class="slide"><img src="img/m8b-16.jpg" alt="Algoritam FCFS, primer 1" loading="lazy"><figcaption><b>Slajd 16 · FCFS, primer 1: redosled P1, P2, P3</b></figcaption></figure>
+<p>P1 traje 24, P2 i P3 po 3 jedinice. Stigli su redom P1, P2, P3 (svi u trenutku 0). <b>Gantt-ov dijagram</b> je traka na kojoj se vidi koji proces kada drži procesor: P1 od 0 do 24, P2 od 24 do 27, P3 od 27 do 30. Vreme čekanja je trenutak kada je proces dobio procesor: P1 = 0, P2 = 24, P3 = 27. <b>Prosečno vreme čekanja = (0 + 24 + 27)/3 = 17.</b></p>
+<figure class="slide"><img src="img/m8b-17.jpg" alt="Algoritam FCFS, primer 2" loading="lazy"><figcaption><b>Slajd 17 · FCFS, primer 2: redosled P2, P3, P1, i efekat konvoja</b></figcaption></figure>
+<p>Isti procesi, ali stižu redom P2, P3, P1. Gantt: P2 0–3, P3 3–6, P1 6–30. Čekanje: P1 = 6, P2 = 0, P3 = 3. <b>Prosek = (6 + 0 + 3)/3 = 3.</b> Isti posao, šest puta kraće prosečno čekanje, samo zbog redosleda dolaska.</p>
+<p>Primer 1 pokazuje <strong>efekat konvoja</strong> (convoy effect): <b>kratkotrajni procesi zaglavljeni iza jednog dugotrajnog procesa</b>, kao automobili iza kamiona na putu sa jednom trakom. U realnom sistemu: jedan proces koji samo računa drži procesor, a iza njega čeka gomila kratkih, interaktivnih procesa koji bi za tren završili i otišli na U/I, pa i uređaji i procesor ostaju slabo iskorišćeni.</p>
+
+<h3>SJF: najkraći posao prvi (slajdovi 11, 12, 18)</h3>
+<figure class="slide"><img src="img/m8b-11.jpg" alt="SJF (Shortest Job First)" loading="lazy"><figcaption><b>Slajd 11 · SJF, najkraći posao prvi</b></figcaption></figure>
+<p>Pouka primera 2 je očigledna: ako kratki idu prvi, prosek je manji. <b>SJF</b> (Shortest Job First): planer iz reda čekanja bira posao koji zahteva <b>najmanje procesorskog vremena</b>. Klasičan SJF je <b>bez prekidanja</b>. Ovaj algoritam <b>minimizira prosečno vreme provedeno u sistemu</b> (i prosečno vreme čekanja): dokazivo je optimalan za dati skup procesa. Intuicija: kad kratki proces ide ispred dugog, kratki mnogo uštedi, a dugi malo izgubi.</p>
+<figure class="slide"><img src="img/m8b-12.jpg" alt="SJF nastavak: nedostaci" loading="lazy"><figcaption><b>Slajd 12 · SJF, nedostaci</b></figcaption></figure>
+<p>Dve mane. Prvo, <b>u opštem slučaju ne može biti implementiran</b>, jer planer unapred ne zna koliko će proces trajati. Zato se SJF u OS-u koristi samo u kombinaciji sa drugim algoritmima, a trajanje se <em>procenjuje</em> iz prethodnih izvršavanja (eksponencijalno usrednjavanje: sledeća procena = α · poslednje trajanje + (1 − α) · prethodna procena). Drugo, moguće je <b>gladovanje</b> (starvation): ako stalno pristižu kratki procesi, dugi proces nikad ne dođe na red.</p>
+<figure class="slide"><img src="img/m8b-18.jpg" alt="SJF bez prekidanja, primer" loading="lazy"><figcaption><b>Slajd 18 · SJF bez prekidanja, primer</b></figcaption></figure>
+<p>Četiri procesa sa različitim vremenima dolaska: P1 (dolazak 0, traje 7), P2 (2, 4), P3 (4, 1), P4 (5, 4). Postupak:</p>
+<ol>
+<li>t = 0: stigao je samo P1, pa on dobija procesor i, pošto nema prekidanja, radi do kraja, do t = 7.</li>
+<li>t = 7: u redu su P2 (4), P3 (1) i P4 (4). Najkraći je <b>P3</b>: radi 7–8.</li>
+<li>t = 8: P2 i P4 traju po 4; nerešeno se razrešava po FCFS, P2 je stigao ranije: <b>P2</b> 8–12.</li>
+<li><b>P4</b> 12–16.</li>
+</ol>
+<p>Čekanje = trenutak početka − trenutak dolaska: P1 = 0, P2 = 8 − 2 = 6, P3 = 7 − 4 = 3, P4 = 12 − 5 = 7. <b>Prosek = (0 + 6 + 3 + 7)/4 = 4.</b></p>
+
+<h3>SRTF: SJF sa prekidanjem (slajd 19)</h3>
+<figure class="slide"><img src="img/m8b-19.jpg" alt="SRTF sa prekidanjem, primer" loading="lazy"><figcaption><b>Slajd 19 · SRTF sa prekidanjem (preemptive)</b></figcaption></figure>
+<p><b>SRTF</b> (Shortest Remaining Time First) je SJF <b>sa prekidanjem</b>. Pravilo sa slajda: <em>prekid nastaje ako novi proces koji dođe ima manje vreme izvršavanja od preostalog potrebnog vremena za završetak tekućeg procesa</em>. Isti procesi kao gore:</p>
+<ol>
+<li>t = 0: radi P1 (preostalo 7).</li>
+<li>t = 2: stiže P2 sa 4. P1-u je ostalo 5. Pošto 4 &lt; 5, <b>P1 se prekida</b>, radi P2.</li>
+<li>t = 4: stiže P3 sa 1. P2-u je ostalo 2. Pošto 1 &lt; 2, P2 se prekida, radi <b>P3</b> (4–5) i završava.</li>
+<li>t = 5: stiže P4 sa 4. Preostala vremena: P1 = 5, P2 = 2, P4 = 4. Radi <b>P2</b> (5–7) i završava.</li>
+<li>t = 7: P1 = 5, P4 = 4. Radi <b>P4</b> (7–11), pa <b>P1</b> (11–16).</li>
+</ol>
+<p>Gantt: P1 0–2, P2 2–4, P3 4–5, P2 5–7, P4 7–11, P1 11–16. Kod prekidanja se čekanje računa kao <b>završetak − dolazak − trajanje</b>: P1 = 16 − 0 − 7 = 9, P2 = 7 − 2 − 4 = 1, P3 = 5 − 4 − 1 = 0, P4 = 11 − 5 − 4 = 2. <b>Prosek = (9 + 1 + 0 + 2)/4 = 3</b>, bolje od SJF-a bez prekidanja (4).</p>
+<div class="warn">SRTF ima isti problem kao SJF, samo izraženiji: <b>gladovanje</b>. Ako kratki procesi stalno pristižu, dugi proces se iznova i iznova prekida i možda nikad ne završi. Od algoritama FCFS, SRTF i RR, do gladovanja može da dovede samo <b>SRTF</b>. FCFS ne može (svako jednom dođe na čelo reda), RR ne može (svako dobije kvantum u svakom krugu).</div>
+
+<h3>Planiranje po prioritetu (slajd 13)</h3>
+<figure class="slide"><img src="img/m8b-13.jpg" alt="Planiranje po prioritetu" loading="lazy"><figcaption><b>Slajd 13 · Planiranje po prioritetu</b></figcaption></figure>
+<p>Svaki proces ima pridružen <b>prioritet</b> (broj). Naredni proces za izvršavanje je proces sa <b>najvišim prioritetom</b>; zato se zove i <b>HPF</b> (Highest Priority First). Ako više procesa ima isti prioritet, među njima se primenjuje FCFS. Može biti bez prekidanja ili sa prekidanjem (proces višeg prioriteta koji stigne odmah oduzima procesor). SJF je zapravo poseban slučaj: prioritet je obrnuto srazmeran trajanju.</p>
+<p>Problem je opet <b>gladovanje</b> procesa niskog prioriteta. Rešenje je ono što slajd naziva <b>povezivanje prioriteta i vremena koje je proces proveo u sistemu</b> (za procese niskog prioriteta), poznato kao <b>starenje</b> (aging): što proces duže čeka, prioritet mu se postepeno podiže, dok konačno ne dođe na red.</p>
+
+<h3>Round-Robin: svako po malo, u krug (slajdovi 14 i 20)</h3>
+<figure class="slide"><img src="img/m8b-14.jpg" alt="RR (Round-robin) algoritam" loading="lazy"><figcaption><b>Slajd 14 · RR (Round-robin) algoritam</b></figcaption></figure>
+<p><b>RR</b> koristi interval zauzeća procesora, <b>vremenski kvantum</b> (time slice). Red spremnih se posmatra kao <b>zatvoren krug</b>. Jedan proces dobija procesor u trajanju jednog kvantuma, a zatim se procesor dodeljuje sledećem procesu u krugu. Ako proces ne završi u svom kvantumu, prekida ga tajmer i on ide na kraj reda. Ovo je FCFS sa prekidanjem i osnova svih sistema sa deljenjem vremena.</p>
+<figure class="slide"><img src="img/m8b-20.jpg" alt="RR algoritam sa vremenskim kvantumom 20" loading="lazy"><figcaption><b>Slajd 20 · RR sa kvantumom 20</b></figcaption></figure>
+<p>Procesi P1 = 53, P2 = 17, P3 = 68, P4 = 24, svi stigli u trenutku 0, kvantum q = 20. Na slajdu su vremena čekanja ostavljena kao „…“; evo ih izračunatih:</p>
+<div class="tbl"><table><thead><tr><th>Interval</th><th>Proces</th><th>Preostalo posle</th></tr></thead><tbody>
+<tr><td>0–20</td><td>P1</td><td>33</td></tr><tr><td>20–37</td><td>P2</td><td>0 (završen u 37)</td></tr><tr><td>37–57</td><td>P3</td><td>48</td></tr><tr><td>57–77</td><td>P4</td><td>4</td></tr>
+<tr><td>77–97</td><td>P1</td><td>13</td></tr><tr><td>97–117</td><td>P3</td><td>28</td></tr><tr><td>117–121</td><td>P4</td><td>0 (završen u 121)</td></tr><tr><td>121–134</td><td>P1</td><td>0 (završen u 134)</td></tr>
+<tr><td>134–154</td><td>P3</td><td>8</td></tr><tr><td>154–162</td><td>P3</td><td>0 (završen u 162)</td></tr>
+</tbody></table></div>
+<p>Čekanje = završetak − trajanje (svi su stigli u 0): P1 = 134 − 53 = <b>81</b>, P2 = 37 − 17 = <b>20</b>, P3 = 162 − 68 = <b>94</b>, P4 = 121 − 24 = <b>97</b>. <b>Prosek = (81 + 20 + 94 + 97)/4 = 73.</b> Tačke na Gantt-ovom dijagramu sa slajda su upravo 0, 20, 37, 57, 77, 97, 117, 121, 134, 154, 162.</p>
+<p>Zaključak sa slajda: kod RR je <b>duže vreme provedeno u sistemu</b> u odnosu na SRTF, ali je <b>bolje vreme odziva</b>: svaki proces počne da radi najkasnije posle (n − 1)·q jedinica, ma koliko drugi procesi bili dugački.</p>
+<div class="ex"><b>Koliki treba da bude kvantum?</b> Ako je kvantum <b>veoma veliki</b>, nijedan proces ne bude prekinut i RR postaje FCFS. Ako je <b>premali</b>, dolazi do previše promena konteksta, a pošto za vreme promene konteksta sistem ne radi ništa korisno, efikasnost procesora opada (npr. kvantum 1 ms i promena konteksta 0,1 ms znači da ~9% vremena odlazi na režiju). Pravilo iz literature: kvantum treba da bude duži od oko 80% procesorskih „naleta“ (CPU burst) procesa; u praksi 10–100 ms, a promena konteksta traje mikrosekunde.</div>
+
+<h3>Planiranje sa redovima čekanja u više nivoa (slajd 15)</h3>
+<figure class="slide"><img src="img/m8b-15.jpg" alt="Planiranje sa redovima čekanja u više nivoa" loading="lazy"><figcaption><b>Slajd 15 · Planiranje sa redovima čekanja u više nivoa</b></figcaption></figure>
+<p>Procesi nisu svi isti. Slajd ih deli u grupe: <b>interaktivni procesi</b>, <b>sistemski procesi</b> i <b>procesi koji rade u paketnom režimu</b>. Za svaku grupu se formira <b>poseban red čekanja</b>, i svaki red može imati svoj algoritam (npr. interaktivni RR, paketni FCFS). Planiranje <em>između</em> redova radi se na dva načina: <b>po prioritetu redova</b> (dok god u sistemskom redu ima nekog, paketni ne dobijaju ništa) ili <b>po procentualnoj raspodeli procesorskog vremena</b> između redova (npr. 80% interaktivnim, 20% paketnim). Ovo se u spisku algoritama zove <b>MLS</b> (Multilevel Strategy).</p>
+<div class="ex"><b>Dopuna: redovi sa povratnom spregom</b> (multilevel feedback queue). Proces nije zauvek u istom redu. Novi proces ide u najviši red sa malim kvantumom. Ako potroši ceo kvantum (znači da mnogo računa), spušta se u niži red sa većim kvantumom. Ako dugo čeka u niskom redu, podiže se (starenje). Tako kratki i interaktivni procesi automatski dobijaju prednost, bez potrebe da se trajanje zna unapred. Ovako u osnovi rade Windows, macOS i stariji Linux planeri.</div>
+
+<h3>Pregled: svi algoritmi na jednom mestu</h3>
+<div class="tbl"><table><thead><tr><th>Algoritam</th><th>Prekidanje</th><th>Bira</th><th>Gladovanje</th><th>Glavna osobina</th></tr></thead><tbody>
+<tr><td>FCFS</td><td>ne</td><td>prvi koji je stigao</td><td>ne</td><td>jednostavan; efekat konvoja</td></tr>
+<tr><td>SJF</td><td>ne</td><td>najkraći posao</td><td>da</td><td>minimalno prosečno čekanje; trajanje se ne zna unapred</td></tr>
+<tr><td>SRTF</td><td>da</td><td>najkraće preostalo vreme</td><td>da</td><td>još manje čekanje od SJF</td></tr>
+<tr><td>Prioritetni (HPF)</td><td>oba</td><td>najviši prioritet</td><td>da (rešava se starenjem)</td><td>uopštenje SJF-a</td></tr>
+<tr><td>RR</td><td>da (kvantum)</td><td>sledeći u krugu</td><td>ne</td><td>dobar odziv, više promena konteksta</td></tr>
+<tr><td>Više nivoa (MLS)</td><td>zavisi</td><td>po redovima</td><td>moguće</td><td>različita pravila za različite grupe</td></tr>
+</tbody></table></div>
+
+<div class="lab" id="schedLab"><div class="lab-title">Laboratorija: planer procesora</div>
+<p>Upiši procese (ime, trenutak dolaska, trajanje, prioritet; manji broj = viši prioritet), izaberi algoritam i pogledaj Gantt-ov dijagram i vremena. Početni podaci su primer sa slajdova 18 i 19.</p>
+<div class="row"><select id="schedAlg" aria-label="Algoritam planiranja"><option value="fcfs">FCFS</option><option value="sjf" selected>SJF bez prekidanja</option><option value="srtf">SRTF (sa prekidanjem)</option><option value="prio">Prioritetni bez prekidanja</option><option value="rr">Round-Robin</option></select>
+<label class="schedq">kvantum <input id="schedQ" type="number" min="1" value="4" inputmode="numeric"></label></div>
+<textarea id="schedIn" rows="5" spellcheck="false" aria-label="Procesi: ime dolazak trajanje prioritet">P1 0 7 3
+P2 2 4 1
+P3 4 1 4
+P4 5 4 2</textarea>
+<div class="row"><button class="btn" id="schedRun" type="button">Izračunaj</button><button class="btn ghost" id="schedEx" type="button">Primer sa slajda 20 (RR, q = 20)</button></div>
+<div id="schedGantt" class="gantt"></div>
+<div id="schedOut"></div></div>
+
+<div class="bridge">Do sada su procesi bili nezavisni: svaki radi svoje, a planer samo deli procesor. Šta ako dva procesa rade sa <em>istim</em> podacima, npr. jedan upisuje poruke u bafer, a drugi ih čita? Tada redosled koji bira planer odjednom može da pokvari rezultat. To je problem <b>uporednih procesa</b>.</div>
+<p class="src">Dodatni izvori: A. Silberschatz i dr., <i>Operating System Concepts</i>, 10. izd., gl. 5 (CPU Scheduling); izračunavanje RR primera sa slajda 20 urađeno je ovde.</p>
+<div class="quiz" data-ch="o3"></div>
+</section>
